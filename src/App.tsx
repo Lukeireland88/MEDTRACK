@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, LogIn, LogOut } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { MedicationWithSlots } from './types';
 import { getDefaultTimeSlot, toLocalDateOnly } from './utils/dateUtils';
+import { useAuth } from './contexts/AuthContext';
 import DateNav from './components/DateNav';
 import TimeSlotPicker from './components/TimeSlotPicker';
 import MedTable from './components/MedTable';
 import Notices from './components/Notices';
 import AddMedicationModal, { MedicationFormData } from './components/AddMedicationModal';
 import MedicationHistoryModal from './components/MedicationHistoryModal';
+import AuthModal from './components/AuthModal';
 
 export default function App() {
+  const { user, loading: authLoading, signOut } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>('');
@@ -18,6 +21,7 @@ export default function App() {
   const [takenStatus, setTakenStatus] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [editingMedication, setEditingMedication] = useState<MedicationFormData | null>(null);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyMedicationId, setHistoryMedicationId] = useState<string>('');
@@ -307,6 +311,10 @@ export default function App() {
   };
 
   const handleEditMedication = (med: MedicationWithSlots) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     setEditingMedication({
       id: med.id,
       name: med.name,
@@ -317,6 +325,15 @@ export default function App() {
       intervalDays: med.interval_days || 1,
       notes: med.notes || '',
     });
+    setIsModalOpen(true);
+  };
+
+  const handleAddMedication = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    setEditingMedication(null);
     setIsModalOpen(true);
   };
 
@@ -349,7 +366,7 @@ export default function App() {
     setHistoryModalOpen(true);
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-600 text-lg">Loading...</div>
@@ -363,16 +380,34 @@ export default function App() {
         <header className="mb-4">
           <div className="flex justify-between items-start mb-3">
             <h1 className="text-3xl font-bold">Medication Tracker</h1>
-            <button
-              onClick={() => {
-                setEditingMedication(null);
-                setIsModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px"
-            >
-              <Plus className="w-5 h-5" />
-              Add medication
-            </button>
+            <div className="flex items-center gap-3">
+              {user ? (
+                <>
+                  <button
+                    onClick={handleAddMedication}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add medication
+                  </button>
+                  <button
+                    onClick={signOut}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 active:translate-y-px"
+                    title="Sign out"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setAuthModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px"
+                >
+                  <LogIn className="w-5 h-5" />
+                  Sign In
+                </button>
+              )}
+            </div>
           </div>
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
@@ -417,6 +452,11 @@ export default function App() {
         timeSlotId={selectedTimeSlotId}
         timeSlotName={selectedTimeSlot}
         doseDate={toLocalDateOnly(selectedDate).toISOString().split('T')[0]}
+      />
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
       />
     </div>
   );
