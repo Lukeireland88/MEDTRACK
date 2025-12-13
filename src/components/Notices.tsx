@@ -12,13 +12,9 @@ export default function Notices({ medications, selectedDate, selectedTimeSlot }:
     return null;
   }
 
-  const ferrousMed = medications.find((m) => m.name.toLowerCase().includes('ferrous'));
-  const azithroMed = medications.find((m) => m.name.toLowerCase().includes('azithromycin'));
+  const notDueMeds = medications.filter((med) => !isDue(med, selectedDate));
 
-  const ferrousNotDue = ferrousMed && !isDue(ferrousMed, selectedDate);
-  const azithroNotDue = azithroMed && !isDue(azithroMed, selectedDate);
-
-  if (!ferrousNotDue && !azithroNotDue) {
+  if (notDueMeds.length === 0) {
     return null;
   }
 
@@ -32,16 +28,11 @@ export default function Notices({ medications, selectedDate, selectedTimeSlot }:
 
   return (
     <div className="mx-3 mt-2 space-y-2">
-      {ferrousNotDue && ferrousMed && (
-        <div className="bg-red-100 border border-gray-300 rounded-lg p-3 text-gray-900">
-          {ferrousMed.name} not due on this date (next due: {formatNextDue(nextDueDate(ferrousMed, selectedDate))}).
+      {notDueMeds.map((med) => (
+        <div key={med.id} className="bg-red-100 border border-gray-300 rounded-lg p-3 text-gray-900">
+          {med.name} not due on this date (next due: {formatNextDue(nextDueDate(med, selectedDate))}).
         </div>
-      )}
-      {azithroNotDue && azithroMed && (
-        <div className="bg-red-100 border border-gray-300 rounded-lg p-3 text-gray-900">
-          {azithroMed.name} not due on this date (next due: {formatNextDue(nextDueDate(azithroMed, selectedDate))}).
-        </div>
-      )}
+      ))}
     </div>
   );
 }
