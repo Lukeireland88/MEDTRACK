@@ -107,65 +107,34 @@ export default function App() {
   const loadMedications = async () => {
     setLoading(true);
     try {
-      const { data: timeSlot } = await supabase
-        .from('time_slots')
-        .select('id')
-        .eq('name', selectedTimeSlot)
-        .maybeSingle();
+      // Load ALL active medications
+      const { data: allMeds, error: medsError } = await supabase
+        .from('medications')
+        .select('*')
+        .eq('active', true);
 
-      if (!timeSlot) {
-        setMedications([]);
-        setSelectedTimeSlotId('');
-        setLoading(false);
-        return;
-      }
-
-      setSelectedTimeSlotId(timeSlot.id);
-
-      const { data: medSlots, error: medSlotsError } = await supabase
-        .from('medication_slots')
-        .select(`
-          medication_id,
-          medications (
-            id,
-            name,
-            when_text,
-            schedule_type,
-            days_of_week,
-            start_date,
-            interval_days,
-            notes,
-            end_date,
-            active
-          )
-        `)
-        .eq('time_slot_id', timeSlot.id);
-
-      if (medSlotsError) {
-        console.error('Error loading medication slots:', medSlotsError);
-      }
-
-      if (!medSlots) {
+      if (medsError) {
+        console.error('Error loading medications:', medsError);
         setMedications([]);
         setLoading(false);
         return;
       }
 
-      const medIds = medSlots
-        .map((ms: any) => ms.medications?.id)
-        .filter(Boolean);
-
-      if (medIds.length === 0) {
+      if (!allMeds || allMeds.length === 0) {
         setMedications([]);
+        setAvailableTimeSlots([]);
         setLoading(false);
         return;
       }
 
+      const medIds = allMeds.map(m => m.id);
+
+      // Load all time slots for all medications
       const { data: allSlots } = await supabase
         .from('medication_slots')
         .select(`
           medication_id,
-          time_slots (name)
+          time_slots (name, id)
         `)
         .in('medication_id', medIds);
 
@@ -182,14 +151,12 @@ export default function App() {
       });
 
       const viewingDate = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+      const sortOrder = ['Morning', 'Lunch', 'Evening', 'Night'];
 
-      const medsWithSlots: MedicationWithSlots[] = medSlots
-        .map((ms: any) => {
-          const med = ms.medications;
-          if (!med) return null;
-
+      // Create medication objects with time slots
+      const allMedsWithSlots: MedicationWithSlots[] = allMeds
+        .map((med: any) => {
           const timeSlotNames = slotsByMed[med.id] || [];
-          const sortOrder = ['Morning', 'Lunch', 'Evening', 'Night'];
           timeSlotNames.sort((a, b) => sortOrder.indexOf(a) - sortOrder.indexOf(b));
 
           return {
@@ -198,24 +165,37 @@ export default function App() {
             is_multiple: timeSlotNames.length > 1
           };
         })
-        .filter(Boolean)
         .filter((med: any) => !med.end_date || med.end_date >= viewingDate)
         .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-      setMedications(medsWithSlots);
-
-      // Update available time slots based on active medications
+      // Determine available time slots from all active medications
       const activeTimeSlots = new Set<string>();
-      medsWithSlots.forEach((med: any) => {
+      allMedsWithSlots.forEach((med: any) => {
         med.time_slot_names.forEach((slot: string) => activeTimeSlots.add(slot));
       });
-      const sortedSlots = ['Morning', 'Lunch', 'Evening', 'Night'].filter(slot => activeTimeSlots.has(slot));
+      const sortedSlots = sortOrder.filter(slot => activeTimeSlots.has(slot));
       setAvailableTimeSlots(sortedSlots);
 
       // Reset selected time slot if it's no longer available
       if (sortedSlots.length > 0 && !sortedSlots.includes(selectedTimeSlot)) {
         setSelectedTimeSlot(sortedSlots[0]);
       }
+
+      // Filter to show only medications for the currently selected time slot
+      const medsForSelectedSlot = allMedsWithSlots.filter((med: any) =>
+        med.time_slot_names.includes(selectedTimeSlot)
+      );
+
+      setMedications(medsForSelectedSlot);
+
+      // Update selectedTimeSlotId for the current time slot
+      const { data: timeSlot } = await supabase
+        .from('time_slots')
+        .select('id')
+        .eq('name', selectedTimeSlot)
+        .maybeSingle();
+
+      setSelectedTimeSlotId(timeSlot?.id || '');
     } catch (error) {
       console.error('Error loading medications:', error);
     } finally {
