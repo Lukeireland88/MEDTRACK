@@ -13,6 +13,7 @@ export interface Medication {
   start_date: string | null;
   interval_days: number | null;
   notes: string | null;
+  end_date: string | null;
   active: boolean;
 }
 

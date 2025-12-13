@@ -18,6 +18,7 @@ export interface MedicationFormData {
   startDate: string;
   intervalDays: number;
   notes: string;
+  endDate: string;
 }
 
 const TIME_SLOTS = ['Morning', 'Lunch', 'Evening', 'Night'];
@@ -46,6 +47,7 @@ export default function AddMedicationModal({
     startDate: new Date().toISOString().split('T')[0],
     intervalDays: 1,
     notes: '',
+    endDate: '',
   });
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function AddMedicationModal({
         startDate: new Date().toISOString().split('T')[0],
         intervalDays: 1,
         notes: '',
+        endDate: '',
       });
     }
   }, [editingMedication, isOpen]);
@@ -226,6 +229,21 @@ export default function AddMedicationModal({
               rows={3}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              End date (optional)
+            </label>
+            <input
+              type="date"
+              value={formData.endDate}
+              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-sm text-gray-600 mt-1">
+              Medication will no longer appear after this date.
+            </p>
           </div>
 
           <div className="flex justify-between items-center gap-3 pt-4">

@@ -135,6 +135,7 @@ export default function App() {
             start_date,
             interval_days,
             notes,
+            end_date,
             active
           )
         `)
@@ -180,6 +181,8 @@ export default function App() {
         }
       });
 
+      const currentDate = new Date().toISOString().split('T')[0];
+
       const medsWithSlots: MedicationWithSlots[] = medSlots
         .map((ms: any) => {
           const med = ms.medications;
@@ -196,6 +199,7 @@ export default function App() {
           };
         })
         .filter(Boolean)
+        .filter((med: any) => !med.end_date || med.end_date >= currentDate)
         .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
       setMedications(medsWithSlots);
@@ -272,6 +276,7 @@ export default function App() {
             start_date: formData.pattern === 'every_n_days_from_start' ? formData.startDate : null,
             interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
             notes: formData.notes || null,
+            end_date: formData.endDate || null,
           })
           .eq('id', formData.id);
 
@@ -306,6 +311,7 @@ export default function App() {
             start_date: formData.pattern === 'every_n_days_from_start' ? formData.startDate : null,
             interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
             notes: formData.notes || null,
+            end_date: formData.endDate || null,
           })
           .select()
           .single();
@@ -365,6 +371,7 @@ export default function App() {
       startDate: med.start_date || new Date().toISOString().split('T')[0],
       intervalDays: med.interval_days || 1,
       notes: med.notes || '',
+      endDate: med.end_date || '',
     });
     setIsModalOpen(true);
   };
