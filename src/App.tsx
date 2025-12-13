@@ -203,6 +203,19 @@ export default function App() {
         .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
       setMedications(medsWithSlots);
+
+      // Update available time slots based on active medications
+      const activeTimeSlots = new Set<string>();
+      medsWithSlots.forEach((med: any) => {
+        med.time_slot_names.forEach((slot: string) => activeTimeSlots.add(slot));
+      });
+      const sortedSlots = ['Morning', 'Lunch', 'Evening', 'Night'].filter(slot => activeTimeSlots.has(slot));
+      setAvailableTimeSlots(sortedSlots);
+
+      // Reset selected time slot if it's no longer available
+      if (sortedSlots.length > 0 && !sortedSlots.includes(selectedTimeSlot)) {
+        setSelectedTimeSlot(sortedSlots[0]);
+      }
     } catch (error) {
       console.error('Error loading medications:', error);
     } finally {
