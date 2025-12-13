@@ -222,6 +222,29 @@ export default function App() {
     setIsModalOpen(true);
   };
 
+  const handleDeleteMedication = async (medicationId: string) => {
+    try {
+      await supabase
+        .from('medication_slots')
+        .delete()
+        .eq('medication_id', medicationId);
+
+      const { error } = await supabase
+        .from('medications')
+        .delete()
+        .eq('id', medicationId);
+
+      if (error) throw error;
+
+      setIsModalOpen(false);
+      setEditingMedication(null);
+      loadMedications();
+    } catch (error) {
+      console.error('Error deleting medication:', error);
+      alert('Failed to delete medication. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -277,6 +300,7 @@ export default function App() {
           setEditingMedication(null);
         }}
         onSave={handleSaveMedication}
+        onDelete={handleDeleteMedication}
         editingMedication={editingMedication}
       />
     </div>

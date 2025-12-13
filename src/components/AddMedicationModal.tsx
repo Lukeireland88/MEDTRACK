@@ -5,6 +5,7 @@ interface AddMedicationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (medication: MedicationFormData) => void;
+  onDelete?: (medicationId: string) => void;
   editingMedication?: MedicationFormData | null;
 }
 
@@ -34,6 +35,7 @@ export default function AddMedicationModal({
   isOpen,
   onClose,
   onSave,
+  onDelete,
   editingMedication,
 }: AddMedicationModalProps) {
   const [formData, setFormData] = useState<MedicationFormData>({
@@ -226,20 +228,39 @@ export default function AddMedicationModal({
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
-            >
-              Save
-            </button>
+          <div className="flex justify-between items-center gap-3 pt-4">
+            {editingMedication && onDelete && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    confirm(
+                      `Are you sure you want to delete ${formData.name}? This cannot be undone.`
+                    )
+                  ) {
+                    onDelete(editingMedication.id!);
+                  }
+                }}
+                className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700"
+              >
+                Delete
+              </button>
+            )}
+            <div className="flex gap-3 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </form>
       </div>
