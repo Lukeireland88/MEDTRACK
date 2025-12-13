@@ -21,6 +21,24 @@ export default function MedTable({
     (med) => isDue(med, selectedDate) && !takenStatus[med.id]
   ).length;
 
+  const sortedMedications = [...medications].sort((a, b) => {
+    const aDue = isDue(a, selectedDate);
+    const bDue = isDue(b, selectedDate);
+
+    // Not due meds go to the bottom
+    if (aDue && !bDue) return -1;
+    if (!aDue && bDue) return 1;
+
+    // Within due meds: daily first, then multiple
+    if (aDue && bDue) {
+      if (!a.is_multiple && b.is_multiple) return -1;
+      if (a.is_multiple && !b.is_multiple) return 1;
+    }
+
+    // Alphabetical within each group
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <>
       <div className="px-3 pb-3">
@@ -42,7 +60,7 @@ export default function MedTable({
             </tr>
           </thead>
           <tbody>
-            {medications.map((med) => {
+            {sortedMedications.map((med) => {
               const due = isDue(med, selectedDate);
               const taken = takenStatus[med.id] || false;
 
