@@ -1,4 +1,4 @@
-import { Edit2, History } from 'lucide-react';
+import { CreditCard as Edit2, History } from 'lucide-react';
 import { MedicationWithSlots } from '../types';
 import { isDue } from '../utils/scheduleUtils';
 
