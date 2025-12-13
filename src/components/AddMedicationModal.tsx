@@ -44,7 +44,7 @@ export default function AddMedicationModal({
     timeSlots: [],
     pattern: 'daily',
     daysOfWeek: [],
-    startDate: new Date().toISOString().split('T')[0],
+    startDate: '',
     intervalDays: 1,
     notes: '',
     endDate: '',
@@ -59,7 +59,7 @@ export default function AddMedicationModal({
         timeSlots: [],
         pattern: 'daily',
         daysOfWeek: [],
-        startDate: new Date().toISOString().split('T')[0],
+        startDate: '',
         intervalDays: 1,
         notes: '',
         endDate: '',
@@ -186,37 +186,41 @@ export default function AddMedicationModal({
           )}
 
           {formData.pattern === 'every_n_days_from_start' && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2">Start date</label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, startDate: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  Repeat every (days)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.intervalDays}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      intervalDays: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Repeat every (days)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={formData.intervalDays}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    intervalDays: parseInt(e.target.value) || 1,
+                  })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           )}
+
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              Start date (optional)
+            </label>
+            <input
+              type="date"
+              value={formData.startDate}
+              onChange={(e) =>
+                setFormData({ ...formData, startDate: e.target.value })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-sm text-gray-600 mt-1">
+              When you started taking this medication.
+            </p>
+          </div>
 
           <div>
             <label className="block text-sm font-semibold mb-2">
