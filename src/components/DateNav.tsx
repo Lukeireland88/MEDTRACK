@@ -33,10 +33,10 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
 
   return (
     <div>
-      <div className="flex gap-2 items-center flex-wrap mb-2">
+      <div className="flex gap-1.5 sm:gap-2 items-center flex-wrap mb-2">
         <button
           onClick={handlePrevDay}
-          className="px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px"
+          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px text-sm sm:text-base min-w-[40px] touch-manipulation"
           title="Previous day"
           aria-label="Previous day"
         >
@@ -46,11 +46,11 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
           type="date"
           value={toDateInputValue(selectedDate)}
           onChange={handleInputChange}
-          className="px-3 py-2 border border-gray-300 bg-white rounded-lg font-semibold text-gray-900"
+          className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white rounded-lg font-semibold text-gray-900 text-sm sm:text-base touch-manipulation"
         />
         <button
           onClick={handleNextDay}
-          className="px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px"
+          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px text-sm sm:text-base min-w-[40px] touch-manipulation"
           title="Next day"
           aria-label="Next day"
         >
@@ -58,13 +58,13 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
         </button>
         <button
           onClick={handleToday}
-          className="px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px"
+          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px text-sm sm:text-base touch-manipulation"
           title="Jump to today"
         >
           Today
         </button>
       </div>
-      <div className="text-gray-600 text-sm">
+      <div className="text-gray-600 text-xs sm:text-sm">
         {weekday} · {fullDate}
       </div>
     </div>

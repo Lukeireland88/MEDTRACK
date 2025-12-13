@@ -43,23 +43,23 @@ export default function MedTable({
 
   return (
     <>
-      <div className="px-3 pb-3">
-        <table className="w-full border-collapse">
+      <div className="overflow-x-auto px-2 sm:px-3 pb-3">
+        <table className="w-full border-collapse min-w-[600px]">
           <thead>
             <tr className="bg-gray-50">
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
+              <th className="text-left text-xs sm:text-sm text-gray-600 border-b border-gray-300 p-2 sm:p-3 w-14">
                 Taken
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
+              <th className="text-left text-xs sm:text-sm text-gray-600 border-b border-gray-300 p-2 sm:p-3">
                 Medication
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
+              <th className="text-left text-xs sm:text-sm text-gray-600 border-b border-gray-300 p-2 sm:p-3">
                 When
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
+              <th className="text-left text-xs sm:text-sm text-gray-600 border-b border-gray-300 p-2 sm:p-3">
                 Notes
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3 w-20">
+              <th className="text-left text-xs sm:text-sm text-gray-600 border-b border-gray-300 p-2 sm:p-3 w-20">
                 Actions
               </th>
             </tr>
@@ -78,32 +78,32 @@ export default function MedTable({
                     ${!due ? 'bg-gray-100 text-gray-600' : ''}
                   `}
                 >
-                  <td className="p-3 border-b border-gray-300">
+                  <td className="p-2 sm:p-3 border-b border-gray-300">
                     <input
                       type="checkbox"
                       checked={taken}
                       disabled={!due}
                       onChange={() => onToggleTaken(med.id)}
-                      className="w-6 h-6 accent-blue-600"
+                      className="w-5 h-5 sm:w-6 sm:h-6 accent-blue-600 cursor-pointer"
                     />
                   </td>
-                  <td className="p-3 border-b border-gray-300 font-semibold">
+                  <td className="p-2 sm:p-3 border-b border-gray-300 font-semibold text-sm sm:text-base">
                     {med.name}
                     {med.is_multiple && (
-                      <span className="block mt-1 text-xs px-2 py-1 border border-gray-300 rounded-full w-fit text-gray-600">
+                      <span className="block mt-1 text-xs px-2 py-0.5 sm:py-1 border border-gray-300 rounded-full w-fit text-gray-600 whitespace-nowrap">
                         Multiple: {med.time_slot_names.join(', ')}
                       </span>
                     )}
                   </td>
-                  <td className="p-3 border-b border-gray-300">{med.when_text}</td>
-                  <td className="p-3 border-b border-gray-300 text-sm text-gray-600">
+                  <td className="p-2 sm:p-3 border-b border-gray-300 text-sm">{med.when_text}</td>
+                  <td className="p-2 sm:p-3 border-b border-gray-300 text-xs sm:text-sm text-gray-600">
                     {med.notes || '—'}
                   </td>
-                  <td className="p-3 border-b border-gray-300">
-                    <div className="flex items-center gap-1">
+                  <td className="p-2 sm:p-3 border-b border-gray-300">
+                    <div className="flex items-center gap-0.5 sm:gap-1">
                       <button
                         onClick={() => onShowHistory(med.id, med.name)}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
                         title="View history"
                         aria-label="View history"
                       >
@@ -111,7 +111,7 @@ export default function MedTable({
                       </button>
                       <button
                         onClick={() => onEditMedication(med)}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="p-1.5 sm:p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
                         title="Edit medication"
                         aria-label="Edit medication"
                       >
@@ -125,12 +125,12 @@ export default function MedTable({
           </tbody>
         </table>
       </div>
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-2 p-3 border-t border-gray-300 text-gray-600 text-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-2 px-2 sm:px-3 py-2 sm:py-3 border-t border-gray-300 text-gray-600 text-xs sm:text-sm">
         <div>
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Highlighted items show all times they are used. Checklist resets on refresh.
+          Highlighted items show all times they are used.
         </div>
       </div>
     </>

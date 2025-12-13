@@ -376,34 +376,35 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <header className="mb-4">
-          <div className="flex justify-between items-start mb-3">
-            <h1 className="text-3xl font-bold">Medication Tracker</h1>
-            <div className="flex items-center gap-3">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
+        <header className="mb-3 sm:mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-start gap-3 mb-3">
+            <h1 className="text-2xl sm:text-3xl font-bold">Medication Tracker</h1>
+            <div className="flex items-center gap-2">
               {user ? (
                 <>
                   <button
                     onClick={handleAddMedication}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap"
                   >
-                    <Plus className="w-5 h-5" />
-                    Add medication
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Add medication</span>
+                    <span className="sm:hidden">Add</span>
                   </button>
                   <button
                     onClick={signOut}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 active:translate-y-px"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 active:translate-y-px text-sm sm:text-base"
                     title="Sign out"
                   >
-                    <LogOut className="w-5 h-5" />
+                    <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </>
               ) : (
                 <button
                   onClick={() => setAuthModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px flex-1 text-sm sm:text-base"
                 >
-                  <LogIn className="w-5 h-5" />
+                  <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
                   Sign In
                 </button>
               )}

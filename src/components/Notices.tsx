@@ -27,10 +27,10 @@ export default function Notices({ medications, selectedDate, selectedTimeSlot }:
   };
 
   return (
-    <div className="mx-3 mt-2 space-y-2">
+    <div className="mx-2 sm:mx-3 mt-2 space-y-2">
       {notDueMeds.map((med) => (
-        <div key={med.id} className="bg-red-100 border border-gray-300 rounded-lg p-3 text-gray-900">
-          {med.name} not due on this date (next due: {formatNextDue(nextDueDate(med, selectedDate))}).
+        <div key={med.id} className="bg-red-100 border border-gray-300 rounded-lg p-2 sm:p-3 text-gray-900 text-xs sm:text-sm">
+          <span className="font-semibold">{med.name}</span> not due on this date (next due: {formatNextDue(nextDueDate(med, selectedDate))}).
         </div>
       ))}
     </div>
