@@ -165,7 +165,11 @@ export default function App() {
             is_multiple: timeSlotNames.length > 1
           };
         })
-        .filter((med: any) => !med.end_date || med.end_date >= viewingDate)
+        .filter((med: any) => {
+          if (med.start_date && med.start_date > viewingDate) return false;
+          if (med.end_date && med.end_date < viewingDate) return false;
+          return true;
+        })
         .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
       // Determine available time slots from all active medications
@@ -266,7 +270,7 @@ export default function App() {
             when_text: whenText,
             schedule_type: formData.pattern,
             days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
-            start_date: formData.pattern === 'every_n_days_from_start' ? formData.startDate : null,
+            start_date: formData.startDate || null,
             interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
             notes: formData.notes || null,
             end_date: formData.endDate || null,
@@ -301,7 +305,7 @@ export default function App() {
             when_text: whenText,
             schedule_type: formData.pattern,
             days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
-            start_date: formData.pattern === 'every_n_days_from_start' ? formData.startDate : null,
+            start_date: formData.startDate || null,
             interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
             notes: formData.notes || null,
             end_date: formData.endDate || null,
@@ -361,7 +365,7 @@ export default function App() {
       timeSlots: med.time_slot_names,
       pattern: med.schedule_type,
       daysOfWeek: med.days_of_week || [],
-      startDate: med.start_date || new Date().toISOString().split('T')[0],
+      startDate: med.start_date || '',
       intervalDays: med.interval_days || 1,
       notes: med.notes || '',
       endDate: med.end_date || '',
