@@ -143,7 +143,7 @@ export default function MedTable({
                 ${!due ? 'bg-gray-200 text-gray-600' : ''}
               `}
             >
-              <div className="flex items-start gap-3 mb-2">
+              <div className="flex items-start gap-3">
                 <input
                   type="checkbox"
                   checked={taken}
@@ -163,37 +163,34 @@ export default function MedTable({
                       Multiple: {med.time_slot_names.join(', ')}
                     </span>
                   )}
+                  {med.notes && (
+                    <div className="mt-2 pt-2 border-t border-gray-300">
+                      <div className="text-xs text-gray-500 mb-0.5">Notes:</div>
+                      <div className="text-xs text-gray-600">
+                        {med.notes}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => onShowHistory(med.id, med.name)}
+                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
+                    title="View history"
+                    aria-label="View history"
+                  >
+                    <History className="w-4 h-4 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => onEditMedication(med)}
+                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
+                    title="Edit medication"
+                    aria-label="Edit medication"
+                  >
+                    <Edit2 className="w-4 h-4 text-gray-600" />
+                  </button>
                 </div>
               </div>
-
-              {(med.notes || true) && (
-                <div className="flex items-start justify-between gap-3 pt-2 border-t border-gray-300">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs text-gray-500 mb-0.5">Notes:</div>
-                    <div className="text-xs text-gray-600">
-                      {med.notes || '—'}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-0.5 flex-shrink-0">
-                    <button
-                      onClick={() => onShowHistory(med.id, med.name)}
-                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
-                      title="View history"
-                      aria-label="View history"
-                    >
-                      <History className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => onEditMedication(med)}
-                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
-                      title="Edit medication"
-                      aria-label="Edit medication"
-                    >
-                      <Edit2 className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}
