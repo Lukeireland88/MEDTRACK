@@ -181,7 +181,7 @@ export default function App() {
         }
       });
 
-      const currentDate = new Date().toISOString().split('T')[0];
+      const viewingDate = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
 
       const medsWithSlots: MedicationWithSlots[] = medSlots
         .map((ms: any) => {
@@ -199,7 +199,7 @@ export default function App() {
           };
         })
         .filter(Boolean)
-        .filter((med: any) => !med.end_date || med.end_date >= currentDate)
+        .filter((med: any) => !med.end_date || med.end_date >= viewingDate)
         .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
       setMedications(medsWithSlots);
