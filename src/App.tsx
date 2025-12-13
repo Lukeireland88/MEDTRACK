@@ -26,11 +26,51 @@ export default function App() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyMedicationId, setHistoryMedicationId] = useState<string>('');
   const [historyMedicationName, setHistoryMedicationName] = useState<string>('');
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(['Morning', 'Lunch', 'Evening', 'Night']);
 
   useEffect(() => {
     loadMedications();
     loadTakenStatus();
   }, [selectedTimeSlot, selectedDate]);
+
+  useEffect(() => {
+    loadAvailableTimeSlots();
+  }, []);
+
+  const loadAvailableTimeSlots = async () => {
+    try {
+      const { data: allSlots } = await supabase
+        .from('medication_slots')
+        .select(`
+          time_slots (name)
+        `);
+
+      if (!allSlots || allSlots.length === 0) {
+        setAvailableTimeSlots([]);
+        return;
+      }
+
+      const uniqueSlots = new Set<string>();
+      allSlots.forEach((slot: any) => {
+        if (slot.time_slots?.name) {
+          uniqueSlots.add(slot.time_slots.name);
+        }
+      });
+
+      const sortedSlots = Array.from(uniqueSlots).sort((a, b) => {
+        const order = ['Morning', 'Lunch', 'Evening', 'Night'];
+        return order.indexOf(a) - order.indexOf(b);
+      });
+
+      setAvailableTimeSlots(sortedSlots);
+
+      if (sortedSlots.length > 0 && !sortedSlots.includes(selectedTimeSlot)) {
+        setSelectedTimeSlot(sortedSlots[0]);
+      }
+    } catch (error) {
+      console.error('Error loading available time slots:', error);
+    }
+  };
 
   const loadTakenStatus = async () => {
     try {
@@ -289,6 +329,7 @@ export default function App() {
 
       setIsModalOpen(false);
       setEditingMedication(null);
+      await loadAvailableTimeSlots();
       loadMedications();
     } catch (error) {
       console.error('Error saving medication:', error);
@@ -353,6 +394,7 @@ export default function App() {
 
       setIsModalOpen(false);
       setEditingMedication(null);
+      await loadAvailableTimeSlots();
       loadMedications();
     } catch (error) {
       console.error('Error deleting medication:', error);
@@ -417,6 +459,7 @@ export default function App() {
           <TimeSlotPicker
             selectedTimeSlot={selectedTimeSlot}
             onTimeSlotChange={setSelectedTimeSlot}
+            availableTimeSlots={availableTimeSlots}
           />
           <Notices
             medications={medications}

@@ -3,11 +3,10 @@ import { useState } from 'react';
 interface TimeSlotPickerProps {
   selectedTimeSlot: string;
   onTimeSlotChange: (timeSlot: string) => void;
+  availableTimeSlots: string[];
 }
 
-const TIME_SLOTS = ['Morning', 'Lunch', 'Evening', 'Night'];
-
-export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange }: TimeSlotPickerProps) {
+export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, availableTimeSlots }: TimeSlotPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleOptions = () => {
@@ -18,6 +17,22 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange }: T
     onTimeSlotChange(timeSlot);
     setIsOpen(false);
   };
+
+  if (availableTimeSlots.length === 0) {
+    return (
+      <div className="p-2 sm:p-3 border-b border-gray-300 text-center text-gray-500 text-sm sm:text-base">
+        No medications scheduled
+      </div>
+    );
+  }
+
+  if (availableTimeSlots.length === 1) {
+    return (
+      <div className="p-2 sm:p-3 border-b border-gray-300 font-semibold text-sm sm:text-base">
+        <span>Showing: {availableTimeSlots[0]}</span>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -30,7 +45,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange }: T
       </div>
       {isOpen && (
         <div className="grid grid-cols-2 gap-2 p-2 sm:p-3 border-b border-gray-300">
-          {TIME_SLOTS.map((slot) => (
+          {availableTimeSlots.map((slot) => (
             <button
               key={slot}
               onClick={() => handleTimeSlotSelect(slot)}
