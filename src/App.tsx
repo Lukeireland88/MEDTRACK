@@ -78,7 +78,7 @@ export default function App() {
 
       setSelectedTimeSlotId(timeSlot.id);
 
-      const { data: medSlots } = await supabase
+      const { data: medSlots, error: medSlotsError } = await supabase
         .from('medication_slots')
         .select(`
           medication_id,
@@ -96,6 +96,10 @@ export default function App() {
         `)
         .eq('time_slot_id', timeSlot.id);
 
+      if (medSlotsError) {
+        console.error('Error loading medication slots:', medSlotsError);
+      }
+
       if (!medSlots) {
         setMedications([]);
         setLoading(false);
@@ -105,6 +109,12 @@ export default function App() {
       const medIds = medSlots
         .map((ms: any) => ms.medications?.id)
         .filter(Boolean);
+
+      if (medIds.length === 0) {
+        setMedications([]);
+        setLoading(false);
+        return;
+      }
 
       const { data: allSlots } = await supabase
         .from('medication_slots')
