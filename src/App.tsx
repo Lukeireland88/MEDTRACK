@@ -49,6 +49,7 @@ export default function App() {
             days_of_week,
             start_date,
             interval_days,
+            notes,
             active
           )
         `)
@@ -131,6 +132,7 @@ export default function App() {
             days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
             start_date: formData.pattern === 'every_n_days_from_start' ? formData.startDate : null,
             interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
+            notes: formData.notes || null,
           })
           .eq('id', formData.id);
 
@@ -164,6 +166,7 @@ export default function App() {
             days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
             start_date: formData.pattern === 'every_n_days_from_start' ? formData.startDate : null,
             interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
+            notes: formData.notes || null,
           })
           .select()
           .single();
@@ -217,7 +220,7 @@ export default function App() {
       daysOfWeek: med.days_of_week || [],
       startDate: med.start_date || new Date().toISOString().split('T')[0],
       intervalDays: med.interval_days || 1,
-      notes: '',
+      notes: med.notes || '',
     });
     setIsModalOpen(true);
   };

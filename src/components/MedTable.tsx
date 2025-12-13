@@ -54,6 +54,9 @@ export default function MedTable({
               <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
                 When
               </th>
+              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
+                Notes
+              </th>
               <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3 w-20">
                 Actions
               </th>
@@ -91,6 +94,9 @@ export default function MedTable({
                     )}
                   </td>
                   <td className="p-3 border-b border-gray-300">{med.when_text}</td>
+                  <td className="p-3 border-b border-gray-300 text-sm text-gray-600">
+                    {med.notes || '—'}
+                  </td>
                   <td className="p-3 border-b border-gray-300">
                     <button
                       onClick={() => onEditMedication(med)}

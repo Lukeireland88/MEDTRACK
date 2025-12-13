@@ -12,6 +12,7 @@ export interface Medication {
   days_of_week: number[] | null;
   start_date: string | null;
   interval_days: number | null;
+  notes: string | null;
   active: boolean;
 }
 
