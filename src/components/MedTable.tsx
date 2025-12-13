@@ -1,4 +1,4 @@
-import { Edit2 } from 'lucide-react';
+import { Edit2, History } from 'lucide-react';
 import { MedicationWithSlots } from '../types';
 import { isDue } from '../utils/scheduleUtils';
 
@@ -8,6 +8,7 @@ interface MedTableProps {
   takenStatus: Record<string, boolean>;
   onToggleTaken: (medId: string) => void;
   onEditMedication: (med: MedicationWithSlots) => void;
+  onShowHistory: (medId: string, medName: string) => void;
 }
 
 export default function MedTable({
@@ -15,7 +16,8 @@ export default function MedTable({
   selectedDate,
   takenStatus,
   onToggleTaken,
-  onEditMedication
+  onEditMedication,
+  onShowHistory
 }: MedTableProps) {
   const remaining = medications.filter(
     (med) => isDue(med, selectedDate) && !takenStatus[med.id]
@@ -98,14 +100,24 @@ export default function MedTable({
                     {med.notes || '—'}
                   </td>
                   <td className="p-3 border-b border-gray-300">
-                    <button
-                      onClick={() => onEditMedication(med)}
-                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                      title="Edit medication"
-                      aria-label="Edit medication"
-                    >
-                      <Edit2 className="w-4 h-4 text-gray-600" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => onShowHistory(med.id, med.name)}
+                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        title="View history"
+                        aria-label="View history"
+                      >
+                        <History className="w-4 h-4 text-gray-600" />
+                      </button>
+                      <button
+                        onClick={() => onEditMedication(med)}
+                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        title="Edit medication"
+                        aria-label="Edit medication"
+                      >
+                        <Edit2 className="w-4 h-4 text-gray-600" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

@@ -35,3 +35,12 @@ export interface DoseTaken {
   taken: boolean;
   taken_at: string;
 }
+
+export interface MedicationLog {
+  id: string;
+  medication_id: string;
+  time_slot_id: string;
+  dose_date: string;
+  action: 'checked' | 'unchecked';
+  logged_at: string;
+}

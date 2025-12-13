@@ -8,19 +8,57 @@ import TimeSlotPicker from './components/TimeSlotPicker';
 import MedTable from './components/MedTable';
 import Notices from './components/Notices';
 import AddMedicationModal, { MedicationFormData } from './components/AddMedicationModal';
+import MedicationHistoryModal from './components/MedicationHistoryModal';
 
 export default function App() {
   const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>('');
   const [medications, setMedications] = useState<MedicationWithSlots[]>([]);
   const [takenStatus, setTakenStatus] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMedication, setEditingMedication] = useState<MedicationFormData | null>(null);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historyMedicationId, setHistoryMedicationId] = useState<string>('');
+  const [historyMedicationName, setHistoryMedicationName] = useState<string>('');
 
   useEffect(() => {
     loadMedications();
-  }, [selectedTimeSlot]);
+    loadTakenStatus();
+  }, [selectedTimeSlot, selectedDate]);
+
+  const loadTakenStatus = async () => {
+    try {
+      const { data: timeSlot } = await supabase
+        .from('time_slots')
+        .select('id')
+        .eq('name', selectedTimeSlot)
+        .maybeSingle();
+
+      if (!timeSlot) {
+        setTakenStatus({});
+        return;
+      }
+
+      const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+
+      const { data: dosesTaken } = await supabase
+        .from('doses_taken')
+        .select('medication_id, taken')
+        .eq('time_slot_id', timeSlot.id)
+        .eq('dose_date', dateString);
+
+      const statusMap: Record<string, boolean> = {};
+      dosesTaken?.forEach((dose) => {
+        statusMap[dose.medication_id] = dose.taken;
+      });
+
+      setTakenStatus(statusMap);
+    } catch (error) {
+      console.error('Error loading taken status:', error);
+    }
+  };
 
   const loadMedications = async () => {
     setLoading(true);
@@ -33,9 +71,12 @@ export default function App() {
 
       if (!timeSlot) {
         setMedications([]);
+        setSelectedTimeSlotId('');
         setLoading(false);
         return;
       }
+
+      setSelectedTimeSlotId(timeSlot.id);
 
       const { data: medSlots } = await supabase
         .from('medication_slots')
@@ -111,11 +152,55 @@ export default function App() {
     }
   };
 
-  const handleToggleTaken = (medId: string) => {
-    setTakenStatus((prev) => ({
-      ...prev,
-      [medId]: !prev[medId]
-    }));
+  const handleToggleTaken = async (medId: string) => {
+    try {
+      const { data: timeSlot } = await supabase
+        .from('time_slots')
+        .select('id')
+        .eq('name', selectedTimeSlot)
+        .maybeSingle();
+
+      if (!timeSlot) return;
+
+      const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+      const newTakenValue = !takenStatus[medId];
+
+      const { error: upsertError } = await supabase
+        .from('doses_taken')
+        .upsert(
+          {
+            medication_id: medId,
+            time_slot_id: timeSlot.id,
+            dose_date: dateString,
+            taken: newTakenValue,
+            taken_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'medication_id,time_slot_id,dose_date',
+          }
+        );
+
+      if (upsertError) throw upsertError;
+
+      const { error: logError } = await supabase
+        .from('medication_logs')
+        .insert({
+          medication_id: medId,
+          time_slot_id: timeSlot.id,
+          dose_date: dateString,
+          action: newTakenValue ? 'checked' : 'unchecked',
+        });
+
+      if (logError) throw logError;
+
+      setTakenStatus((prev) => ({
+        ...prev,
+        [medId]: newTakenValue
+      }));
+    } catch (error) {
+      console.error('Error toggling taken status:', error);
+      alert('Failed to update status. Please try again.');
+    }
   };
 
   const handleSaveMedication = async (formData: MedicationFormData) => {
@@ -248,6 +333,12 @@ export default function App() {
     }
   };
 
+  const handleShowHistory = (medId: string, medName: string) => {
+    setHistoryMedicationId(medId);
+    setHistoryMedicationName(medName);
+    setHistoryModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -292,6 +383,7 @@ export default function App() {
             takenStatus={takenStatus}
             onToggleTaken={handleToggleTaken}
             onEditMedication={handleEditMedication}
+            onShowHistory={handleShowHistory}
           />
         </section>
       </div>
@@ -305,6 +397,16 @@ export default function App() {
         onSave={handleSaveMedication}
         onDelete={handleDeleteMedication}
         editingMedication={editingMedication}
+      />
+
+      <MedicationHistoryModal
+        isOpen={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        medicationId={historyMedicationId}
+        medicationName={historyMedicationName}
+        timeSlotId={selectedTimeSlotId}
+        timeSlotName={selectedTimeSlot}
+        doseDate={toLocalDateOnly(selectedDate).toISOString().split('T')[0]}
       />
     </div>
   );
