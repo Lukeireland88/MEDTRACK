@@ -1,0 +1,284 @@
+import { useEffect, useState } from 'react';
+import { Plus } from 'lucide-react';
+import { supabase } from './lib/supabase';
+import { MedicationWithSlots } from './types';
+import { getDefaultTimeSlot, toLocalDateOnly } from './utils/dateUtils';
+import DateNav from './components/DateNav';
+import TimeSlotPicker from './components/TimeSlotPicker';
+import MedTable from './components/MedTable';
+import Notices from './components/Notices';
+import AddMedicationModal, { MedicationFormData } from './components/AddMedicationModal';
+
+export default function App() {
+  const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
+  const [medications, setMedications] = useState<MedicationWithSlots[]>([]);
+  const [takenStatus, setTakenStatus] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingMedication, setEditingMedication] = useState<MedicationFormData | null>(null);
+
+  useEffect(() => {
+    loadMedications();
+  }, [selectedTimeSlot]);
+
+  const loadMedications = async () => {
+    setLoading(true);
+    try {
+      const { data: timeSlot } = await supabase
+        .from('time_slots')
+        .select('id')
+        .eq('name', selectedTimeSlot)
+        .maybeSingle();
+
+      if (!timeSlot) {
+        setMedications([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: medSlots } = await supabase
+        .from('medication_slots')
+        .select(`
+          medication_id,
+          medications (
+            id,
+            name,
+            when_text,
+            schedule_type,
+            days_of_week,
+            start_date,
+            interval_days,
+            active
+          )
+        `)
+        .eq('time_slot_id', timeSlot.id);
+
+      if (!medSlots) {
+        setMedications([]);
+        setLoading(false);
+        return;
+      }
+
+      const medIds = medSlots
+        .map((ms: any) => ms.medications?.id)
+        .filter(Boolean);
+
+      const { data: allSlots } = await supabase
+        .from('medication_slots')
+        .select(`
+          medication_id,
+          time_slots (name)
+        `)
+        .in('medication_id', medIds);
+
+      const slotsByMed: Record<string, string[]> = {};
+      allSlots?.forEach((slot: any) => {
+        const medId = slot.medication_id;
+        const slotName = slot.time_slots?.name;
+        if (!slotsByMed[medId]) {
+          slotsByMed[medId] = [];
+        }
+        if (slotName && !slotsByMed[medId].includes(slotName)) {
+          slotsByMed[medId].push(slotName);
+        }
+      });
+
+      const medsWithSlots: MedicationWithSlots[] = medSlots
+        .map((ms: any) => {
+          const med = ms.medications;
+          if (!med) return null;
+
+          const timeSlotNames = slotsByMed[med.id] || [];
+          const sortOrder = ['Morning', 'Lunch', 'Evening', 'Night'];
+          timeSlotNames.sort((a, b) => sortOrder.indexOf(a) - sortOrder.indexOf(b));
+
+          return {
+            ...med,
+            time_slot_names: timeSlotNames,
+            is_multiple: timeSlotNames.length > 1
+          };
+        })
+        .filter(Boolean)
+        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+      setMedications(medsWithSlots);
+    } catch (error) {
+      console.error('Error loading medications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleTaken = (medId: string) => {
+    setTakenStatus((prev) => ({
+      ...prev,
+      [medId]: !prev[medId]
+    }));
+  };
+
+  const handleSaveMedication = async (formData: MedicationFormData) => {
+    try {
+      const whenText = generateWhenText(formData);
+
+      if (formData.id) {
+        const { error: medError } = await supabase
+          .from('medications')
+          .update({
+            name: formData.name,
+            when_text: whenText,
+            schedule_type: formData.pattern,
+            days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
+            start_date: formData.pattern === 'every_n_days_from_start' ? formData.startDate : null,
+            interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
+          })
+          .eq('id', formData.id);
+
+        if (medError) throw medError;
+
+        await supabase
+          .from('medication_slots')
+          .delete()
+          .eq('medication_id', formData.id);
+
+        const { data: timeSlots } = await supabase
+          .from('time_slots')
+          .select('id, name')
+          .in('name', formData.timeSlots);
+
+        if (timeSlots) {
+          const slots = timeSlots.map((slot) => ({
+            medication_id: formData.id,
+            time_slot_id: slot.id,
+          }));
+
+          await supabase.from('medication_slots').insert(slots);
+        }
+      } else {
+        const { data: newMed, error: medError } = await supabase
+          .from('medications')
+          .insert({
+            name: formData.name,
+            when_text: whenText,
+            schedule_type: formData.pattern,
+            days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
+            start_date: formData.pattern === 'every_n_days_from_start' ? formData.startDate : null,
+            interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
+          })
+          .select()
+          .single();
+
+        if (medError) throw medError;
+
+        const { data: timeSlots } = await supabase
+          .from('time_slots')
+          .select('id, name')
+          .in('name', formData.timeSlots);
+
+        if (timeSlots && newMed) {
+          const slots = timeSlots.map((slot) => ({
+            medication_id: newMed.id,
+            time_slot_id: slot.id,
+          }));
+
+          await supabase.from('medication_slots').insert(slots);
+        }
+      }
+
+      setIsModalOpen(false);
+      setEditingMedication(null);
+      loadMedications();
+    } catch (error) {
+      console.error('Error saving medication:', error);
+      alert('Failed to save medication. Please try again.');
+    }
+  };
+
+  const generateWhenText = (formData: MedicationFormData): string => {
+    if (formData.pattern === 'daily') {
+      return 'Daily';
+    } else if (formData.pattern === 'days_of_week') {
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      const selectedDays = formData.daysOfWeek
+        .sort()
+        .map((day) => dayNames[day - 1]);
+      return selectedDays.join(', ');
+    } else {
+      return `Every ${formData.intervalDays} day${formData.intervalDays > 1 ? 's' : ''}`;
+    }
+  };
+
+  const handleEditMedication = (med: MedicationWithSlots) => {
+    setEditingMedication({
+      id: med.id,
+      name: med.name,
+      timeSlots: med.time_slot_names,
+      pattern: med.schedule_type,
+      daysOfWeek: med.days_of_week || [],
+      startDate: med.start_date || new Date().toISOString().split('T')[0],
+      intervalDays: med.interval_days || 1,
+      notes: '',
+    });
+    setIsModalOpen(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600 text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <header className="mb-4">
+          <div className="flex justify-between items-start mb-3">
+            <h1 className="text-3xl font-bold">Medication Tracker</h1>
+            <button
+              onClick={() => {
+                setEditingMedication(null);
+                setIsModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px"
+            >
+              <Plus className="w-5 h-5" />
+              Add medication
+            </button>
+          </div>
+          <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
+        </header>
+
+        <section className="bg-white border border-gray-300 rounded-2xl shadow-lg">
+          <TimeSlotPicker
+            selectedTimeSlot={selectedTimeSlot}
+            onTimeSlotChange={setSelectedTimeSlot}
+          />
+          <Notices
+            medications={medications}
+            selectedDate={selectedDate}
+            selectedTimeSlot={selectedTimeSlot}
+          />
+          <MedTable
+            medications={medications}
+            selectedDate={selectedDate}
+            takenStatus={takenStatus}
+            onToggleTaken={handleToggleTaken}
+            onEditMedication={handleEditMedication}
+          />
+        </section>
+      </div>
+
+      <AddMedicationModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingMedication(null);
+        }}
+        onSave={handleSaveMedication}
+        editingMedication={editingMedication}
+      />
+    </div>
+  );
+}
