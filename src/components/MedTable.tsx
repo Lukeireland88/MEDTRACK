@@ -76,7 +76,7 @@ export default function MedTable({
                   className={`
                     ${taken ? 'text-gray-500 line-through' : ''}
                     ${med.is_multiple ? 'bg-yellow-50' : ''}
-                    ${!due ? 'bg-gray-100 text-gray-600' : ''}
+                    ${!due ? 'bg-gray-200 text-gray-600' : ''}
                   `}
                 >
                   <td className="p-3 border-b border-gray-300">
@@ -140,7 +140,7 @@ export default function MedTable({
                 border border-gray-300 rounded-lg p-3
                 ${taken ? 'text-gray-500' : ''}
                 ${med.is_multiple ? 'bg-yellow-50' : 'bg-white'}
-                ${!due ? 'bg-gray-100 text-gray-600' : ''}
+                ${!due ? 'bg-gray-200 text-gray-600' : ''}
               `}
             >
               <div className="flex items-start gap-3 mb-2">
