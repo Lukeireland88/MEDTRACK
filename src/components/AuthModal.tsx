@@ -8,12 +8,11 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
 
   if (!isOpen) return null;
 
@@ -28,9 +27,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       return;
     }
 
-    const { error: authError } = isSignUp
-      ? await signUp(email, password)
-      : await signIn(email, password);
+    const { error: authError } = await signIn(email, password);
 
     if (authError) {
       setError(authError.message);
@@ -44,18 +41,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setLoading(false);
   };
 
-  const toggleMode = () => {
-    setIsSignUp(!isSignUp);
-    setError('');
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {isSignUp ? 'Create Account' : 'Sign In'}
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900">Sign In</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -113,18 +103,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
           >
-            {loading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
+            {loading ? 'Loading...' : 'Sign In'}
           </button>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-            </button>
-          </div>
         </form>
       </div>
     </div>
