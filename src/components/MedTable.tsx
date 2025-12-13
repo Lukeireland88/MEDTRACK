@@ -1,4 +1,4 @@
-import { CreditCard as Edit2, History } from 'lucide-react';
+import { Pencil, History } from 'lucide-react';
 import { MedicationWithSlots } from '../types';
 import { isDue } from '../utils/scheduleUtils';
 
@@ -121,7 +121,7 @@ export default function MedTable({
                         title="Edit medication"
                         aria-label="Edit medication"
                       >
-                        <Edit2 className="w-4 h-4 text-gray-600" />
+                        <Pencil className="w-4 h-4 text-gray-600" />
                       </button>
                     </div>
                   </td>
@@ -197,7 +197,7 @@ export default function MedTable({
                     title="Edit medication"
                     aria-label="Edit medication"
                   >
-                    <Edit2 className="w-4 h-4 text-gray-600" />
+                    <Pencil className="w-4 h-4 text-gray-600" />
                   </button>
                 </div>
               </div>
