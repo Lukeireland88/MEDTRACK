@@ -80,13 +80,18 @@ export default function MedTable({
                   `}
                 >
                   <td className="p-3 border-b border-gray-300">
-                    <input
-                      type="checkbox"
-                      checked={taken}
-                      disabled={!due}
-                      onChange={() => onToggleTaken(med.id)}
-                      className="w-6 h-6 accent-blue-600 cursor-pointer"
-                    />
+                    {due ? (
+                      <input
+                        type="checkbox"
+                        checked={taken}
+                        onChange={() => onToggleTaken(med.id)}
+                        className="w-6 h-6 accent-blue-600 cursor-pointer"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
+                        —
+                      </div>
+                    )}
                   </td>
                   <td className="p-3 border-b border-gray-300 font-semibold">
                     {med.name}
@@ -144,13 +149,18 @@ export default function MedTable({
               `}
             >
               <div className="flex items-start gap-3">
-                <input
-                  type="checkbox"
-                  checked={taken}
-                  disabled={!due}
-                  onChange={() => onToggleTaken(med.id)}
-                  className="w-6 h-6 mt-0.5 accent-blue-600 cursor-pointer flex-shrink-0 touch-manipulation"
-                />
+                {due ? (
+                  <input
+                    type="checkbox"
+                    checked={taken}
+                    onChange={() => onToggleTaken(med.id)}
+                    className="w-6 h-6 mt-0.5 accent-blue-600 cursor-pointer flex-shrink-0 touch-manipulation"
+                  />
+                ) : (
+                  <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
+                    —
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className={`font-semibold text-sm mb-1 ${taken ? 'line-through' : ''}`}>
                     {med.name}
