@@ -12,7 +12,9 @@ interface AddMedicationModalProps {
 export interface MedicationFormData {
   id?: string;
   name: string;
+  dosingMode: 'time_slots' | 'flexible_daily';
   timeSlots: string[];
+  targetDosesPerDay: number | '';
   pattern: 'daily' | 'days_of_week' | 'every_n_days_from_start';
   daysOfWeek: number[];
   startDate: string;
@@ -41,7 +43,9 @@ export default function AddMedicationModal({
 }: AddMedicationModalProps) {
   const [formData, setFormData] = useState<MedicationFormData>({
     name: '',
+    dosingMode: 'time_slots',
     timeSlots: [],
+    targetDosesPerDay: '',
     pattern: 'daily',
     daysOfWeek: [],
     startDate: '',
@@ -56,7 +60,9 @@ export default function AddMedicationModal({
     } else {
       setFormData({
         name: '',
+        dosingMode: 'time_slots',
         timeSlots: [],
+        targetDosesPerDay: '',
         pattern: 'daily',
         daysOfWeek: [],
         startDate: '',
@@ -69,9 +75,21 @@ export default function AddMedicationModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || formData.timeSlots.length === 0) {
-      alert('Please enter a medication name and select at least one time of day.');
+    if (!formData.name.trim()) {
+      alert('Please enter a medication name.');
       return;
+    }
+    if (formData.dosingMode === 'time_slots' && formData.timeSlots.length === 0) {
+      alert('Select at least one time of day, or switch to flexible daily dosing.');
+      return;
+    }
+    if (formData.dosingMode === 'flexible_daily') {
+      const n =
+        formData.targetDosesPerDay === '' ? null : Number(formData.targetDosesPerDay);
+      if (n != null && (Number.isNaN(n) || n < 1)) {
+        alert('Target doses per day must be at least 1, or leave blank to track without a daily goal.');
+        return;
+      }
     }
     onSave(formData);
   };
@@ -125,24 +143,87 @@ export default function AddMedicationModal({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Times of day</label>
-            <div className="grid grid-cols-2 gap-3">
-              {TIME_SLOTS.map((slot) => (
-                <label
-                  key={slot}
-                  className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.timeSlots.includes(slot)}
-                    onChange={() => toggleTimeSlot(slot)}
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                  <span>{slot}</span>
-                </label>
-              ))}
+            <label className="block text-sm font-semibold mb-2">How to schedule</label>
+            <div className="space-y-2">
+              <label className="flex items-start gap-2 cursor-pointer p-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="dosingMode"
+                  checked={formData.dosingMode === 'time_slots'}
+                  onChange={() => setFormData({ ...formData, dosingMode: 'time_slots' })}
+                  className="mt-1 accent-blue-600"
+                />
+                <span>
+                  <span className="font-medium">Morning / Lunch / Evening / Night</span>
+                  <span className="block text-sm text-gray-600">
+                    One check per selected time block (same as now).
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer p-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+                <input
+                  type="radio"
+                  name="dosingMode"
+                  checked={formData.dosingMode === 'flexible_daily'}
+                  onChange={() => setFormData({ ...formData, dosingMode: 'flexible_daily' })}
+                  className="mt-1 accent-blue-600"
+                />
+                <span>
+                  <span className="font-medium">Flexible — multiple times per day</span>
+                  <span className="block text-sm text-gray-600">
+                    Log each dose with a timestamp; optional daily goal.
+                  </span>
+                </span>
+              </label>
             </div>
           </div>
+
+          {formData.dosingMode === 'time_slots' && (
+            <div>
+              <label className="block text-sm font-semibold mb-2">Times of day</label>
+              <div className="grid grid-cols-2 gap-3">
+                {TIME_SLOTS.map((slot) => (
+                  <label
+                    key={slot}
+                    className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.timeSlots.includes(slot)}
+                      onChange={() => toggleTimeSlot(slot)}
+                      className="w-5 h-5 accent-blue-600"
+                    />
+                    <span>{slot}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {formData.dosingMode === 'flexible_daily' && (
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                Target doses per day (optional)
+              </label>
+              <input
+                type="number"
+                min={1}
+                placeholder="e.g. 4 — leave empty to only track count"
+                value={formData.targetDosesPerDay === '' ? '' : formData.targetDosesPerDay}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setFormData({
+                    ...formData,
+                    targetDosesPerDay: v === '' ? '' : parseInt(v, 10) || '',
+                  });
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-sm text-gray-600 mt-1">
+                You can log more or fewer doses; this is just a daily goal for progress.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-semibold mb-2">Pattern</label>

@@ -4,6 +4,8 @@ export interface TimeSlot {
   sort_order: number;
 }
 
+export type DosingMode = 'time_slots' | 'flexible_daily';
+
 export interface Medication {
   id: string;
   name: string;
@@ -15,6 +17,8 @@ export interface Medication {
   notes: string | null;
   end_date: string | null;
   active: boolean;
+  dosing_mode: DosingMode;
+  target_doses_per_day: number | null;
 }
 
 export interface MedicationSlot {
@@ -26,6 +30,14 @@ export interface MedicationSlot {
 export interface MedicationWithSlots extends Medication {
   time_slot_names: string[];
   is_multiple: boolean;
+}
+
+export interface MedicationDoseEvent {
+  id: string;
+  medication_id: string;
+  dose_date: string;
+  taken_at: string;
+  amount: number;
 }
 
 export interface DoseTaken {

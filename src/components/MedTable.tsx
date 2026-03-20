@@ -1,27 +1,49 @@
 import { Pencil, History } from 'lucide-react';
-import { MedicationWithSlots } from '../types';
+import { DosingMode, MedicationDoseEvent, MedicationWithSlots } from '../types';
 import { isDue } from '../utils/scheduleUtils';
 
 interface MedTableProps {
   medications: MedicationWithSlots[];
   selectedDate: Date;
   takenStatus: Record<string, boolean>;
+  flexibleDoseEvents: Record<string, Pick<MedicationDoseEvent, 'id' | 'taken_at'>[]>;
   onToggleTaken: (medId: string) => void;
+  onLogFlexibleDose: (medId: string) => void;
+  onRemoveLastFlexibleDose: (medId: string) => void;
   onEditMedication: (med: MedicationWithSlots) => void;
-  onShowHistory: (medId: string, medName: string) => void;
+  onShowHistory: (medId: string, medName: string, dosingMode?: DosingMode) => void;
+}
+
+function flexibleRemaining(
+  med: MedicationWithSlots,
+  selectedDate: Date,
+  events: Pick<MedicationDoseEvent, 'taken_at'>[] | undefined
+): number {
+  if (!isDue(med, selectedDate)) return 0;
+  const count = events?.length ?? 0;
+  const target = med.target_doses_per_day;
+  if (target != null && count < target) return target - count;
+  return 0;
 }
 
 export default function MedTable({
   medications,
   selectedDate,
   takenStatus,
+  flexibleDoseEvents,
   onToggleTaken,
+  onLogFlexibleDose,
+  onRemoveLastFlexibleDose,
   onEditMedication,
   onShowHistory
 }: MedTableProps) {
-  const remaining = medications.filter(
-    (med) => isDue(med, selectedDate) && !takenStatus[med.id]
-  ).length;
+  const remaining = medications.reduce((acc, med) => {
+    if (med.dosing_mode === 'flexible_daily') {
+      return acc + flexibleRemaining(med, selectedDate, flexibleDoseEvents[med.id]);
+    }
+    if (isDue(med, selectedDate) && !takenStatus[med.id]) return acc + 1;
+    return acc;
+  }, 0);
 
   const sortedMedications = [...medications].sort((a, b) => {
     const aDue = isDue(a, selectedDate);
@@ -31,15 +53,27 @@ export default function MedTable({
     if (aDue && !bDue) return -1;
     if (!aDue && bDue) return 1;
 
-    // Within due meds: daily first, then multiple
+    // Flexible dosing next (within due)
     if (aDue && bDue) {
-      if (!a.is_multiple && b.is_multiple) return -1;
-      if (a.is_multiple && !b.is_multiple) return 1;
+      const aFlex = a.dosing_mode === 'flexible_daily';
+      const bFlex = b.dosing_mode === 'flexible_daily';
+      if (aFlex && !bFlex) return -1;
+      if (!aFlex && bFlex) return 1;
+      if (!aFlex && !bFlex) {
+        if (!a.is_multiple && b.is_multiple) return -1;
+        if (a.is_multiple && !b.is_multiple) return 1;
+      }
     }
 
-    // Alphabetical within each group
     return a.name.localeCompare(b.name);
   });
+
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
 
   return (
     <>
@@ -69,18 +103,54 @@ export default function MedTable({
             {sortedMedications.map((med) => {
               const due = isDue(med, selectedDate);
               const taken = takenStatus[med.id] || false;
+              const isFlexible = med.dosing_mode === 'flexible_daily';
+              const flexEvents = flexibleDoseEvents[med.id] || [];
+              const flexCount = flexEvents.length;
+              const target = med.target_doses_per_day;
+              const flexComplete =
+                isFlexible &&
+                target != null &&
+                flexCount >= target &&
+                due;
 
               return (
                 <tr
                   key={med.id}
                   className={`
-                    ${taken ? 'text-gray-500 line-through' : ''}
-                    ${med.is_multiple ? 'bg-yellow-50' : ''}
+                    ${!isFlexible && taken ? 'text-gray-500 line-through' : ''}
+                    ${isFlexible && flexComplete ? 'text-gray-500' : ''}
+                    ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
+                    ${isFlexible ? 'bg-sky-50' : ''}
                     ${!due ? 'bg-gray-200 text-gray-600' : ''}
                   `}
                 >
-                  <td className="p-3 border-b border-gray-300">
-                    {due ? (
+                  <td className="p-3 border-b border-gray-300 align-top">
+                    {isFlexible ? (
+                      due ? (
+                        <div className="flex flex-col gap-1.5 min-w-[7rem]">
+                          <button
+                            type="button"
+                            onClick={() => onLogFlexibleDose(med.id)}
+                            className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                          >
+                            Log dose
+                          </button>
+                          {flexCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => onRemoveLastFlexibleDose(med.id)}
+                              className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                            >
+                              Undo last
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
+                          —
+                        </div>
+                      )
+                    ) : due ? (
                       <input
                         type="checkbox"
                         checked={taken}
@@ -95,7 +165,27 @@ export default function MedTable({
                   </td>
                   <td className="p-3 border-b border-gray-300 font-semibold">
                     {med.name}
-                    {med.is_multiple && (
+                    {isFlexible && (
+                      <span className="block mt-1 text-sm font-normal text-gray-800">
+                        {target != null ? (
+                          <>
+                            <strong>{flexCount}</strong> / {target} doses today
+                          </>
+                        ) : (
+                          <>
+                            <strong>{flexCount}</strong> dose{flexCount !== 1 ? 's' : ''} logged today
+                          </>
+                        )}
+                      </span>
+                    )}
+                    {isFlexible && flexEvents.length > 0 && (
+                      <ul className="mt-1.5 text-xs font-normal text-gray-600 list-disc list-inside space-y-0.5">
+                        {flexEvents.map((ev) => (
+                          <li key={ev.id}>{formatTime(ev.taken_at)}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {!isFlexible && med.is_multiple && (
                       <span className="block mt-1 text-xs px-2 py-1 border border-gray-300 rounded-full w-fit text-gray-600">
                         Multiple: {med.time_slot_names.join(', ')}
                       </span>
@@ -108,7 +198,7 @@ export default function MedTable({
                   <td className="p-3 border-b border-gray-300">
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => onShowHistory(med.id, med.name)}
+                        onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
                         className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
                         title="View history"
                         aria-label="View history"
@@ -137,19 +227,52 @@ export default function MedTable({
         {sortedMedications.map((med) => {
           const due = isDue(med, selectedDate);
           const taken = takenStatus[med.id] || false;
+          const isFlexible = med.dosing_mode === 'flexible_daily';
+          const flexEvents = flexibleDoseEvents[med.id] || [];
+          const flexCount = flexEvents.length;
+          const target = med.target_doses_per_day;
+          const flexComplete =
+            isFlexible && target != null && flexCount >= target && due;
 
           return (
             <div
               key={med.id}
               className={`
                 border border-gray-300 rounded-lg p-3
-                ${taken ? 'text-gray-500' : ''}
-                ${med.is_multiple ? 'bg-yellow-50' : 'bg-white'}
+                ${!isFlexible && taken ? 'text-gray-500' : ''}
+                ${isFlexible && flexComplete ? 'text-gray-500' : ''}
+                ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
+                ${isFlexible ? 'bg-sky-50' : !med.is_multiple ? 'bg-white' : ''}
                 ${!due ? 'bg-gray-200 text-gray-600' : ''}
               `}
             >
               <div className="flex items-start gap-3">
-                {due ? (
+                {isFlexible ? (
+                  due ? (
+                    <div className="flex flex-col gap-1.5 flex-shrink-0 mt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => onLogFlexibleDose(med.id)}
+                        className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 touch-manipulation"
+                      >
+                        Log dose
+                      </button>
+                      {flexCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => onRemoveLastFlexibleDose(med.id)}
+                          className="px-2 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 touch-manipulation"
+                        >
+                          Undo last
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
+                      —
+                    </div>
+                  )
+                ) : due ? (
                   <input
                     type="checkbox"
                     checked={taken}
@@ -162,13 +285,35 @@ export default function MedTable({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className={`font-semibold text-sm mb-1 ${taken ? 'line-through' : ''}`}>
+                  <div
+                    className={`font-semibold text-sm mb-1 ${!isFlexible && taken ? 'line-through' : ''}`}
+                  >
                     {med.name}
                   </div>
                   <div className="text-xs text-gray-600 mb-1">
                     {med.when_text}
                   </div>
-                  {med.is_multiple && (
+                  {isFlexible && (
+                    <div className="text-xs text-gray-800 mb-1">
+                      {target != null ? (
+                        <>
+                          <strong>{flexCount}</strong> / {target} doses today
+                        </>
+                      ) : (
+                        <>
+                          <strong>{flexCount}</strong> dose{flexCount !== 1 ? 's' : ''} logged today
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {isFlexible && flexEvents.length > 0 && (
+                    <ul className="text-xs text-gray-600 list-disc list-inside space-y-0.5 mb-1">
+                      {flexEvents.map((ev) => (
+                        <li key={ev.id}>{formatTime(ev.taken_at)}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {!isFlexible && med.is_multiple && (
                     <span className="inline-block text-xs px-2 py-0.5 border border-gray-300 rounded-full text-gray-600">
                       Multiple: {med.time_slot_names.join(', ')}
                     </span>
@@ -184,7 +329,7 @@ export default function MedTable({
                 </div>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   <button
-                    onClick={() => onShowHistory(med.id, med.name)}
+                    onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
                     className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
                     title="View history"
                     aria-label="View history"
@@ -211,7 +356,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Highlighted items show all times they are used.
+          Yellow: multiple time blocks. Blue: flexible doses (log each time).
         </div>
       </div>
     </>

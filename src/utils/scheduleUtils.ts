@@ -9,6 +9,8 @@ export interface Medication {
   start_date: string | null;
   interval_days: number | null;
   active: boolean;
+  dosing_mode?: 'time_slots' | 'flexible_daily';
+  target_doses_per_day?: number | null;
 }
 
 export function isDue(med: Medication, date: Date): boolean {

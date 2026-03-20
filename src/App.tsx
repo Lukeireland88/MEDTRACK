@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, LogIn, LogOut } from 'lucide-react';
 import { supabase } from './lib/supabase';
-import { MedicationWithSlots } from './types';
+import { DosingMode, MedicationDoseEvent, MedicationWithSlots } from './types';
 import { getDefaultTimeSlot, toLocalDateOnly } from './utils/dateUtils';
 import { useAuth } from './contexts/AuthContext';
 import DateNav from './components/DateNav';
@@ -19,6 +19,9 @@ export default function App() {
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>('');
   const [medications, setMedications] = useState<MedicationWithSlots[]>([]);
   const [takenStatus, setTakenStatus] = useState<Record<string, boolean>>({});
+  const [flexibleDoseEvents, setFlexibleDoseEvents] = useState<
+    Record<string, Pick<MedicationDoseEvent, 'id' | 'taken_at'>[]>
+  >({});
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -26,6 +29,7 @@ export default function App() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyMedicationId, setHistoryMedicationId] = useState<string>('');
   const [historyMedicationName, setHistoryMedicationName] = useState<string>('');
+  const [historyDosingMode, setHistoryDosingMode] = useState<DosingMode>('time_slots');
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(['Morning', 'Lunch', 'Evening', 'Night']);
 
   useEffect(() => {
@@ -116,6 +120,7 @@ export default function App() {
       if (medsError) {
         console.error('Error loading medications:', medsError);
         setMedications([]);
+        setFlexibleDoseEvents({});
         setLoading(false);
         return;
       }
@@ -123,6 +128,7 @@ export default function App() {
       if (!allMeds || allMeds.length === 0) {
         setMedications([]);
         setAvailableTimeSlots([]);
+        setFlexibleDoseEvents({});
         setLoading(false);
         return;
       }
@@ -159,10 +165,16 @@ export default function App() {
           const timeSlotNames = slotsByMed[med.id] || [];
           timeSlotNames.sort((a, b) => sortOrder.indexOf(a) - sortOrder.indexOf(b));
 
+          const dosingMode = (med.dosing_mode as MedicationWithSlots['dosing_mode']) ?? 'time_slots';
+          const targetDoses =
+            med.target_doses_per_day != null ? Number(med.target_doses_per_day) : null;
+
           return {
             ...med,
+            dosing_mode: dosingMode,
+            target_doses_per_day: targetDoses,
             time_slot_names: timeSlotNames,
-            is_multiple: timeSlotNames.length > 1
+            is_multiple: dosingMode === 'time_slots' && timeSlotNames.length > 1,
           };
         })
         .filter((med: any) => {
@@ -177,7 +189,13 @@ export default function App() {
       allMedsWithSlots.forEach((med: any) => {
         med.time_slot_names.forEach((slot: string) => activeTimeSlots.add(slot));
       });
-      const sortedSlots = sortOrder.filter(slot => activeTimeSlots.has(slot));
+      const hasFlexibleDaily = allMedsWithSlots.some(
+        (m: MedicationWithSlots) => m.dosing_mode === 'flexible_daily'
+      );
+      let sortedSlots = sortOrder.filter((slot) => activeTimeSlots.has(slot));
+      if (sortedSlots.length === 0 && hasFlexibleDaily) {
+        sortedSlots = [...sortOrder];
+      }
       setAvailableTimeSlots(sortedSlots);
 
       // Reset selected time slot if it's no longer available
@@ -185,12 +203,38 @@ export default function App() {
         setSelectedTimeSlot(sortedSlots[0]);
       }
 
-      // Filter to show only medications for the currently selected time slot
-      const medsForSelectedSlot = allMedsWithSlots.filter((med: any) =>
-        med.time_slot_names.includes(selectedTimeSlot)
-      );
+      // Time-slot meds for this tab; flexible meds appear on every tab
+      const medsForSelectedSlot = allMedsWithSlots.filter((med: any) => {
+        if (med.dosing_mode === 'flexible_daily') return true;
+        return med.time_slot_names.includes(selectedTimeSlot);
+      });
 
       setMedications(medsForSelectedSlot);
+
+      const flexibleIds = allMedsWithSlots
+        .filter((m: MedicationWithSlots) => m.dosing_mode === 'flexible_daily')
+        .map((m: MedicationWithSlots) => m.id);
+
+      if (flexibleIds.length > 0) {
+        const { data: doseRows } = await supabase
+          .from('medication_dose_events')
+          .select('id, medication_id, taken_at')
+          .in('medication_id', flexibleIds)
+          .eq('dose_date', viewingDate)
+          .order('taken_at', { ascending: true });
+
+        const byMed: Record<string, Pick<MedicationDoseEvent, 'id' | 'taken_at'>[]> = {};
+        flexibleIds.forEach((id) => {
+          byMed[id] = [];
+        });
+        doseRows?.forEach((row: { id: string; medication_id: string; taken_at: string }) => {
+          if (!byMed[row.medication_id]) byMed[row.medication_id] = [];
+          byMed[row.medication_id].push({ id: row.id, taken_at: row.taken_at });
+        });
+        setFlexibleDoseEvents(byMed);
+      } else {
+        setFlexibleDoseEvents({});
+      }
 
       // Update selectedTimeSlotId for the current time slot
       const { data: timeSlot } = await supabase
@@ -258,75 +302,125 @@ export default function App() {
     }
   };
 
+  const handleLogFlexibleDose = async (medId: string) => {
+    const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+    try {
+      const { data: row, error } = await supabase
+        .from('medication_dose_events')
+        .insert({
+          medication_id: medId,
+          dose_date: dateString,
+          taken_at: new Date().toISOString(),
+        })
+        .select('id, taken_at')
+        .single();
+
+      if (error) throw error;
+
+      setFlexibleDoseEvents((prev) => {
+        const next = { ...prev };
+        const list = [...(next[medId] || [])];
+        if (row) list.push({ id: row.id, taken_at: row.taken_at });
+        list.sort(
+          (a, b) => new Date(a.taken_at).getTime() - new Date(b.taken_at).getTime()
+        );
+        next[medId] = list;
+        return next;
+      });
+    } catch (error) {
+      console.error('Error logging dose:', error);
+      alert('Failed to log dose. Please try again.');
+    }
+  };
+
+  const handleRemoveLastFlexibleDose = async (medId: string) => {
+    const events = flexibleDoseEvents[medId];
+    if (!events?.length) return;
+    const last = events[events.length - 1];
+    try {
+      const { error } = await supabase.from('medication_dose_events').delete().eq('id', last.id);
+      if (error) throw error;
+
+      setFlexibleDoseEvents((prev) => {
+        const next = { ...prev };
+        const list = [...(next[medId] || [])].slice(0, -1);
+        next[medId] = list;
+        return next;
+      });
+    } catch (error) {
+      console.error('Error removing dose:', error);
+      alert('Failed to remove dose. Please try again.');
+    }
+  };
+
   const handleSaveMedication = async (formData: MedicationFormData) => {
     try {
       const whenText = generateWhenText(formData);
+      const isFlexible = formData.dosingMode === 'flexible_daily';
+      const targetDoses =
+        isFlexible && formData.targetDosesPerDay !== ''
+          ? Number(formData.targetDosesPerDay)
+          : null;
+
+      const medPayload = {
+        name: formData.name,
+        when_text: whenText,
+        schedule_type: formData.pattern,
+        days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
+        start_date: formData.startDate || null,
+        interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
+        notes: formData.notes || null,
+        end_date: formData.endDate || null,
+        dosing_mode: formData.dosingMode,
+        target_doses_per_day: isFlexible ? targetDoses : null,
+      };
 
       if (formData.id) {
         const { error: medError } = await supabase
           .from('medications')
-          .update({
-            name: formData.name,
-            when_text: whenText,
-            schedule_type: formData.pattern,
-            days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
-            start_date: formData.startDate || null,
-            interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
-            notes: formData.notes || null,
-            end_date: formData.endDate || null,
-          })
+          .update(medPayload)
           .eq('id', formData.id);
 
         if (medError) throw medError;
 
-        await supabase
-          .from('medication_slots')
-          .delete()
-          .eq('medication_id', formData.id);
+        await supabase.from('medication_slots').delete().eq('medication_id', formData.id);
 
-        const { data: timeSlots } = await supabase
-          .from('time_slots')
-          .select('id, name')
-          .in('name', formData.timeSlots);
+        if (!isFlexible) {
+          const { data: timeSlots } = await supabase
+            .from('time_slots')
+            .select('id, name')
+            .in('name', formData.timeSlots);
 
-        if (timeSlots) {
-          const slots = timeSlots.map((slot) => ({
-            medication_id: formData.id,
-            time_slot_id: slot.id,
-          }));
-
-          await supabase.from('medication_slots').insert(slots);
+          if (timeSlots?.length) {
+            const slots = timeSlots.map((slot) => ({
+              medication_id: formData.id,
+              time_slot_id: slot.id,
+            }));
+            await supabase.from('medication_slots').insert(slots);
+          }
         }
       } else {
         const { data: newMed, error: medError } = await supabase
           .from('medications')
-          .insert({
-            name: formData.name,
-            when_text: whenText,
-            schedule_type: formData.pattern,
-            days_of_week: formData.pattern === 'days_of_week' ? formData.daysOfWeek : null,
-            start_date: formData.startDate || null,
-            interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
-            notes: formData.notes || null,
-            end_date: formData.endDate || null,
-          })
+          .insert(medPayload)
           .select()
           .single();
 
         if (medError) throw medError;
 
-        const { data: timeSlots } = await supabase
-          .from('time_slots')
-          .select('id, name')
-          .in('name', formData.timeSlots);
+        if (!isFlexible && newMed) {
+          const { data: timeSlots } = await supabase
+            .from('time_slots')
+            .select('id, name')
+            .in('name', formData.timeSlots);
 
-        if (timeSlots && newMed) {
-          const slots = timeSlots.map((slot) => ({
-            medication_id: newMed.id,
-            time_slot_id: slot.id,
-          }));
-
-          await supabase.from('medication_slots').insert(slots);
+          if (timeSlots?.length) {
+            const slots = timeSlots.map((slot) => ({
+              medication_id: newMed.id,
+              time_slot_id: slot.id,
+            }));
+            await supabase.from('medication_slots').insert(slots);
+          }
         }
       }
 
@@ -341,6 +435,13 @@ export default function App() {
   };
 
   const generateWhenText = (formData: MedicationFormData): string => {
+    if (formData.dosingMode === 'flexible_daily') {
+      if (formData.targetDosesPerDay === '' || formData.targetDosesPerDay === null) {
+        return 'Flexible daily (log each dose)';
+      }
+      const n = Number(formData.targetDosesPerDay);
+      return `${n} dose${n !== 1 ? 's' : ''} per day (flexible times)`;
+    }
     if (formData.pattern === 'daily') {
       return 'Daily';
     } else if (formData.pattern === 'days_of_week') {
@@ -362,7 +463,10 @@ export default function App() {
     setEditingMedication({
       id: med.id,
       name: med.name,
+      dosingMode: med.dosing_mode ?? 'time_slots',
       timeSlots: med.time_slot_names,
+      targetDosesPerDay:
+        med.target_doses_per_day != null ? med.target_doses_per_day : '',
       pattern: med.schedule_type,
       daysOfWeek: med.days_of_week || [],
       startDate: med.start_date || '',
@@ -406,9 +510,10 @@ export default function App() {
     }
   };
 
-  const handleShowHistory = (medId: string, medName: string) => {
+  const handleShowHistory = (medId: string, medName: string, dosingMode: DosingMode = 'time_slots') => {
     setHistoryMedicationId(medId);
     setHistoryMedicationName(medName);
+    setHistoryDosingMode(dosingMode);
     setHistoryModalOpen(true);
   };
 
@@ -474,7 +579,10 @@ export default function App() {
             medications={medications}
             selectedDate={selectedDate}
             takenStatus={takenStatus}
+            flexibleDoseEvents={flexibleDoseEvents}
             onToggleTaken={handleToggleTaken}
+            onLogFlexibleDose={handleLogFlexibleDose}
+            onRemoveLastFlexibleDose={handleRemoveLastFlexibleDose}
             onEditMedication={handleEditMedication}
             onShowHistory={handleShowHistory}
           />
@@ -497,6 +605,7 @@ export default function App() {
         onClose={() => setHistoryModalOpen(false)}
         medicationId={historyMedicationId}
         medicationName={historyMedicationName}
+        dosingMode={historyDosingMode}
         timeSlotId={selectedTimeSlotId}
         timeSlotName={selectedTimeSlot}
         doseDate={toLocalDateOnly(selectedDate).toISOString().split('T')[0]}
