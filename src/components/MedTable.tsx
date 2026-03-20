@@ -53,16 +53,23 @@ export default function MedTable({
     if (aDue && !bDue) return -1;
     if (!aDue && bDue) return 1;
 
-    // Flexible dosing next (within due)
+    const aFlex = a.dosing_mode === 'flexible_daily';
+    const bFlex = b.dosing_mode === 'flexible_daily';
+
+    // Within due: time-slot meds first, flexible daily last
     if (aDue && bDue) {
-      const aFlex = a.dosing_mode === 'flexible_daily';
-      const bFlex = b.dosing_mode === 'flexible_daily';
-      if (aFlex && !bFlex) return -1;
-      if (!aFlex && bFlex) return 1;
+      if (aFlex && !bFlex) return 1;
+      if (!aFlex && bFlex) return -1;
       if (!aFlex && !bFlex) {
         if (!a.is_multiple && b.is_multiple) return -1;
         if (a.is_multiple && !b.is_multiple) return 1;
       }
+    }
+
+    // Within not-due: same — flexible rows at the bottom of that group
+    if (!aDue && !bDue) {
+      if (aFlex && !bFlex) return 1;
+      if (!aFlex && bFlex) return -1;
     }
 
     return a.name.localeCompare(b.name);
