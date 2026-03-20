@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import { ClipboardList } from 'lucide-react';
 import { toDateInputValue, fromDateInputValue, formatDateLine } from '../utils/dateUtils';
 
 interface DateNavProps {
@@ -63,6 +65,14 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
         >
           Today
         </button>
+        <Link
+          to="/history"
+          className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px text-sm sm:text-base touch-manipulation"
+          title="View history across all medications"
+        >
+          <ClipboardList className="w-4 h-4 sm:w-[18px] sm:h-[18px] shrink-0" />
+          <span className="hidden sm:inline">History</span>
+        </Link>
       </div>
       <div className="text-gray-600 text-xs sm:text-sm">
         {weekday} · {fullDate}
