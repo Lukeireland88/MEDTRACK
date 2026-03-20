@@ -27,3 +27,23 @@ export function getDefaultTimeSlot(): string {
   if (hour < 19) return 'Evening';
   return 'Night';
 }
+
+/** `HH:mm` for `<input type="time" />` in local time */
+export function toTimeInputValue(d: Date): string {
+  const h = d.getHours();
+  const m = d.getMinutes();
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+/** Calendar day from `date` at `timeHHMM` (`HH:mm`), returned as ISO string for storage */
+export function combineLocalDateWithTime(date: Date, timeHHMM: string): string {
+  const base = toLocalDateOnly(date);
+  const parts = timeHHMM.split(':');
+  const h = parseInt(parts[0] ?? '0', 10);
+  const m = parseInt(parts[1] ?? '0', 10);
+  if (Number.isNaN(h) || Number.isNaN(m)) {
+    return base.toISOString();
+  }
+  base.setHours(h, m, 0, 0);
+  return base.toISOString();
+}

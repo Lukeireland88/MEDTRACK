@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Pencil, History } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots } from '../types';
 import { isDue } from '../utils/scheduleUtils';
+import LogDoseTimeModal from './LogDoseTimeModal';
 
 interface MedTableProps {
   medications: MedicationWithSlots[];
@@ -8,7 +10,7 @@ interface MedTableProps {
   takenStatus: Record<string, boolean>;
   flexibleDoseEvents: Record<string, Pick<MedicationDoseEvent, 'id' | 'taken_at'>[]>;
   onToggleTaken: (medId: string) => void;
-  onLogFlexibleDose: (medId: string) => void;
+  onLogFlexibleDose: (medId: string, takenAtIso: string) => void | Promise<void>;
   onRemoveLastFlexibleDose: (medId: string) => void;
   onEditMedication: (med: MedicationWithSlots) => void;
   onShowHistory: (medId: string, medName: string, dosingMode?: DosingMode) => void;
@@ -37,6 +39,8 @@ export default function MedTable({
   onEditMedication,
   onShowHistory
 }: MedTableProps) {
+  const [logDoseMedId, setLogDoseMedId] = useState<string | null>(null);
+
   const remaining = medications.reduce((acc, med) => {
     if (med.dosing_mode === 'flexible_daily') {
       return acc + flexibleRemaining(med, selectedDate, flexibleDoseEvents[med.id]);
@@ -137,7 +141,7 @@ export default function MedTable({
                         <div className="flex flex-col gap-1.5 min-w-[7rem]">
                           <button
                             type="button"
-                            onClick={() => onLogFlexibleDose(med.id)}
+                            onClick={() => setLogDoseMedId(med.id)}
                             className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                           >
                             Log dose
@@ -259,7 +263,7 @@ export default function MedTable({
                     <div className="flex flex-col gap-1.5 flex-shrink-0 mt-0.5">
                       <button
                         type="button"
-                        onClick={() => onLogFlexibleDose(med.id)}
+                        onClick={() => setLogDoseMedId(med.id)}
                         className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 touch-manipulation"
                       >
                         Log dose
@@ -366,6 +370,21 @@ export default function MedTable({
           Yellow: multiple time blocks. Blue: flexible doses (log each time).
         </div>
       </div>
+
+      <LogDoseTimeModal
+        isOpen={logDoseMedId !== null}
+        medicationName={
+          logDoseMedId
+            ? medications.find((m) => m.id === logDoseMedId)?.name ?? 'Medication'
+            : ''
+        }
+        selectedDate={selectedDate}
+        onClose={() => setLogDoseMedId(null)}
+        onConfirm={async (takenAtIso) => {
+          if (!logDoseMedId) return;
+          await onLogFlexibleDose(logDoseMedId, takenAtIso);
+        }}
+      />
     </>
   );
 }

@@ -302,7 +302,7 @@ export default function App() {
     }
   };
 
-  const handleLogFlexibleDose = async (medId: string) => {
+  const handleLogFlexibleDose = async (medId: string, takenAtIso: string) => {
     const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
     try {
       const { data: row, error } = await supabase
@@ -310,7 +310,7 @@ export default function App() {
         .insert({
           medication_id: medId,
           dose_date: dateString,
-          taken_at: new Date().toISOString(),
+          taken_at: takenAtIso,
         })
         .select('id, taken_at')
         .single();
@@ -330,6 +330,7 @@ export default function App() {
     } catch (error) {
       console.error('Error logging dose:', error);
       alert('Failed to log dose. Please try again.');
+      throw error;
     }
   };
 
