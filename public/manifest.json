@@ -1,7 +1,9 @@
 {
+  "id": "/MEDTRACK/",
   "name": "Medication Tracker",
   "short_name": "MedTrack",
-  "start_url": ".",
+  "start_url": "/MEDTRACK/",
+  "scope": "/MEDTRACK/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
