@@ -262,14 +262,40 @@ export default function HistoryReportPage() {
               <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-xs text-gray-600">
                 {rows.length} event{rows.length !== 1 ? 's' : ''}
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse min-w-[640px]">
+
+              {/* Mobile: stacked cards — no horizontal scroll */}
+              <ul className="md:hidden divide-y divide-gray-100">
+                {rows.map((row) => (
+                  <li
+                    key={row.id}
+                    className={`px-4 py-3 text-sm ${
+                      row.kind === 'flexible' ? 'bg-sky-50/60' : ''
+                    }`}
+                  >
+                    <p className="font-semibold text-gray-900 break-words">{row.medicationName}</p>
+                    <p className="text-gray-600 mt-1">{formatWhen(row.at)}</p>
+                    <p className="text-gray-700 mt-2">
+                      <span className="text-gray-500">
+                        {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
+                      </span>
+                      <span className="mx-1.5 text-gray-300" aria-hidden>
+                        ·
+                      </span>
+                      <span>{row.detail}</span>
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              {/* md+: table; dose day only on xl+ (redundant with When on smaller widths) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full border-collapse min-w-0 table-fixed">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs sm:text-sm text-gray-600 border-b border-gray-200">
-                      <th className="p-3 font-semibold whitespace-nowrap">When</th>
-                      <th className="p-3 font-semibold whitespace-nowrap">Dose day</th>
+                      <th className="p-3 font-semibold">When</th>
+                      <th className="hidden xl:table-cell p-3 font-semibold whitespace-nowrap">Dose day</th>
                       <th className="p-3 font-semibold">Medication</th>
-                      <th className="p-3 font-semibold whitespace-nowrap">Type</th>
+                      <th className="p-3 font-semibold">Type</th>
                       <th className="p-3 font-semibold">Detail</th>
                     </tr>
                   </thead>
@@ -281,13 +307,17 @@ export default function HistoryReportPage() {
                           row.kind === 'flexible' ? 'bg-sky-50/60' : ''
                         }`}
                       >
-                        <td className="p-3 whitespace-nowrap text-gray-900">{formatWhen(row.at)}</td>
-                        <td className="p-3 whitespace-nowrap text-gray-700">{formatDoseDay(row.doseDate)}</td>
-                        <td className="p-3 font-medium text-gray-900">{row.medicationName}</td>
-                        <td className="p-3 whitespace-nowrap text-gray-700">
+                        <td className="p-3 align-top text-gray-900">{formatWhen(row.at)}</td>
+                        <td className="hidden xl:table-cell p-3 align-top text-gray-700 whitespace-nowrap">
+                          {formatDoseDay(row.doseDate)}
+                        </td>
+                        <td className="p-3 align-top font-medium text-gray-900 break-words">
+                          {row.medicationName}
+                        </td>
+                        <td className="p-3 align-top text-gray-700">
                           {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
                         </td>
-                        <td className="p-3 text-gray-700">{row.detail}</td>
+                        <td className="p-3 align-top text-gray-700 break-words">{row.detail}</td>
                       </tr>
                     ))}
                   </tbody>
