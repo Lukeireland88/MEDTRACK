@@ -1,170 +1,146 @@
 # Medication Tracker
 
-A responsive web application for tracking daily medications with smart scheduling, built with React, TypeScript, Tailwind CSS, and Supabase.
+A responsive web app for tracking daily medications with smart scheduling. Built with React, TypeScript, Tailwind CSS, Vite, and Supabase (database and authentication).
 
 ## Features
 
-- **Date Navigation**: Navigate through dates with prev/next buttons and date picker
-- **Time-of-Day Tracking**: Organize medications by Morning, Lunch, Evening, and Night
-- **Smart Scheduling**: Supports multiple schedule types:
-  - Daily medications
-  - Specific days of the week (e.g., Mon/Wed/Fri)
-  - Every N days from a start date
-- **Multiple Time Slots**: Highlights medications that appear in multiple time slots
-- **Visual Indicators**:
-  - Grey out medications not due on the selected date
-  - Show remaining count of unchecked medications
-  - Display notices for special medications (Ferrous, Azithromycin)
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Authentication**: Sign up and sign in with Supabase Auth (email/password). Data is scoped per user via Row Level Security.
+- **Daily tracker** (`/`): Pick a date and time-of-day slot; check off doses and see what is still due.
+- **Date navigation**: Previous/next day, date picker, and jump to today.
+- **Time-of-day slots**: Morning, Lunch, Evening, and Night (only slots that exist in your data are offered). Default slot follows the current time.
+- **Scheduling**:
+  - Daily
+  - Specific days of the week (e.g. Mon/Wed/Fri)
+  - Every *N* days from a start date
+- **Dosing modes**:
+  - **Time slots**: Medications tied to one or more slots; supports multiple slots per med (highlighted when relevant).
+  - **Flexible daily**: Target doses per day with optional per-dose timestamps (`LogDoseTimeModal`).
+- **Medication management**: Add and edit medications and their slot assignments (`AddMedicationModal`).
+- **Per-medication history**: View dose events and check/uncheck logs for a single medication (`MedicationHistoryModal`).
+- **History report** (`/history`): Filter by date range and medication; combines slot-based logs and flexible-dose events.
+- **Visual cues**: Grey out meds not due on the selected date; show remaining unchecked count; notices for configured special cases (e.g. Ferrous, Azithromycin).
+- **Deploy-friendly**: If `VITE_SUPABASE_*` is missing at build time, the app still loads and shows a banner instead of a blank screen.
 
-## Tech Stack
+## Tech stack
 
-- React 18 with TypeScript
-- Vite for build tooling
-- Tailwind CSS for styling
-- Supabase for database and backend
-- Lucide React for icons
+- React 18 and TypeScript
+- Vite
+- React Router
+- Tailwind CSS
+- Supabase (Postgres, Auth)
+- Lucide React (icons)
 
 ## Prerequisites
 
-- Node.js 16+ and npm
-- A Supabase account and project
+- Node.js 18+ recommended (16+ may work)
+- npm
+- A [Supabase](https://supabase.com/) project with tables and RLS aligned to this app (see schema below)
 
-## Setup Instructions
+## Setup
 
-### 1. Clone and Install
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Environment Variables
+### 2. Environment variables
 
-The `.env` file is already configured with Supabase credentials. The database includes:
+Create a `.env` or `.env.local` in the project root:
 
-- 4 time slots: Morning, Lunch, Evening, Night
-- 12+ medications with various schedules
-- Proper Row Level Security (RLS) policies
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
 
-### 3. Database Schema
+Never commit real keys. For CI/CD (e.g. GitHub Actions), set the same variables as secrets and inject them at build time.
 
-The database includes the following tables:
-
-- `time_slots`: Time periods for medication (Morning, Lunch, Evening, Night)
-- `medications`: Medication details and schedule rules
-- `medication_slots`: Join table linking medications to time slots
-- `doses_taken`: Optional tracking of which doses have been taken
-
-All migrations have been applied automatically.
-
-### 4. Run the Application
+### 3. Run locally
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+Open the URL shown in the terminal (default [http://localhost:5173](http://localhost:5173)).
 
-### 5. Build for Production
+### 4. Other scripts
 
-```bash
-npm run build
-```
+| Command | Description |
+|--------|-------------|
+| `npm run build` | Production build to `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript check (no emit) |
+
+If `npm run build` errors on a missing `vite-plugin-pwa` package, install it (`npm install -D vite-plugin-pwa`) or remove the PWA plugin block from `vite.config.ts`.
 
 ## Usage
 
-### Date Selection
+### Tracker (`/`)
 
-- Use the **◀** and **▶** buttons to navigate between dates
-- Click the date input to select a specific date
-- Click **Today** to jump to the current date
+- Use **◀** / **▶** or the date field to change day; use **Today** for the current date.
+- Open **Showing: [time]** to change the active time slot.
+- Check medications to mark them taken; counts update automatically.
+- Sign in from the header when you want cloud sync; sign out when finished.
 
-### Time Slot Selection
+### History report (`/history`)
 
-- Click the "Showing: [time]" dropdown to see all time slots
-- Select Morning, Lunch, Evening, or Night
-- The default time slot is determined by the current time:
-  - Before 12 PM: Morning
-  - 12 PM - 3 PM: Lunch
-  - 3 PM - 7 PM: Evening
-  - After 7 PM: Night
+- Set **From** / **To** and optionally a medication.
+- Load the report to see unified rows from slot-based logging and flexible dose events.
 
-### Tracking Medications
-
-- Check the box next to a medication to mark it as taken
-- The remaining count updates automatically
-- Medications highlighted in yellow appear in multiple time slots
-- Greyed out medications are not due on the selected date
-
-### Special Schedules
-
-- **Azithromycin**: Only due on Monday, Wednesday, and Friday
-- **Ferrous Fumarate**: Due every other day starting from Sept 18, 2025
-
-When these medications are not due (and Morning is selected), a notice appears showing the next due date.
-
-## Project Structure
+## Project structure
 
 ```
 src/
 ├── components/
-│   ├── DateNav.tsx          # Date navigation controls
-│   ├── TimeSlotPicker.tsx   # Time slot selector
-│   ├── MedTable.tsx          # Medication table and status
-│   └── Notices.tsx           # Special medication notices
+│   ├── AddMedicationModal.tsx
+│   ├── AuthModal.tsx
+│   ├── DateNav.tsx
+│   ├── LogDoseTimeModal.tsx
+│   ├── MedicationHistoryModal.tsx
+│   ├── MedTable.tsx
+│   ├── Notices.tsx
+│   └── TimeSlotPicker.tsx
+├── contexts/
+│   └── AuthContext.tsx
 ├── lib/
-│   └── supabase.ts           # Supabase client
+│   └── supabase.ts
+├── pages/
+│   ├── HistoryReportPage.tsx
+│   └── TrackerPage.tsx
 ├── types/
-│   └── index.ts              # TypeScript type definitions
+│   └── index.ts
 ├── utils/
-│   ├── dateUtils.ts          # Date handling utilities
-│   └── scheduleUtils.ts      # Medication scheduling logic
-├── App.tsx                   # Main application component
-└── main.tsx                  # Application entry point
+│   ├── dateUtils.ts
+│   └── scheduleUtils.ts
+├── App.tsx
+└── main.tsx
 ```
 
-## Database Schema
+## Database (Supabase)
 
-### time_slots
-- `id`: UUID primary key
-- `name`: Text (Morning, Lunch, Evening, Night)
-- `sort_order`: Integer for ordering
+The app expects tables including:
 
-### medications
-- `id`: UUID primary key
-- `name`: Text (medication name)
-- `when_text`: Text (display text like "Daily" or "Mon/Wed/Fri")
-- `schedule_type`: Text (daily, days_of_week, every_n_days_from_start)
-- `days_of_week`: Integer array (1=Mon, 7=Sun)
-- `start_date`: Date (for interval-based schedules)
-- `interval_days`: Integer (for interval-based schedules)
-- `active`: Boolean
+| Table | Role |
+|-------|------|
+| `time_slots` | Morning / Lunch / Evening / Night (with sort order) |
+| `medications` | Name, schedule fields, `active`, `dosing_mode` (`time_slots` \| `flexible_daily`), `target_doses_per_day`, optional `notes` / `end_date` |
+| `medication_slots` | Links medications to time slots |
+| `doses_taken` | Slot-based taken state per med, slot, and date |
+| `medication_logs` | Audit log for check/uncheck actions on slot-based doses |
+| `medication_dose_events` | Flexible-mode doses with `taken_at`, `dose_date`, `amount` |
 
-### medication_slots
-- `id`: UUID primary key
-- `medication_id`: UUID foreign key
-- `time_slot_id`: UUID foreign key
+Configure Row Level Security so each user only sees their own rows (policies depend on how you store `user_id` on rows).
 
-### doses_taken
-- `id`: UUID primary key
-- `medication_id`: UUID foreign key
-- `time_slot_id`: UUID foreign key
-- `dose_date`: Date
-- `taken`: Boolean
-- `taken_at`: Timestamp
+### Schedule fields (`medications`)
 
-## Customization
+- `schedule_type`: `daily` | `days_of_week` | `every_n_days_from_start`
+- `days_of_week`: integers 1–7 (1 = Monday, 7 = Sunday) when using `days_of_week`
+- `start_date` / `interval_days`: for `every_n_days_from_start`
 
-### Adding New Medications
+### Customization
 
-Medications are stored in Supabase. To add new medications, insert records into the `medications` table and link them to time slots via `medication_slots`.
-
-### Modifying Schedules
-
-Schedule types:
-- `daily`: Medication is due every day
-- `days_of_week`: Due on specific days (1=Monday, 7=Sunday)
-- `every_n_days_from_start`: Due every N days from a start date
+Add or change medications in Supabase: insert/update `medications`, then link rows in `medication_slots` for time-slot meds.
 
 ## License
 
