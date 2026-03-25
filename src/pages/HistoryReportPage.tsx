@@ -14,18 +14,21 @@ type UnifiedRow = {
   detail: string;
 };
 
-function defaultRange(): { from: string; to: string } {
+function todayRange(): { from: string; to: string } {
+  const day = toLocalDateOnly(new Date());
+  const v = toDateInputValue(day);
+  return { from: v, to: v };
+}
+
+function last7DaysRange(): { from: string; to: string } {
   const end = toLocalDateOnly(new Date());
   const start = new Date(end);
   start.setDate(start.getDate() - 7);
-  return {
-    from: toDateInputValue(start),
-    to: toDateInputValue(end),
-  };
+  return { from: toDateInputValue(start), to: toDateInputValue(end) };
 }
 
 export default function HistoryReportPage() {
-  const initial = useMemo(() => defaultRange(), []);
+  const initial = useMemo(() => todayRange(), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
   const [medicationIds, setMedicationIds] = useState<string[]>([]);
@@ -182,7 +185,7 @@ export default function HistoryReportPage() {
   };
 
   const setLast7Days = () => {
-    const r = defaultRange();
+    const r = last7DaysRange();
     setDateFrom(r.from);
     setDateTo(r.to);
   };
