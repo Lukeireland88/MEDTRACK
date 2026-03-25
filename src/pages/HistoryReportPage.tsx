@@ -267,27 +267,31 @@ export default function HistoryReportPage() {
                 </span>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={setToday}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 self-end"
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={setYesterday}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 self-end"
-            >
-              Yesterday
-            </button>
-            <button
-              type="button"
-              onClick={setLast7Days}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 self-end"
-            >
-              Last 7 days
-            </button>
+            <div className="self-end overflow-x-auto max-w-full">
+              <div className="flex gap-2 flex-nowrap">
+                <button
+                  type="button"
+                  onClick={setToday}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={setYesterday}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                >
+                  Yesterday
+                </button>
+                <button
+                  type="button"
+                  onClick={setLast7Days}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                >
+                  Last 7 days
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
