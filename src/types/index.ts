@@ -16,6 +16,10 @@ export interface Medication {
   interval_days: number | null;
   notes: string | null;
   end_date: string | null;
+  /** Inclusive local-date window (YYYY-MM-DD) during which med is paused */
+  pause_start_date: string | null;
+  /** Inclusive local-date window (YYYY-MM-DD) during which med is paused */
+  pause_end_date: string | null;
   active: boolean;
   dosing_mode: DosingMode;
   target_doses_per_day: number | null;

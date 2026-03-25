@@ -21,6 +21,8 @@ export interface MedicationFormData {
   intervalDays: number;
   notes: string;
   endDate: string;
+  pauseStartDate: string;
+  pauseEndDate: string;
 }
 
 const TIME_SLOTS = ['Morning', 'Lunch', 'Evening', 'Night'];
@@ -52,6 +54,8 @@ export default function AddMedicationModal({
     intervalDays: 1,
     notes: '',
     endDate: '',
+    pauseStartDate: '',
+    pauseEndDate: '',
   });
 
   useEffect(() => {
@@ -69,6 +73,8 @@ export default function AddMedicationModal({
         intervalDays: 1,
         notes: '',
         endDate: '',
+        pauseStartDate: '',
+        pauseEndDate: '',
       });
     }
   }, [editingMedication, isOpen]);
@@ -90,6 +96,10 @@ export default function AddMedicationModal({
         alert('Target doses per day must be at least 1, or leave blank to track without a daily goal.');
         return;
       }
+    }
+    if ((formData.pauseStartDate && formData.pauseEndDate) && formData.pauseStartDate > formData.pauseEndDate) {
+      alert('Pause start date must be on or before the pause end date.');
+      return;
     }
     onSave(formData);
   };
@@ -329,6 +339,52 @@ export default function AddMedicationModal({
             <p className="text-sm text-gray-600 mt-1">
               Medication will no longer appear after this date.
             </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2">
+              Pause date range (optional)
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  Pause from
+                </label>
+                <input
+                  type="date"
+                  value={formData.pauseStartDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pauseStartDate: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  Pause until
+                </label>
+                <input
+                  type="date"
+                  value={formData.pauseEndDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pauseEndDate: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, pauseStartDate: '', pauseEndDate: '' })}
+                className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Clear pause
+              </button>
+              <p className="text-sm text-gray-600">
+                While paused, this medication appears greyed out and cannot be checked/logged.
+              </p>
+            </div>
           </div>
 
           <div className="flex justify-between items-center gap-3 pt-4">

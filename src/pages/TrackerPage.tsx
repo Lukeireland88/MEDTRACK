@@ -363,6 +363,19 @@ export default function TrackerPage() {
           ? Number(formData.targetDosesPerDay)
           : null;
 
+      const todayLocal = toLocalDateOnly(new Date()).toISOString().split('T')[0];
+      const pauseStartRaw = formData.pauseStartDate || '';
+      const pauseEndRaw = formData.pauseEndDate || '';
+      const pauseStart =
+        pauseStartRaw || (pauseEndRaw ? todayLocal : '');
+      const pauseEnd =
+        pauseEndRaw || (pauseStartRaw ? pauseStartRaw : '');
+
+      if (pauseStart && pauseEnd && pauseStart > pauseEnd) {
+        alert('Pause start date must be on or before the pause end date.');
+        return;
+      }
+
       const medPayload = {
         name: formData.name,
         when_text: whenText,
@@ -372,6 +385,8 @@ export default function TrackerPage() {
         interval_days: formData.pattern === 'every_n_days_from_start' ? formData.intervalDays : null,
         notes: formData.notes || null,
         end_date: formData.endDate || null,
+        pause_start_date: pauseStart || null,
+        pause_end_date: pauseEnd || null,
         dosing_mode: formData.dosingMode,
         target_doses_per_day: isFlexible ? targetDoses : null,
       };
@@ -474,6 +489,8 @@ export default function TrackerPage() {
       intervalDays: med.interval_days || 1,
       notes: med.notes || '',
       endDate: med.end_date || '',
+      pauseStartDate: (med.pause_start_date as string | null) || '',
+      pauseEndDate: (med.pause_end_date as string | null) || '',
     });
     setIsModalOpen(true);
   };

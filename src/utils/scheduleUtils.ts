@@ -8,13 +8,27 @@ export interface Medication {
   days_of_week: number[] | null;
   start_date: string | null;
   interval_days: number | null;
+  pause_start_date?: string | null;
+  pause_end_date?: string | null;
   active: boolean;
   dosing_mode?: 'time_slots' | 'flexible_daily';
   target_doses_per_day?: number | null;
 }
 
+export function isPaused(med: Pick<Medication, 'pause_start_date' | 'pause_end_date'>, date: Date): boolean {
+  const start = med.pause_start_date ?? null;
+  const end = med.pause_end_date ?? null;
+  if (!start && !end) return false;
+
+  const localDate = toLocalDateOnly(date).toISOString().split('T')[0];
+  const startDay = (start ?? '0000-01-01');
+  const endDay = (end ?? '9999-12-31');
+  return localDate >= startDay && localDate <= endDay;
+}
+
 export function isDue(med: Medication, date: Date): boolean {
   const localDate = toLocalDateOnly(date);
+  if (isPaused(med, localDate)) return false;
 
   switch (med.schedule_type) {
     case 'daily':

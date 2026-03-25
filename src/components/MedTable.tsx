@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pencil, History } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots } from '../types';
-import { isDue } from '../utils/scheduleUtils';
+import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
 
 interface MedTableProps {
@@ -113,6 +113,7 @@ export default function MedTable({
           <tbody>
             {sortedMedications.map((med) => {
               const due = isDue(med, selectedDate);
+              const paused = isPaused(med, selectedDate);
               const taken = takenStatus[med.id] || false;
               const isFlexible = med.dosing_mode === 'flexible_daily';
               const flexEvents = flexibleDoseEvents[med.id] || [];
@@ -132,7 +133,7 @@ export default function MedTable({
                     ${isFlexible && flexComplete ? 'text-gray-500' : ''}
                     ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
                     ${isFlexible ? 'bg-sky-50' : ''}
-                    ${!due ? 'bg-gray-200 text-gray-600' : ''}
+                    ${(!due || paused) ? 'bg-gray-200 text-gray-600' : ''}
                   `}
                 >
                   <td className="p-3 border-b border-gray-300 align-top">
@@ -176,6 +177,11 @@ export default function MedTable({
                   </td>
                   <td className="p-3 border-b border-gray-300 font-semibold">
                     {med.name}
+                    {paused && (
+                      <span className="ml-2 inline-block align-middle text-xs px-2 py-1 border border-gray-400 rounded-full text-gray-700 bg-gray-100">
+                        Paused
+                      </span>
+                    )}
                     {isFlexible && (
                       <span className="block mt-1 text-sm font-normal text-gray-800">
                         {target != null ? (
@@ -237,6 +243,7 @@ export default function MedTable({
       <div className="md:hidden px-2 pb-3 space-y-2">
         {sortedMedications.map((med) => {
           const due = isDue(med, selectedDate);
+          const paused = isPaused(med, selectedDate);
           const taken = takenStatus[med.id] || false;
           const isFlexible = med.dosing_mode === 'flexible_daily';
           const flexEvents = flexibleDoseEvents[med.id] || [];
@@ -254,7 +261,7 @@ export default function MedTable({
                 ${isFlexible && flexComplete ? 'text-gray-500' : ''}
                 ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
                 ${isFlexible ? 'bg-sky-50' : !med.is_multiple ? 'bg-white' : ''}
-                ${!due ? 'bg-gray-200 text-gray-600' : ''}
+                ${(!due || paused) ? 'bg-gray-200 text-gray-600' : ''}
               `}
             >
               <div className="flex items-start gap-3">
@@ -300,6 +307,11 @@ export default function MedTable({
                     className={`font-semibold text-sm mb-1 ${!isFlexible && taken ? 'line-through' : ''}`}
                   >
                     {med.name}
+                    {paused && (
+                      <span className="ml-2 inline-block align-middle text-[11px] px-2 py-0.5 border border-gray-400 rounded-full text-gray-700 bg-gray-100">
+                        Paused
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-gray-600 mb-1">
                     {med.when_text}
