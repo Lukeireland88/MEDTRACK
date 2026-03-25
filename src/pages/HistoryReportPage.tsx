@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ClipboardList } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -33,6 +33,8 @@ export default function HistoryReportPage() {
   const [rows, setRows] = useState<UnifiedRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [medPickerOpen, setMedPickerOpen] = useState(false);
+  const medPickerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -44,6 +46,26 @@ export default function HistoryReportPage() {
       if (!e && data) setMedications(data);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!medPickerOpen) return;
+    const onPointerDown = (ev: PointerEvent) => {
+      const el = medPickerRef.current;
+      if (!el) return;
+      if (ev.target instanceof Node && !el.contains(ev.target)) {
+        setMedPickerOpen(false);
+      }
+    };
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') setMedPickerOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [medPickerOpen]);
 
   const loadReport = useCallback(async () => {
     setLoading(true);
@@ -165,6 +187,14 @@ export default function HistoryReportPage() {
     setDateTo(r.to);
   };
 
+  const medicationSummary = useMemo(() => {
+    if (medicationIds.length === 0) return 'All medications';
+    const byId = new Map(medications.map((m) => [m.id, m.name] as const));
+    const names = medicationIds.map((id) => byId.get(id) ?? 'Unknown');
+    if (names.length <= 2) return names.join(', ');
+    return `${names.slice(0, 2).join(', ')} +${names.length - 2} more`;
+  }, [medicationIds, medications]);
+
   const formatWhen = (iso: string) =>
     new Date(iso).toLocaleString(undefined, {
       month: 'short',
@@ -238,22 +268,74 @@ export default function HistoryReportPage() {
               <label htmlFor="hist-med" className="block text-xs font-semibold text-gray-600 mb-1">
                 Medication
               </label>
-              <select
-                id="hist-med"
-                multiple
-                value={medicationIds}
-                onChange={(e) => {
-                  const values = Array.from(e.target.selectedOptions).map((o) => o.value);
-                  setMedicationIds(values);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white min-h-[2.5rem]"
-              >
-                {medications.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative" ref={medPickerRef}>
+                <button
+                  id="hist-med"
+                  type="button"
+                  onClick={() => setMedPickerOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={medPickerOpen}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-left hover:bg-gray-50"
+                >
+                  <span className="block truncate text-gray-900">{medicationSummary}</span>
+                </button>
+                {medPickerOpen && (
+                  <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-300 bg-white shadow-lg">
+                    <div className="p-2 border-b border-gray-200 flex items-center justify-between gap-2">
+                      <div className="text-xs font-semibold text-gray-600">
+                        Select medication(s)
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setMedicationIds([])}
+                        className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <div className="max-h-64 overflow-auto p-2">
+                      {medications.length === 0 ? (
+                        <div className="p-2 text-sm text-gray-500">No medications found.</div>
+                      ) : (
+                        <ul role="listbox" aria-label="Medications" className="space-y-1">
+                          {medications.map((m) => {
+                            const checked = medicationIds.includes(m.id);
+                            return (
+                              <li key={m.id}>
+                                <label className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => {
+                                      setMedicationIds((prev) =>
+                                        prev.includes(m.id)
+                                          ? prev.filter((x) => x !== m.id)
+                                          : [...prev, m.id]
+                                      );
+                                    }}
+                                    className="w-4 h-4 accent-blue-600"
+                                  />
+                                  <span className="text-sm text-gray-900">{m.name}</span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                    <div className="p-2 border-t border-gray-200 flex items-center justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setMedPickerOpen(false)}
+                        className="px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -263,7 +345,9 @@ export default function HistoryReportPage() {
                   Clear medication filter
                 </button>
                 <span className="text-xs text-gray-500">
-                  Tip: hold Ctrl (Windows) / Cmd (Mac) to select multiple.
+                  {medicationIds.length === 0
+                    ? 'Reporting on all medications.'
+                    : `Selected ${medicationIds.length} medication${medicationIds.length !== 1 ? 's' : ''}.`}
                 </span>
               </div>
             </div>
