@@ -28,7 +28,7 @@ export default function HistoryReportPage() {
   const initial = useMemo(() => defaultRange(), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
-  const [medicationId, setMedicationId] = useState<string>('');
+  const [medicationIds, setMedicationIds] = useState<string[]>([]);
   const [medications, setMedications] = useState<{ id: string; name: string }[]>([]);
   const [rows, setRows] = useState<UnifiedRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,8 +68,8 @@ export default function HistoryReportPage() {
         .gte('dose_date', from)
         .lte('dose_date', to);
 
-      if (medicationId) {
-        logsQuery = logsQuery.eq('medication_id', medicationId);
+      if (medicationIds.length > 0) {
+        logsQuery = logsQuery.in('medication_id', medicationIds);
       }
 
       const { data: logs, error: logsError } = await logsQuery;
@@ -89,8 +89,8 @@ export default function HistoryReportPage() {
         .gte('dose_date', from)
         .lte('dose_date', to);
 
-      if (medicationId) {
-        dosesQuery = dosesQuery.eq('medication_id', medicationId);
+      if (medicationIds.length > 0) {
+        dosesQuery = dosesQuery.in('medication_id', medicationIds);
       }
 
       const { data: doses, error: dosesError } = await dosesQuery;
@@ -138,11 +138,26 @@ export default function HistoryReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo, medicationId]);
+  }, [dateFrom, dateTo, medicationIds]);
 
   useEffect(() => {
     loadReport();
   }, [loadReport]);
+
+  const setToday = () => {
+    const day = toLocalDateOnly(new Date());
+    const v = toDateInputValue(day);
+    setDateFrom(v);
+    setDateTo(v);
+  };
+
+  const setYesterday = () => {
+    const day = toLocalDateOnly(new Date());
+    day.setDate(day.getDate() - 1);
+    const v = toDateInputValue(day);
+    setDateFrom(v);
+    setDateTo(v);
+  };
 
   const setLast7Days = () => {
     const r = defaultRange();
@@ -225,18 +240,47 @@ export default function HistoryReportPage() {
               </label>
               <select
                 id="hist-med"
-                value={medicationId}
-                onChange={(e) => setMedicationId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white"
+                multiple
+                value={medicationIds}
+                onChange={(e) => {
+                  const values = Array.from(e.target.selectedOptions).map((o) => o.value);
+                  setMedicationIds(values);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white min-h-[2.5rem]"
               >
-                <option value="">All medications</option>
                 {medications.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
                   </option>
                 ))}
               </select>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMedicationIds([])}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Clear medication filter
+                </button>
+                <span className="text-xs text-gray-500">
+                  Tip: hold Ctrl (Windows) / Cmd (Mac) to select multiple.
+                </span>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={setToday}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 self-end"
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={setYesterday}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 self-end"
+            >
+              Yesterday
+            </button>
             <button
               type="button"
               onClick={setLast7Days}
@@ -255,7 +299,7 @@ export default function HistoryReportPage() {
           ) : rows.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               No history in this range
-              {medicationId ? ' for this medication' : ''}.
+              {medicationIds.length > 0 ? ' for the selected medication(s)' : ''}.
             </div>
           ) : (
             <>
