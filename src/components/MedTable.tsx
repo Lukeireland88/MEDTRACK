@@ -133,6 +133,11 @@ export default function MedTable({
                 target != null &&
                 flexCount >= target &&
                 due;
+              const tone = paused
+                ? 'bg-gray-200 text-gray-600 opacity-70'
+                : !due
+                  ? 'bg-gray-50 text-gray-500 opacity-80'
+                  : '';
 
               return (
                 <tr
@@ -142,7 +147,7 @@ export default function MedTable({
                     ${isFlexible && flexComplete ? 'text-gray-500' : ''}
                     ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
                     ${isFlexible ? 'bg-sky-50' : ''}
-                    ${(!due || paused) ? 'bg-gray-200 text-gray-600' : ''}
+                    ${tone}
                   `}
                 >
                   <td className="p-3 border-b border-gray-300 align-top">
@@ -266,6 +271,11 @@ export default function MedTable({
           const target = med.target_doses_per_day;
           const flexComplete =
             isFlexible && target != null && flexCount >= target && due;
+          const tone = paused
+            ? 'bg-gray-200 text-gray-600 opacity-70'
+            : !due
+              ? 'bg-gray-50 text-gray-500 opacity-80'
+              : '';
 
           return (
             <div
@@ -276,7 +286,7 @@ export default function MedTable({
                 ${isFlexible && flexComplete ? 'text-gray-500' : ''}
                 ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
                 ${isFlexible ? 'bg-sky-50' : !med.is_multiple ? 'bg-white' : ''}
-                ${(!due || paused) ? 'bg-gray-200 text-gray-600' : ''}
+                ${tone}
               `}
             >
               <div className="flex items-start gap-3">
