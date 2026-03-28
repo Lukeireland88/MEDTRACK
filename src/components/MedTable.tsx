@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, History } from 'lucide-react';
+import { Pencil, History, CircleOff } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -115,7 +115,7 @@ export default function MedTable({
               <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
                 Notes
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3 w-20">
+              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3 w-32">
                 Actions
               </th>
             </tr>
@@ -183,27 +183,13 @@ export default function MedTable({
                         </div>
                       )
                     ) : due ? (
-                      <div className="flex flex-col gap-1.5 items-start min-w-[6.5rem]">
-                        <input
-                          type="checkbox"
-                          checked={taken}
-                          onChange={() => onToggleTaken(med.id)}
-                          className="w-6 h-6 accent-blue-600 cursor-pointer"
-                          title={notTakenRecorded ? 'Mark as taken' : undefined}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => onOpenMarkNotTaken(med.id)}
-                          className="text-xs font-semibold text-amber-800 hover:text-amber-950 underline-offset-2 hover:underline"
-                        >
-                          {notTakenRecorded ? 'Update reason' : 'Not taken'}
-                        </button>
-                        {notTakenRecorded && slotDose?.notTakenReason && (
-                          <p className="text-[11px] text-amber-900 leading-snug max-w-[10rem]">
-                            {slotDose.notTakenReason}
-                          </p>
-                        )}
-                      </div>
+                      <input
+                        type="checkbox"
+                        checked={taken}
+                        onChange={() => onToggleTaken(med.id)}
+                        className="w-6 h-6 accent-blue-600 cursor-pointer"
+                        title={notTakenRecorded ? 'Mark as taken' : 'Mark as taken'}
+                      />
                     ) : (
                       <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
                         —
@@ -247,13 +233,40 @@ export default function MedTable({
                         Multiple: {med.time_slot_names.join(', ')}
                       </span>
                     )}
+                    {notTakenRecorded && slotDose?.notTakenReason && (
+                      <p className="block mt-1.5 text-xs text-amber-900 font-medium leading-snug max-w-md">
+                        Not taken: {slotDose.notTakenReason}
+                      </p>
+                    )}
                   </td>
                   <td className="p-3 border-b border-gray-300">{med.when_text}</td>
                   <td className="p-3 border-b border-gray-300 text-sm text-gray-600">
                     {med.notes || '—'}
                   </td>
                   <td className="p-3 border-b border-gray-300">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
+                      {due && !isFlexible && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenMarkNotTaken(med.id)}
+                          className={`
+                            p-2 rounded-lg transition-colors
+                            ${notTakenRecorded ? 'text-amber-800 bg-amber-100 hover:bg-amber-200' : 'text-amber-700 hover:bg-amber-50'}
+                          `}
+                          title={
+                            notTakenRecorded
+                              ? 'Update not-taken reason'
+                              : 'Record as not taken (with reason)'
+                          }
+                          aria-label={
+                            notTakenRecorded
+                              ? 'Update not-taken reason'
+                              : 'Record as not taken with reason'
+                          }
+                        >
+                          <CircleOff className="w-4 h-4" strokeWidth={2} />
+                        </button>
+                      )}
                       <button
                         onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
                         className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
@@ -341,22 +354,13 @@ export default function MedTable({
                     </div>
                   )
                 ) : due ? (
-                  <div className="flex flex-col gap-1 items-start flex-shrink-0 mt-0.5">
-                    <input
-                      type="checkbox"
-                      checked={taken}
-                      onChange={() => onToggleTaken(med.id)}
-                      className="w-6 h-6 accent-blue-600 cursor-pointer touch-manipulation"
-                      title={notTakenRecorded ? 'Mark as taken' : undefined}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => onOpenMarkNotTaken(med.id)}
-                      className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 underline-offset-2 hover:underline touch-manipulation max-w-[5.5rem] text-left leading-tight"
-                    >
-                      {notTakenRecorded ? 'Update reason' : 'Not taken'}
-                    </button>
-                  </div>
+                  <input
+                    type="checkbox"
+                    checked={taken}
+                    onChange={() => onToggleTaken(med.id)}
+                    className="w-6 h-6 mt-0.5 accent-blue-600 cursor-pointer flex-shrink-0 touch-manipulation"
+                    title="Mark as taken"
+                  />
                 ) : (
                   <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
                     —
@@ -421,6 +425,28 @@ export default function MedTable({
                   )}
                 </div>
                 <div className="flex items-center gap-0.5 flex-shrink-0">
+                  {due && !isFlexible && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenMarkNotTaken(med.id)}
+                      className={`
+                        p-2 rounded-lg transition-colors touch-manipulation
+                        ${notTakenRecorded ? 'text-amber-800 bg-amber-100 active:bg-amber-200' : 'text-amber-700 hover:bg-amber-50 active:bg-amber-100'}
+                      `}
+                      title={
+                        notTakenRecorded
+                          ? 'Update not-taken reason'
+                          : 'Record as not taken (with reason)'
+                      }
+                      aria-label={
+                        notTakenRecorded
+                          ? 'Update not-taken reason'
+                          : 'Record as not taken with reason'
+                      }
+                    >
+                      <CircleOff className="w-5 h-5" strokeWidth={2} />
+                    </button>
+                  )}
                   <button
                     onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
                     className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
@@ -449,7 +475,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. Amber: not taken (with reason). Use “Not taken” to record why.
+          Yellow: multiple time blocks. Blue: flexible doses. Amber row: not taken. Circle-off icon: record or update reason.
         </div>
       </div>
 
