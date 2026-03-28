@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pencil, History, CircleOff } from 'lucide-react';
+import { Pencil, History, CircleOff, X } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -16,6 +16,44 @@ interface MedTableProps {
   onRemoveLastFlexibleDose: (medId: string) => void;
   onEditMedication: (med: MedicationWithSlots) => void;
   onShowHistory: (medId: string, medName: string, dosingMode?: DosingMode) => void;
+}
+
+/** Checkbox for pending/taken; X-in-box when explicitly not taken (click marks taken). */
+function SlotTakenControl({
+  medId,
+  taken,
+  notTakenRecorded,
+  onToggleTaken,
+  className = '',
+}: {
+  medId: string;
+  taken: boolean;
+  notTakenRecorded: boolean;
+  onToggleTaken: (id: string) => void;
+  className?: string;
+}) {
+  if (notTakenRecorded) {
+    return (
+      <button
+        type="button"
+        onClick={() => onToggleTaken(medId)}
+        className={`w-6 h-6 shrink-0 rounded border-2 border-gray-500 bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${className}`}
+        title="Not taken — click to mark as taken"
+        aria-label="Not taken. Click to mark as taken."
+      >
+        <X className="w-4 h-4 text-gray-800" strokeWidth={2.5} aria-hidden />
+      </button>
+    );
+  }
+  return (
+    <input
+      type="checkbox"
+      checked={taken}
+      onChange={() => onToggleTaken(medId)}
+      className={`w-6 h-6 accent-blue-600 cursor-pointer ${className}`}
+      title="Mark as taken"
+    />
+  );
 }
 
 function flexibleRemaining(
@@ -141,9 +179,7 @@ export default function MedTable({
                 ? 'bg-gray-200 text-gray-600 opacity-70'
                 : !due
                   ? 'bg-gray-50 text-gray-500 opacity-80'
-                  : notTakenRecorded
-                    ? 'bg-amber-50/80 text-gray-800'
-                    : '';
+                  : '';
 
               return (
                 <tr
@@ -183,12 +219,11 @@ export default function MedTable({
                         </div>
                       )
                     ) : due ? (
-                      <input
-                        type="checkbox"
-                        checked={taken}
-                        onChange={() => onToggleTaken(med.id)}
-                        className="w-6 h-6 accent-blue-600 cursor-pointer"
-                        title={notTakenRecorded ? 'Mark as taken' : 'Mark as taken'}
+                      <SlotTakenControl
+                        medId={med.id}
+                        taken={taken}
+                        notTakenRecorded={notTakenRecorded}
+                        onToggleTaken={onToggleTaken}
                       />
                     ) : (
                       <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
@@ -234,7 +269,7 @@ export default function MedTable({
                       </span>
                     )}
                     {notTakenRecorded && slotDose?.notTakenReason && (
-                      <p className="block mt-1.5 text-xs text-amber-900 font-medium leading-snug max-w-md">
+                      <p className="block mt-1.5 text-xs text-gray-700 font-medium leading-snug max-w-md">
                         Not taken: {slotDose.notTakenReason}
                       </p>
                     )}
@@ -251,7 +286,7 @@ export default function MedTable({
                           onClick={() => onOpenMarkNotTaken(med.id)}
                           className={`
                             p-2 rounded-lg transition-colors
-                            ${notTakenRecorded ? 'text-amber-800 bg-amber-100 hover:bg-amber-200' : 'text-amber-700 hover:bg-amber-50'}
+                            ${notTakenRecorded ? 'text-gray-800 bg-gray-200 hover:bg-gray-300' : 'text-gray-600 hover:bg-gray-100'}
                           `}
                           title={
                             notTakenRecorded
@@ -311,9 +346,7 @@ export default function MedTable({
             ? 'bg-gray-200 text-gray-600 opacity-70'
             : !due
               ? 'bg-gray-50 text-gray-500 opacity-80'
-              : notTakenRecorded
-                ? 'bg-amber-50/80 text-gray-800'
-                : '';
+              : '';
 
           return (
             <div
@@ -354,12 +387,12 @@ export default function MedTable({
                     </div>
                   )
                 ) : due ? (
-                  <input
-                    type="checkbox"
-                    checked={taken}
-                    onChange={() => onToggleTaken(med.id)}
-                    className="w-6 h-6 mt-0.5 accent-blue-600 cursor-pointer flex-shrink-0 touch-manipulation"
-                    title="Mark as taken"
+                  <SlotTakenControl
+                    medId={med.id}
+                    taken={taken}
+                    notTakenRecorded={notTakenRecorded}
+                    onToggleTaken={onToggleTaken}
+                    className="mt-0.5 flex-shrink-0 touch-manipulation"
                   />
                 ) : (
                   <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
@@ -386,7 +419,7 @@ export default function MedTable({
                     {med.when_text}
                   </div>
                   {notTakenRecorded && slotDose?.notTakenReason && (
-                    <div className="text-xs text-amber-900 mb-1 font-medium">
+                    <div className="text-xs text-gray-700 mb-1 font-medium">
                       Not taken: {slotDose.notTakenReason}
                     </div>
                   )}
@@ -431,7 +464,7 @@ export default function MedTable({
                       onClick={() => onOpenMarkNotTaken(med.id)}
                       className={`
                         p-2 rounded-lg transition-colors touch-manipulation
-                        ${notTakenRecorded ? 'text-amber-800 bg-amber-100 active:bg-amber-200' : 'text-amber-700 hover:bg-amber-50 active:bg-amber-100'}
+                        ${notTakenRecorded ? 'text-gray-800 bg-gray-200 active:bg-gray-300' : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'}
                       `}
                       title={
                         notTakenRecorded
@@ -475,7 +508,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. Amber row: not taken. Circle-off icon: record or update reason.
+          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). Circle-off: reason.
         </div>
       </div>
 
