@@ -281,16 +281,24 @@ export default function TrackerPage() {
 
       if (upsertError) throw upsertError;
 
-      const { error: logError } = await supabase
-        .from('medication_logs')
-        .insert({
+      if (newTakenValue) {
+        const { error: logError } = await supabase.from('medication_logs').insert({
           medication_id: medId,
           time_slot_id: timeSlot.id,
           dose_date: dateString,
-          action: newTakenValue ? 'checked' : 'unchecked',
+          action: 'checked',
         });
-
-      if (logError) throw logError;
+        if (logError) throw logError;
+      } else {
+        const { error: logError } = await supabase
+          .from('medication_logs')
+          .delete()
+          .eq('medication_id', medId)
+          .eq('time_slot_id', timeSlot.id)
+          .eq('dose_date', dateString)
+          .eq('action', 'checked');
+        if (logError) throw logError;
+      }
 
       setTakenStatus((prev) => ({
         ...prev,
