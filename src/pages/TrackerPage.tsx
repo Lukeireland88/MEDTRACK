@@ -282,6 +282,14 @@ export default function TrackerPage() {
       if (upsertError) throw upsertError;
 
       if (newTakenValue) {
+        const { error: clearLogsError } = await supabase
+          .from('medication_logs')
+          .delete()
+          .eq('medication_id', medId)
+          .eq('time_slot_id', timeSlot.id)
+          .eq('dose_date', dateString);
+        if (clearLogsError) throw clearLogsError;
+
         const { error: logError } = await supabase.from('medication_logs').insert({
           medication_id: medId,
           time_slot_id: timeSlot.id,
