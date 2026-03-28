@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ClipboardList } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
 
@@ -63,6 +63,23 @@ function variantBadge(v: HistoryEventVariant): { label: string; className: strin
     case 'flexible_dose':
       return { label: 'Dose logged', className: 'bg-sky-100 text-sky-900 ring-1 ring-sky-200/80' };
   }
+}
+
+function csvQuote(value: string): string {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
+function downloadTextFile(filename: string, text: string, mime: string) {
+  const blob = new Blob([text], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function todayRange(): { from: string; to: string } {
@@ -278,6 +295,43 @@ export default function HistoryReportPage() {
     return rows.filter((r) => r.variant === eventFilter);
   }, [rows, eventFilter]);
 
+  const exportFilteredCsv = () => {
+    if (filteredRows.length === 0) return;
+
+    const from = dateFrom <= dateTo ? dateFrom : dateTo;
+    const to = dateFrom <= dateTo ? dateTo : dateFrom;
+    const filename = `medication-history_${from}_to_${to}.csv`;
+
+    const header = [
+      'Logged at (ISO)',
+      'Logged at',
+      'Dose date',
+      'Dose day',
+      'Medication',
+      'Status',
+      'Type',
+      'Detail',
+    ].map(csvQuote);
+
+    const dataLines = filteredRows.map((row) => {
+      const status = variantBadge(row.variant).label;
+      const type = row.kind === 'flexible' ? 'Flexible dose' : 'Time slot';
+      return [
+        csvQuote(row.at),
+        csvQuote(formatWhen(row.at)),
+        csvQuote(row.doseDate),
+        csvQuote(formatDoseDay(row.doseDate)),
+        csvQuote(row.medicationName),
+        csvQuote(status),
+        csvQuote(type),
+        csvQuote(row.detail),
+      ].join(',');
+    });
+
+    const csv = `\ufeff${[header.join(','), ...dataLines].join('\r\n')}`;
+    downloadTextFile(filename, csv, 'text/csv;charset=utf-8;');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
@@ -483,30 +537,41 @@ export default function HistoryReportPage() {
             </div>
           ) : (
             <>
-              <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-xs text-gray-600 flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span>
-                  {filteredRows.length} event{filteredRows.length !== 1 ? 's' : ''}
-                  {eventFilter !== 'all' && rows.length !== filteredRows.length
-                    ? ` (of ${rows.length})`
-                    : ''}
-                </span>
-                <span className="text-gray-400 hidden sm:inline" aria-hidden>
-                  |
-                </span>
-                <span className="text-gray-500">
-                  <span className="inline-flex items-center gap-1.5 mr-3">
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" aria-hidden />
-                    Taken
+              <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 min-w-0">
+                  <span>
+                    {filteredRows.length} event{filteredRows.length !== 1 ? 's' : ''}
+                    {eventFilter !== 'all' && rows.length !== filteredRows.length
+                      ? ` (of ${rows.length})`
+                      : ''}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 mr-3">
-                    <span className="inline-block w-2 h-2 rounded-full bg-rose-500" aria-hidden />
-                    Not taken
+                  <span className="text-gray-400 hidden sm:inline" aria-hidden>
+                    |
                   </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="inline-block w-2 h-2 rounded-full bg-sky-500" aria-hidden />
-                    Flexible
+                  <span className="text-gray-500">
+                    <span className="inline-flex items-center gap-1.5 mr-3">
+                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" aria-hidden />
+                      Taken
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 mr-3">
+                      <span className="inline-block w-2 h-2 rounded-full bg-rose-500" aria-hidden />
+                      Not taken
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block w-2 h-2 rounded-full bg-sky-500" aria-hidden />
+                      Flexible
+                    </span>
                   </span>
-                </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={exportFilteredCsv}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 shrink-0"
+                  title="Download visible rows as CSV (for your records or to share with a clinician)"
+                >
+                  <Download className="w-4 h-4 shrink-0" aria-hidden />
+                  Export CSV
+                </button>
               </div>
 
               {/* Mobile: stacked cards — no horizontal scroll */}
