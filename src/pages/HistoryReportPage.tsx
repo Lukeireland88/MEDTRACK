@@ -4,6 +4,10 @@ import { ArrowLeft, ClipboardList } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
 
+type HistoryEventVariant = 'slot_taken' | 'slot_not_taken' | 'flexible_dose';
+
+type EventFilter = 'all' | HistoryEventVariant;
+
 type UnifiedRow = {
   id: string;
   at: string;
@@ -12,7 +16,30 @@ type UnifiedRow = {
   medicationName: string;
   kind: 'slot' | 'flexible';
   detail: string;
+  variant: HistoryEventVariant;
 };
+
+function rowVariantClasses(v: HistoryEventVariant): string {
+  switch (v) {
+    case 'slot_taken':
+      return 'bg-emerald-50/90 border-l-4 border-l-emerald-500';
+    case 'slot_not_taken':
+      return 'bg-rose-50/90 border-l-4 border-l-rose-500';
+    case 'flexible_dose':
+      return 'bg-sky-50/90 border-l-4 border-l-sky-500';
+  }
+}
+
+function variantBadge(v: HistoryEventVariant): { label: string; className: string } {
+  switch (v) {
+    case 'slot_taken':
+      return { label: 'Taken', className: 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200/80' };
+    case 'slot_not_taken':
+      return { label: 'Not taken', className: 'bg-rose-100 text-rose-900 ring-1 ring-rose-200/80' };
+    case 'flexible_dose':
+      return { label: 'Dose logged', className: 'bg-sky-100 text-sky-900 ring-1 ring-sky-200/80' };
+  }
+}
 
 function todayRange(): { from: string; to: string } {
   const day = toLocalDateOnly(new Date());
@@ -38,6 +65,7 @@ export default function HistoryReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [medPickerOpen, setMedPickerOpen] = useState(false);
   const medPickerRef = useRef<HTMLDivElement | null>(null);
+  const [eventFilter, setEventFilter] = useState<EventFilter>('all');
 
   useEffect(() => {
     (async () => {
@@ -141,6 +169,7 @@ export default function HistoryReportPage() {
           medicationName: name,
           kind: 'slot',
           detail: `${slotName} · ${actionLabel}${reasonSuffix}`,
+          variant: log.action === 'checked' ? 'slot_taken' : 'slot_not_taken',
         });
       });
 
@@ -154,6 +183,7 @@ export default function HistoryReportPage() {
           medicationName: med?.name ?? 'Unknown',
           kind: 'flexible',
           detail: 'Dose logged',
+          variant: 'flexible_dose',
         });
       });
 
@@ -219,6 +249,11 @@ export default function HistoryReportPage() {
       year: 'numeric',
     });
 
+  const filteredRows = useMemo(() => {
+    if (eventFilter === 'all') return rows;
+    return rows.filter((r) => r.variant === eventFilter);
+  }, [rows, eventFilter]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
@@ -237,8 +272,8 @@ export default function HistoryReportPage() {
             </div>
           </div>
           <p className="text-sm text-gray-600 mt-2 max-w-2xl">
-            All time-slot check/uncheck events and flexible dose logs in one place. Adjust the range or filter by
-            medication.
+            Time-slot taken / not-taken events and flexible dose logs in one place. Filter by date, medication, and
+            event type.
           </p>
         </header>
 
@@ -357,6 +392,22 @@ export default function HistoryReportPage() {
                 </span>
               </div>
             </div>
+            <div className="w-full min-w-0 sm:min-w-[200px] sm:max-w-xs">
+              <label htmlFor="hist-event" className="block text-xs font-semibold text-gray-600 mb-1">
+                Event type
+              </label>
+              <select
+                id="hist-event"
+                value={eventFilter}
+                onChange={(e) => setEventFilter(e.target.value as EventFilter)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white"
+              >
+                <option value="all">All events</option>
+                <option value="slot_taken">Taken (time slot)</option>
+                <option value="slot_not_taken">Not taken (time slot)</option>
+                <option value="flexible_dose">Flexible dose</option>
+              </select>
+            </div>
             <div className="self-end overflow-x-auto max-w-full">
               <div className="flex gap-2 flex-nowrap">
                 <button
@@ -395,34 +446,75 @@ export default function HistoryReportPage() {
               No history in this range
               {medicationIds.length > 0 ? ' for the selected medication(s)' : ''}.
             </div>
+          ) : filteredRows.length === 0 ? (
+            <div className="p-8 text-center text-gray-500 space-y-2">
+              <p>No events match the selected event type filter.</p>
+              <button
+                type="button"
+                onClick={() => setEventFilter('all')}
+                className="text-sm font-semibold text-blue-700 hover:text-blue-900"
+              >
+                Show all events
+              </button>
+            </div>
           ) : (
             <>
-              <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-xs text-gray-600">
-                {rows.length} event{rows.length !== 1 ? 's' : ''}
+              <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 text-xs text-gray-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>
+                  {filteredRows.length} event{filteredRows.length !== 1 ? 's' : ''}
+                  {eventFilter !== 'all' && rows.length !== filteredRows.length
+                    ? ` (of ${rows.length})`
+                    : ''}
+                </span>
+                <span className="text-gray-400 hidden sm:inline" aria-hidden>
+                  |
+                </span>
+                <span className="text-gray-500">
+                  <span className="inline-flex items-center gap-1.5 mr-3">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" aria-hidden />
+                    Taken
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 mr-3">
+                    <span className="inline-block w-2 h-2 rounded-full bg-rose-500" aria-hidden />
+                    Not taken
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-sky-500" aria-hidden />
+                    Flexible
+                  </span>
+                </span>
               </div>
 
               {/* Mobile: stacked cards — no horizontal scroll */}
               <ul className="md:hidden divide-y divide-gray-100">
-                {rows.map((row) => (
-                  <li
-                    key={row.id}
-                    className={`px-4 py-3 text-sm ${
-                      row.kind === 'flexible' ? 'bg-sky-50/60' : ''
-                    }`}
-                  >
-                    <p className="font-semibold text-gray-900 break-words">{row.medicationName}</p>
-                    <p className="text-gray-600 mt-1">{formatWhen(row.at)}</p>
-                    <p className="text-gray-700 mt-2">
-                      <span className="text-gray-500">
-                        {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
-                      </span>
-                      <span className="mx-1.5 text-gray-300" aria-hidden>
-                        ·
-                      </span>
-                      <span>{row.detail}</span>
-                    </p>
-                  </li>
-                ))}
+                {filteredRows.map((row) => {
+                  const badge = variantBadge(row.variant);
+                  return (
+                    <li
+                      key={row.id}
+                      className={`pl-3 pr-4 py-3 text-sm ${rowVariantClasses(row.variant)}`}
+                    >
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span
+                          className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${badge.className}`}
+                        >
+                          {badge.label}
+                        </span>
+                      </div>
+                      <p className="font-semibold text-gray-900 break-words">{row.medicationName}</p>
+                      <p className="text-gray-600 mt-1">{formatWhen(row.at)}</p>
+                      <p className="text-gray-700 mt-2">
+                        <span className="text-gray-500">
+                          {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
+                        </span>
+                        <span className="mx-1.5 text-gray-300" aria-hidden>
+                          ·
+                        </span>
+                        <span>{row.detail}</span>
+                      </p>
+                    </li>
+                  );
+                })}
               </ul>
 
               {/* md+: table; dose day only on xl+ (redundant with When on smaller widths) */}
@@ -433,31 +525,40 @@ export default function HistoryReportPage() {
                       <th className="p-3 font-semibold">When</th>
                       <th className="hidden xl:table-cell p-3 font-semibold whitespace-nowrap">Dose day</th>
                       <th className="p-3 font-semibold">Medication</th>
+                      <th className="p-3 font-semibold">Status</th>
                       <th className="p-3 font-semibold">Type</th>
                       <th className="p-3 font-semibold">Detail</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className={`border-b border-gray-100 text-sm ${
-                          row.kind === 'flexible' ? 'bg-sky-50/60' : ''
-                        }`}
-                      >
-                        <td className="p-3 align-top text-gray-900">{formatWhen(row.at)}</td>
-                        <td className="hidden xl:table-cell p-3 align-top text-gray-700 whitespace-nowrap">
-                          {formatDoseDay(row.doseDate)}
-                        </td>
-                        <td className="p-3 align-top font-medium text-gray-900 break-words">
-                          {row.medicationName}
-                        </td>
-                        <td className="p-3 align-top text-gray-700">
-                          {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
-                        </td>
-                        <td className="p-3 align-top text-gray-700 break-words">{row.detail}</td>
-                      </tr>
-                    ))}
+                    {filteredRows.map((row) => {
+                      const badge = variantBadge(row.variant);
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`border-b border-gray-100 text-sm ${rowVariantClasses(row.variant)}`}
+                        >
+                          <td className="p-3 pl-4 align-top text-gray-900">{formatWhen(row.at)}</td>
+                          <td className="hidden xl:table-cell p-3 align-top text-gray-700 whitespace-nowrap">
+                            {formatDoseDay(row.doseDate)}
+                          </td>
+                          <td className="p-3 align-top font-medium text-gray-900 break-words">
+                            {row.medicationName}
+                          </td>
+                          <td className="p-3 align-top">
+                            <span
+                              className={`inline-block text-xs font-semibold px-2 py-1 rounded-full ${badge.className}`}
+                            >
+                              {badge.label}
+                            </span>
+                          </td>
+                          <td className="p-3 align-top text-gray-700">
+                            {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
+                          </td>
+                          <td className="p-3 align-top text-gray-700 break-words">{row.detail}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
