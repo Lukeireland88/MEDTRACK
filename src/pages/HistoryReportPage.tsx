@@ -19,14 +19,38 @@ type UnifiedRow = {
   variant: HistoryEventVariant;
 };
 
-function rowVariantClasses(v: HistoryEventVariant): string {
+function rowVariantBgClass(v: HistoryEventVariant): string {
   switch (v) {
     case 'slot_taken':
-      return 'bg-emerald-50/90 border-l-4 border-l-emerald-500';
+      return 'bg-emerald-50/90';
     case 'slot_not_taken':
-      return 'bg-rose-50/90 border-l-4 border-l-rose-500';
+      return 'bg-rose-50/90';
     case 'flexible_dose':
-      return 'bg-sky-50/90 border-l-4 border-l-sky-500';
+      return 'bg-sky-50/90';
+  }
+}
+
+/** Desktop table rows — left border works reliably on table rows. */
+function rowVariantTableClass(v: HistoryEventVariant): string {
+  switch (v) {
+    case 'slot_taken':
+      return `${rowVariantBgClass(v)} border-l-4 border-l-emerald-500`;
+    case 'slot_not_taken':
+      return `${rowVariantBgClass(v)} border-l-4 border-l-rose-500`;
+    case 'flexible_dose':
+      return `${rowVariantBgClass(v)} border-l-4 border-l-sky-500`;
+  }
+}
+
+/** Mobile: solid strip (avoids border-l bugs with divide-y / overflow). */
+function variantAccentBarClass(v: HistoryEventVariant): string {
+  switch (v) {
+    case 'slot_taken':
+      return 'bg-emerald-500';
+    case 'slot_not_taken':
+      return 'bg-rose-500';
+    case 'flexible_dose':
+      return 'bg-sky-500';
   }
 }
 
@@ -492,26 +516,32 @@ export default function HistoryReportPage() {
                   return (
                     <li
                       key={row.id}
-                      className={`pl-3 pr-4 py-3 text-sm ${rowVariantClasses(row.variant)}`}
+                      className={`flex min-h-0 text-sm ${rowVariantBgClass(row.variant)}`}
                     >
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span
-                          className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${badge.className}`}
-                        >
-                          {badge.label}
-                        </span>
+                      <div
+                        className={`w-1 shrink-0 self-stretch ${variantAccentBarClass(row.variant)}`}
+                        aria-hidden
+                      />
+                      <div className="flex-1 min-w-0 pr-4 py-3 pl-3">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span
+                            className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${badge.className}`}
+                          >
+                            {badge.label}
+                          </span>
+                        </div>
+                        <p className="font-semibold text-gray-900 break-words">{row.medicationName}</p>
+                        <p className="text-gray-600 mt-1">{formatWhen(row.at)}</p>
+                        <p className="text-gray-700 mt-2">
+                          <span className="text-gray-500">
+                            {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
+                          </span>
+                          <span className="mx-1.5 text-gray-300" aria-hidden>
+                            ·
+                          </span>
+                          <span>{row.detail}</span>
+                        </p>
                       </div>
-                      <p className="font-semibold text-gray-900 break-words">{row.medicationName}</p>
-                      <p className="text-gray-600 mt-1">{formatWhen(row.at)}</p>
-                      <p className="text-gray-700 mt-2">
-                        <span className="text-gray-500">
-                          {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
-                        </span>
-                        <span className="mx-1.5 text-gray-300" aria-hidden>
-                          ·
-                        </span>
-                        <span>{row.detail}</span>
-                      </p>
                     </li>
                   );
                 })}
@@ -536,7 +566,7 @@ export default function HistoryReportPage() {
                       return (
                         <tr
                           key={row.id}
-                          className={`border-b border-gray-100 text-sm ${rowVariantClasses(row.variant)}`}
+                          className={`border-b border-gray-100 text-sm ${rowVariantTableClass(row.variant)}`}
                         >
                           <td className="p-3 pl-4 align-top text-gray-900">{formatWhen(row.at)}</td>
                           <td className="hidden xl:table-cell p-3 align-top text-gray-700 whitespace-nowrap">
