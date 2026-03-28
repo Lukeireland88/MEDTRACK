@@ -51,6 +51,8 @@ export interface DoseTaken {
   dose_date: string;
   taken: boolean;
   taken_at: string;
+  /** Set when `taken` is false (explicit not taken) */
+  not_taken_reason?: string | null;
 }
 
 export interface MedicationLog {
@@ -60,4 +62,11 @@ export interface MedicationLog {
   dose_date: string;
   action: 'checked' | 'unchecked';
   logged_at: string;
+  reason?: string | null;
+}
+
+/** Per med for the active time slot + selected date (from `doses_taken`). */
+export interface SlotDoseState {
+  taken: boolean;
+  notTakenReason: string | null;
 }

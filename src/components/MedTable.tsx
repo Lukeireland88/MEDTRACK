@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pencil, History } from 'lucide-react';
-import { DosingMode, MedicationDoseEvent, MedicationWithSlots } from '../types';
+import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
 import { fromDateInputValue } from '../utils/dateUtils';
@@ -8,9 +8,10 @@ import { fromDateInputValue } from '../utils/dateUtils';
 interface MedTableProps {
   medications: MedicationWithSlots[];
   selectedDate: Date;
-  takenStatus: Record<string, boolean>;
+  slotDoseByMedId: Record<string, SlotDoseState>;
   flexibleDoseEvents: Record<string, Pick<MedicationDoseEvent, 'id' | 'taken_at'>[]>;
   onToggleTaken: (medId: string) => void;
+  onOpenMarkNotTaken: (medId: string) => void;
   onLogFlexibleDose: (medId: string, takenAtIso: string) => void | Promise<void>;
   onRemoveLastFlexibleDose: (medId: string) => void;
   onEditMedication: (med: MedicationWithSlots) => void;
@@ -32,9 +33,10 @@ function flexibleRemaining(
 export default function MedTable({
   medications,
   selectedDate,
-  takenStatus,
+  slotDoseByMedId,
   flexibleDoseEvents,
   onToggleTaken,
+  onOpenMarkNotTaken,
   onLogFlexibleDose,
   onRemoveLastFlexibleDose,
   onEditMedication,
@@ -53,7 +55,7 @@ export default function MedTable({
     if (med.dosing_mode === 'flexible_daily') {
       return acc + flexibleRemaining(med, selectedDate, flexibleDoseEvents[med.id]);
     }
-    if (isDue(med, selectedDate) && !takenStatus[med.id]) return acc + 1;
+    if (isDue(med, selectedDate) && slotDoseByMedId[med.id] === undefined) return acc + 1;
     return acc;
   }, 0);
 
@@ -123,7 +125,9 @@ export default function MedTable({
               const due = isDue(med, selectedDate);
               const paused = isPaused(med, selectedDate);
               const resumesOn = paused ? formatResumesOn(med) : null;
-              const taken = takenStatus[med.id] || false;
+              const slotDose = slotDoseByMedId[med.id];
+              const taken = slotDose?.taken === true;
+              const notTakenRecorded = slotDose !== undefined && slotDose.taken === false;
               const isFlexible = med.dosing_mode === 'flexible_daily';
               const flexEvents = flexibleDoseEvents[med.id] || [];
               const flexCount = flexEvents.length;
@@ -137,7 +141,9 @@ export default function MedTable({
                 ? 'bg-gray-200 text-gray-600 opacity-70'
                 : !due
                   ? 'bg-gray-50 text-gray-500 opacity-80'
-                  : '';
+                  : notTakenRecorded
+                    ? 'bg-amber-50/80 text-gray-800'
+                    : '';
 
               return (
                 <tr
@@ -177,12 +183,27 @@ export default function MedTable({
                         </div>
                       )
                     ) : due ? (
-                      <input
-                        type="checkbox"
-                        checked={taken}
-                        onChange={() => onToggleTaken(med.id)}
-                        className="w-6 h-6 accent-blue-600 cursor-pointer"
-                      />
+                      <div className="flex flex-col gap-1.5 items-start min-w-[6.5rem]">
+                        <input
+                          type="checkbox"
+                          checked={taken}
+                          onChange={() => onToggleTaken(med.id)}
+                          className="w-6 h-6 accent-blue-600 cursor-pointer"
+                          title={notTakenRecorded ? 'Mark as taken' : undefined}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => onOpenMarkNotTaken(med.id)}
+                          className="text-xs font-semibold text-amber-800 hover:text-amber-950 underline-offset-2 hover:underline"
+                        >
+                          {notTakenRecorded ? 'Update reason' : 'Not taken'}
+                        </button>
+                        {notTakenRecorded && slotDose?.notTakenReason && (
+                          <p className="text-[11px] text-amber-900 leading-snug max-w-[10rem]">
+                            {slotDose.notTakenReason}
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
                         —
@@ -264,7 +285,9 @@ export default function MedTable({
           const due = isDue(med, selectedDate);
           const paused = isPaused(med, selectedDate);
           const resumesOn = paused ? formatResumesOn(med) : null;
-          const taken = takenStatus[med.id] || false;
+          const slotDose = slotDoseByMedId[med.id];
+          const taken = slotDose?.taken === true;
+          const notTakenRecorded = slotDose !== undefined && slotDose.taken === false;
           const isFlexible = med.dosing_mode === 'flexible_daily';
           const flexEvents = flexibleDoseEvents[med.id] || [];
           const flexCount = flexEvents.length;
@@ -275,7 +298,9 @@ export default function MedTable({
             ? 'bg-gray-200 text-gray-600 opacity-70'
             : !due
               ? 'bg-gray-50 text-gray-500 opacity-80'
-              : '';
+              : notTakenRecorded
+                ? 'bg-amber-50/80 text-gray-800'
+                : '';
 
           return (
             <div
@@ -316,12 +341,22 @@ export default function MedTable({
                     </div>
                   )
                 ) : due ? (
-                  <input
-                    type="checkbox"
-                    checked={taken}
-                    onChange={() => onToggleTaken(med.id)}
-                    className="w-6 h-6 mt-0.5 accent-blue-600 cursor-pointer flex-shrink-0 touch-manipulation"
-                  />
+                  <div className="flex flex-col gap-1 items-start flex-shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={taken}
+                      onChange={() => onToggleTaken(med.id)}
+                      className="w-6 h-6 accent-blue-600 cursor-pointer touch-manipulation"
+                      title={notTakenRecorded ? 'Mark as taken' : undefined}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => onOpenMarkNotTaken(med.id)}
+                      className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 underline-offset-2 hover:underline touch-manipulation max-w-[5.5rem] text-left leading-tight"
+                    >
+                      {notTakenRecorded ? 'Update reason' : 'Not taken'}
+                    </button>
+                  </div>
                 ) : (
                   <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
                     —
@@ -346,6 +381,11 @@ export default function MedTable({
                   <div className="text-xs text-gray-600 mb-1">
                     {med.when_text}
                   </div>
+                  {notTakenRecorded && slotDose?.notTakenReason && (
+                    <div className="text-xs text-amber-900 mb-1 font-medium">
+                      Not taken: {slotDose.notTakenReason}
+                    </div>
+                  )}
                   {isFlexible && (
                     <div className="text-xs text-gray-800 mb-1">
                       {target != null ? (
@@ -409,7 +449,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses (log each time).
+          Yellow: multiple time blocks. Blue: flexible doses. Amber: not taken (with reason). Use “Not taken” to record why.
         </div>
       </div>
 

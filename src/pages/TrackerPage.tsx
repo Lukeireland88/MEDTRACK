@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, LogIn, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { DosingMode, MedicationDoseEvent, MedicationWithSlots } from '../types';
+import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { getDefaultTimeSlot, toLocalDateOnly } from '../utils/dateUtils';
 import { useAuth } from '../contexts/AuthContext';
 import DateNav from '../components/DateNav';
@@ -11,6 +11,7 @@ import Notices from '../components/Notices';
 import AddMedicationModal, { MedicationFormData } from '../components/AddMedicationModal';
 import MedicationHistoryModal from '../components/MedicationHistoryModal';
 import AuthModal from '../components/AuthModal';
+import MarkNotTakenModal from '../components/MarkNotTakenModal';
 
 export default function TrackerPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -18,7 +19,8 @@ export default function TrackerPage() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>('');
   const [medications, setMedications] = useState<MedicationWithSlots[]>([]);
-  const [takenStatus, setTakenStatus] = useState<Record<string, boolean>>({});
+  const [slotDoseByMedId, setSlotDoseByMedId] = useState<Record<string, SlotDoseState>>({});
+  const [markNotTakenMedId, setMarkNotTakenMedId] = useState<string | null>(null);
   const [flexibleDoseEvents, setFlexibleDoseEvents] = useState<
     Record<string, Pick<MedicationDoseEvent, 'id' | 'taken_at'>[]>
   >({});
@@ -85,7 +87,7 @@ export default function TrackerPage() {
         .maybeSingle();
 
       if (!timeSlot) {
-        setTakenStatus({});
+        setSlotDoseByMedId({});
         return;
       }
 
@@ -93,16 +95,19 @@ export default function TrackerPage() {
 
       const { data: dosesTaken } = await supabase
         .from('doses_taken')
-        .select('medication_id, taken')
+        .select('medication_id, taken, not_taken_reason')
         .eq('time_slot_id', timeSlot.id)
         .eq('dose_date', dateString);
 
-      const statusMap: Record<string, boolean> = {};
-      dosesTaken?.forEach((dose) => {
-        statusMap[dose.medication_id] = dose.taken;
+      const statusMap: Record<string, SlotDoseState> = {};
+      dosesTaken?.forEach((dose: { medication_id: string; taken: boolean; not_taken_reason: string | null }) => {
+        statusMap[dose.medication_id] = {
+          taken: dose.taken,
+          notTakenReason: dose.not_taken_reason ?? null,
+        };
       });
 
-      setTakenStatus(statusMap);
+      setSlotDoseByMedId(statusMap);
     } catch (error) {
       console.error('Error loading taken status:', error);
     }
@@ -262,26 +267,28 @@ export default function TrackerPage() {
       if (!timeSlot) return;
 
       const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
-      const newTakenValue = !takenStatus[medId];
-
-      const { error: upsertError } = await supabase
-        .from('doses_taken')
-        .upsert(
-          {
-            medication_id: medId,
-            time_slot_id: timeSlot.id,
-            dose_date: dateString,
-            taken: newTakenValue,
-            taken_at: new Date().toISOString(),
-          },
-          {
-            onConflict: 'medication_id,time_slot_id,dose_date',
-          }
-        );
-
-      if (upsertError) throw upsertError;
+      const row = slotDoseByMedId[medId];
+      const currentlyTaken = row?.taken === true;
+      const newTakenValue = !currentlyTaken;
 
       if (newTakenValue) {
+        const { error: upsertError } = await supabase
+          .from('doses_taken')
+          .upsert(
+            {
+              medication_id: medId,
+              time_slot_id: timeSlot.id,
+              dose_date: dateString,
+              taken: true,
+              not_taken_reason: null,
+              taken_at: new Date().toISOString(),
+            },
+            {
+              onConflict: 'medication_id,time_slot_id,dose_date',
+            }
+          );
+        if (upsertError) throw upsertError;
+
         const { error: clearLogsError } = await supabase
           .from('medication_logs')
           .delete()
@@ -297,24 +304,94 @@ export default function TrackerPage() {
           action: 'checked',
         });
         if (logError) throw logError;
+
+        setSlotDoseByMedId((prev) => ({
+          ...prev,
+          [medId]: { taken: true, notTakenReason: null },
+        }));
       } else {
-        const { error: logError } = await supabase
+        const { error: delDoseError } = await supabase
+          .from('doses_taken')
+          .delete()
+          .eq('medication_id', medId)
+          .eq('time_slot_id', timeSlot.id)
+          .eq('dose_date', dateString);
+        if (delDoseError) throw delDoseError;
+
+        const { error: clearLogsError } = await supabase
           .from('medication_logs')
           .delete()
           .eq('medication_id', medId)
           .eq('time_slot_id', timeSlot.id)
-          .eq('dose_date', dateString)
-          .eq('action', 'checked');
-        if (logError) throw logError;
-      }
+          .eq('dose_date', dateString);
+        if (clearLogsError) throw clearLogsError;
 
-      setTakenStatus((prev) => ({
-        ...prev,
-        [medId]: newTakenValue
-      }));
+        setSlotDoseByMedId((prev) => {
+          const next = { ...prev };
+          delete next[medId];
+          return next;
+        });
+      }
     } catch (error) {
       console.error('Error toggling taken status:', error);
       alert('Failed to update status. Please try again.');
+    }
+  };
+
+  const handleMarkNotTaken = async (medId: string, reason: string) => {
+    try {
+      const { data: timeSlot } = await supabase
+        .from('time_slots')
+        .select('id')
+        .eq('name', selectedTimeSlot)
+        .maybeSingle();
+
+      if (!timeSlot) return;
+
+      const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+
+      const { error: upsertError } = await supabase
+        .from('doses_taken')
+        .upsert(
+          {
+            medication_id: medId,
+            time_slot_id: timeSlot.id,
+            dose_date: dateString,
+            taken: false,
+            not_taken_reason: reason,
+            taken_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'medication_id,time_slot_id,dose_date',
+          }
+        );
+      if (upsertError) throw upsertError;
+
+      const { error: clearLogsError } = await supabase
+        .from('medication_logs')
+        .delete()
+        .eq('medication_id', medId)
+        .eq('time_slot_id', timeSlot.id)
+        .eq('dose_date', dateString);
+      if (clearLogsError) throw clearLogsError;
+
+      const { error: logError } = await supabase.from('medication_logs').insert({
+        medication_id: medId,
+        time_slot_id: timeSlot.id,
+        dose_date: dateString,
+        action: 'unchecked',
+        reason,
+      });
+      if (logError) throw logError;
+
+      setSlotDoseByMedId((prev) => ({
+        ...prev,
+        [medId]: { taken: false, notTakenReason: reason },
+      }));
+    } catch (error) {
+      console.error('Error marking not taken:', error);
+      alert('Failed to save. Please try again.');
+      throw error;
     }
   };
 
@@ -612,9 +689,10 @@ export default function TrackerPage() {
           <MedTable
             medications={medications}
             selectedDate={selectedDate}
-            takenStatus={takenStatus}
+            slotDoseByMedId={slotDoseByMedId}
             flexibleDoseEvents={flexibleDoseEvents}
             onToggleTaken={handleToggleTaken}
+            onOpenMarkNotTaken={setMarkNotTakenMedId}
             onLogFlexibleDose={handleLogFlexibleDose}
             onRemoveLastFlexibleDose={handleRemoveLastFlexibleDose}
             onEditMedication={handleEditMedication}
@@ -648,6 +726,20 @@ export default function TrackerPage() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+      />
+
+      <MarkNotTakenModal
+        isOpen={markNotTakenMedId !== null}
+        medicationName={
+          markNotTakenMedId
+            ? medications.find((m) => m.id === markNotTakenMedId)?.name ?? 'Medication'
+            : ''
+        }
+        onClose={() => setMarkNotTakenMedId(null)}
+        onConfirm={async (reason) => {
+          if (!markNotTakenMedId) return;
+          await handleMarkNotTaken(markNotTakenMedId, reason);
+        }}
       />
     </div>
   );

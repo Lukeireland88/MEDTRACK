@@ -85,6 +85,7 @@ export default function HistoryReportPage() {
           logged_at,
           dose_date,
           action,
+          reason,
           medication_id,
           medications!inner(name),
           time_slots!inner(name)
@@ -130,6 +131,8 @@ export default function HistoryReportPage() {
         const slotName = slot?.name ?? '—';
         const actionLabel =
           log.action === 'checked' ? 'Marked taken' : 'Marked not taken';
+        const reasonSuffix =
+          log.action === 'unchecked' && log.reason ? ` · ${log.reason}` : '';
         unified.push({
           id: `log-${log.id}`,
           at: log.logged_at,
@@ -137,7 +140,7 @@ export default function HistoryReportPage() {
           medicationId: log.medication_id,
           medicationName: name,
           kind: 'slot',
-          detail: `${slotName} · ${actionLabel}`,
+          detail: `${slotName} · ${actionLabel}${reasonSuffix}`,
         });
       });
 

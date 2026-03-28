@@ -166,6 +166,9 @@ export default function MedicationHistoryModal({
                     <p className="text-sm text-gray-600 mt-1">
                       {formatDateTime(log.logged_at)}
                     </p>
+                    {log.action === 'unchecked' && log.reason && (
+                      <p className="text-sm text-amber-900 mt-2 font-medium">Reason: {log.reason}</p>
+                    )}
                   </div>
                 </div>
               ))}
