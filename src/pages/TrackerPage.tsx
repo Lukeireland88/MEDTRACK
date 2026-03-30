@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, LogIn, LogOut } from 'lucide-react';
+import { Plus, LogIn, LogOut, Activity } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { getDefaultTimeSlot, toLocalDateOnly } from '../utils/dateUtils';
@@ -12,6 +12,7 @@ import AddMedicationModal, { MedicationFormData } from '../components/AddMedicat
 import MedicationHistoryModal from '../components/MedicationHistoryModal';
 import AuthModal from '../components/AuthModal';
 import MarkNotTakenModal from '../components/MarkNotTakenModal';
+import LogSeizureModal from '../components/LogSeizureModal';
 
 export default function TrackerPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -33,6 +34,7 @@ export default function TrackerPage() {
   const [historyMedicationName, setHistoryMedicationName] = useState<string>('');
   const [historyDosingMode, setHistoryDosingMode] = useState<DosingMode>('time_slots');
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(['Morning', 'Lunch', 'Evening', 'Night']);
+  const [logSeizureOpen, setLogSeizureOpen] = useState(false);
 
   useEffect(() => {
     loadMedications();
@@ -395,6 +397,23 @@ export default function TrackerPage() {
     }
   };
 
+  const handleLogSeizure = async (payload: { occurredAtIso: string; eventDate: string; durationSeconds: number; notes: string | null }) => {
+    try {
+      const { error } = await supabase.from('symptom_events').insert({
+        event_type: 'seizure',
+        occurred_at: payload.occurredAtIso,
+        event_date: payload.eventDate,
+        duration_seconds: payload.durationSeconds,
+        notes: payload.notes,
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error logging seizure:', error);
+      alert('Failed to save seizure log. Please try again.');
+      throw error;
+    }
+  };
+
   const handleLogFlexibleDose = async (medId: string, takenAtIso: string) => {
     const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
     try {
@@ -646,6 +665,15 @@ export default function TrackerPage() {
               {user ? (
                 <>
                   <button
+                    onClick={() => setLogSeizureOpen(true)}
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                    title="Log a seizure"
+                  >
+                    <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Log seizure</span>
+                    <span className="sm:hidden">Seizure</span>
+                  </button>
+                  <button
                     onClick={handleAddMedication}
                     className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap"
                   >
@@ -740,6 +768,13 @@ export default function TrackerPage() {
           if (!markNotTakenMedId) return;
           await handleMarkNotTaken(markNotTakenMedId, reason);
         }}
+      />
+
+      <LogSeizureModal
+        isOpen={logSeizureOpen}
+        selectedDate={selectedDate}
+        onClose={() => setLogSeizureOpen(false)}
+        onConfirm={handleLogSeizure}
       />
     </div>
   );

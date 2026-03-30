@@ -70,3 +70,14 @@ export interface SlotDoseState {
   taken: boolean;
   notTakenReason: string | null;
 }
+
+export type SymptomEventType = 'seizure';
+
+export interface SymptomEvent {
+  id: string;
+  event_type: SymptomEventType;
+  occurred_at: string;
+  event_date: string;
+  duration_seconds: number;
+  notes: string | null;
+}

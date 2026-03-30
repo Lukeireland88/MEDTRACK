@@ -4,7 +4,7 @@ import { ArrowLeft, ClipboardList, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
 
-type HistoryEventVariant = 'slot_taken' | 'slot_not_taken' | 'flexible_dose';
+type HistoryEventVariant = 'slot_taken' | 'slot_not_taken' | 'flexible_dose' | 'seizure';
 
 type EventFilter = 'all' | HistoryEventVariant;
 
@@ -14,7 +14,7 @@ type UnifiedRow = {
   doseDate: string;
   medicationId: string;
   medicationName: string;
-  kind: 'slot' | 'flexible';
+  kind: 'slot' | 'flexible' | 'symptom';
   detail: string;
   variant: HistoryEventVariant;
 };
@@ -27,6 +27,8 @@ function rowVariantBgClass(v: HistoryEventVariant): string {
       return 'bg-rose-50/90';
     case 'flexible_dose':
       return 'bg-sky-50/90';
+    case 'seizure':
+      return 'bg-purple-50/90';
   }
 }
 
@@ -39,6 +41,8 @@ function rowVariantTableClass(v: HistoryEventVariant): string {
       return `${rowVariantBgClass(v)} border-l-4 border-l-rose-500`;
     case 'flexible_dose':
       return `${rowVariantBgClass(v)} border-l-4 border-l-sky-500`;
+    case 'seizure':
+      return `${rowVariantBgClass(v)} border-l-4 border-l-purple-500`;
   }
 }
 
@@ -51,6 +55,8 @@ function variantAccentBarClass(v: HistoryEventVariant): string {
       return 'bg-rose-500';
     case 'flexible_dose':
       return 'bg-sky-500';
+    case 'seizure':
+      return 'bg-purple-500';
   }
 }
 
@@ -62,6 +68,8 @@ function variantBadge(v: HistoryEventVariant): { label: string; className: strin
       return { label: 'Not taken', className: 'bg-rose-100 text-rose-900 ring-1 ring-rose-200/80' };
     case 'flexible_dose':
       return { label: 'Dose logged', className: 'bg-sky-100 text-sky-900 ring-1 ring-sky-200/80' };
+    case 'seizure':
+      return { label: 'Seizure', className: 'bg-purple-100 text-purple-900 ring-1 ring-purple-200/80' };
   }
 }
 
@@ -191,6 +199,14 @@ export default function HistoryReportPage() {
       const { data: doses, error: dosesError } = await dosesQuery;
       if (dosesError) throw dosesError;
 
+      const { data: symptoms, error: symptomsError } = await supabase
+        .from('symptom_events')
+        .select('id, occurred_at, event_date, duration_seconds, notes, event_type')
+        .gte('event_date', from)
+        .lte('event_date', to)
+        .order('occurred_at', { ascending: false });
+      if (symptomsError) throw symptomsError;
+
       const unified: UnifiedRow[] = [];
 
       (logs as any[])?.forEach((log) => {
@@ -225,6 +241,25 @@ export default function HistoryReportPage() {
           kind: 'flexible',
           detail: 'Dose logged',
           variant: 'flexible_dose',
+        });
+      });
+
+      (symptoms as any[])?.forEach((s) => {
+        if (s.event_type !== 'seizure') return;
+        const dur = Number(s.duration_seconds) || 0;
+        const mins = Math.floor(dur / 60);
+        const secs = dur % 60;
+        const durationLabel = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        const notes = (s.notes as string | null) ?? null;
+        unified.push({
+          id: `sym-${s.id}`,
+          at: s.occurred_at,
+          doseDate: s.event_date,
+          medicationId: '',
+          medicationName: 'Seizure',
+          kind: 'symptom',
+          detail: `Duration: ${durationLabel}${notes ? ` · ${notes}` : ''}`,
+          variant: 'seizure',
         });
       });
 
@@ -315,7 +350,12 @@ export default function HistoryReportPage() {
 
     const dataLines = filteredRows.map((row) => {
       const status = variantBadge(row.variant).label;
-      const type = row.kind === 'flexible' ? 'Flexible dose' : 'Time slot';
+      const type =
+        row.kind === 'flexible'
+          ? 'Flexible dose'
+          : row.kind === 'symptom'
+            ? 'Symptom'
+            : 'Time slot';
       return [
         csvQuote(row.at),
         csvQuote(formatWhen(row.at)),
@@ -484,6 +524,7 @@ export default function HistoryReportPage() {
                 <option value="slot_taken">Taken (time slot)</option>
                 <option value="slot_not_taken">Not taken (time slot)</option>
                 <option value="flexible_dose">Flexible dose</option>
+                <option value="seizure">Seizure</option>
               </select>
             </div>
             <div className="self-end overflow-x-auto max-w-full">
@@ -560,6 +601,10 @@ export default function HistoryReportPage() {
                     <span className="inline-flex items-center gap-1.5">
                       <span className="inline-block w-2 h-2 rounded-full bg-sky-500" aria-hidden />
                       Flexible
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 ml-3">
+                      <span className="inline-block w-2 h-2 rounded-full bg-purple-500" aria-hidden />
+                      Seizure
                     </span>
                   </span>
                 </div>
