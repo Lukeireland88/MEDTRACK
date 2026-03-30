@@ -1,4 +1,4 @@
-import { toLocalDateOnly } from './dateUtils';
+import { toLocalDateKey, toLocalDateOnly } from './dateUtils';
 
 export interface Medication {
   id: string;
@@ -20,7 +20,7 @@ export function isPaused(med: Pick<Medication, 'pause_start_date' | 'pause_end_d
   const end = med.pause_end_date ?? null;
   if (!start && !end) return false;
 
-  const localDate = toLocalDateOnly(date).toISOString().split('T')[0];
+  const localDate = toLocalDateKey(date);
   const startDay = (start ?? '0000-01-01');
   const endDay = (end ?? '9999-12-31');
   return localDate >= startDay && localDate <= endDay;

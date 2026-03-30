@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Plus, LogIn, LogOut, Activity } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
-import { getDefaultTimeSlot, toLocalDateOnly } from '../utils/dateUtils';
+import { getDefaultTimeSlot, toLocalDateKey, toLocalDateOnly } from '../utils/dateUtils';
 import { useAuth } from '../contexts/AuthContext';
 import DateNav from '../components/DateNav';
 import TimeSlotPicker from '../components/TimeSlotPicker';
@@ -93,7 +93,7 @@ export default function TrackerPage() {
         return;
       }
 
-      const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+      const dateString = toLocalDateKey(selectedDate);
 
       const { data: dosesTaken } = await supabase
         .from('doses_taken')
@@ -163,7 +163,7 @@ export default function TrackerPage() {
         }
       });
 
-      const viewingDate = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+      const viewingDate = toLocalDateKey(selectedDate);
       const sortOrder = ['Morning', 'Lunch', 'Evening', 'Night'];
 
       // Create medication objects with time slots
@@ -268,7 +268,7 @@ export default function TrackerPage() {
 
       if (!timeSlot) return;
 
-      const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+      const dateString = toLocalDateKey(selectedDate);
       const row = slotDoseByMedId[medId];
       const currentlyTaken = row?.taken === true;
       const newTakenValue = !currentlyTaken;
@@ -350,7 +350,7 @@ export default function TrackerPage() {
 
       if (!timeSlot) return;
 
-      const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+      const dateString = toLocalDateKey(selectedDate);
 
       const { error: upsertError } = await supabase
         .from('doses_taken')
@@ -415,7 +415,7 @@ export default function TrackerPage() {
   };
 
   const handleLogFlexibleDose = async (medId: string, takenAtIso: string) => {
-    const dateString = toLocalDateOnly(selectedDate).toISOString().split('T')[0];
+    const dateString = toLocalDateKey(selectedDate);
     try {
       const { data: row, error } = await supabase
         .from('medication_dose_events')
@@ -475,7 +475,7 @@ export default function TrackerPage() {
           ? Number(formData.targetDosesPerDay)
           : null;
 
-      const todayLocal = toLocalDateOnly(new Date()).toISOString().split('T')[0];
+      const todayLocal = toLocalDateKey(new Date());
       const pauseStartRaw = formData.pauseStartDate || '';
       const pauseEndRaw = formData.pauseEndDate || '';
       const pauseStart =
@@ -748,7 +748,7 @@ export default function TrackerPage() {
         dosingMode={historyDosingMode}
         timeSlotId={selectedTimeSlotId}
         timeSlotName={selectedTimeSlot}
-        doseDate={toLocalDateOnly(selectedDate).toISOString().split('T')[0]}
+        doseDate={toLocalDateKey(selectedDate)}
       />
 
       <AuthModal

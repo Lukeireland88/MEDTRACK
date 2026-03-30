@@ -9,6 +9,11 @@ export function toDateInputValue(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Local calendar day as `YYYY-MM-DD` (never UTC-shifted). */
+export function toLocalDateKey(date: Date): string {
+  return toDateInputValue(toLocalDateOnly(date));
+}
+
 export function fromDateInputValue(value: string): Date {
   const [y, m, d] = value.split('-').map(Number);
   return new Date(y, (m || 1) - 1, d || 1);
