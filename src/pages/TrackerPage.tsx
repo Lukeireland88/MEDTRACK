@@ -415,7 +415,9 @@ export default function TrackerPage() {
   };
 
   const handleLogFlexibleDose = async (medId: string, takenAtIso: string) => {
-    const dateString = toLocalDateKey(selectedDate);
+    // Use the actual taken timestamp to determine the local dose day.
+    // This prevents a dose taken just after midnight from being stored under the previous selected day.
+    const dateString = toLocalDateKey(new Date(takenAtIso));
     try {
       const { data: row, error } = await supabase
         .from('medication_dose_events')
