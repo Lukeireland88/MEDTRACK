@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Plus, LogIn, LogOut, Activity } from 'lucide-react';
+import {
+  Plus,
+  LogIn,
+  LogOut,
+  Activity,
+  RotateCcw,
+  ChevronDown,
+  ChevronRight,
+  Pencil,
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { getDefaultTimeSlot, toLocalDateKey, toLocalDateOnly } from '../utils/dateUtils';
@@ -35,6 +44,9 @@ export default function TrackerPage() {
   const [historyDosingMode, setHistoryDosingMode] = useState<DosingMode>('time_slots');
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(['Morning', 'Lunch', 'Evening', 'Night']);
   const [logSeizureOpen, setLogSeizureOpen] = useState(false);
+  const [endedResumableMedications, setEndedResumableMedications] = useState<MedicationWithSlots[]>([]);
+  const [endedCoursesOpen, setEndedCoursesOpen] = useState(true);
+  const [restartingMedId, setRestartingMedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadMedications();
@@ -115,8 +127,8 @@ export default function TrackerPage() {
     }
   };
 
-  const loadMedications = async () => {
-    setLoading(true);
+  const loadMedications = async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
     try {
       // Load ALL active medications
       const { data: allMeds, error: medsError } = await supabase
@@ -128,7 +140,8 @@ export default function TrackerPage() {
         console.error('Error loading medications:', medsError);
         setMedications([]);
         setFlexibleDoseEvents({});
-        setLoading(false);
+        setEndedResumableMedications([]);
+        if (!opts?.silent) setLoading(false);
         return;
       }
 
@@ -136,7 +149,8 @@ export default function TrackerPage() {
         setMedications([]);
         setAvailableTimeSlots([]);
         setFlexibleDoseEvents({});
-        setLoading(false);
+        setEndedResumableMedications([]);
+        if (!opts?.silent) setLoading(false);
         return;
       }
 
@@ -166,24 +180,35 @@ export default function TrackerPage() {
       const viewingDate = toLocalDateKey(selectedDate);
       const sortOrder = ['Morning', 'Lunch', 'Evening', 'Night'];
 
-      // Create medication objects with time slots
-      const allMedsWithSlots: MedicationWithSlots[] = allMeds
-        .map((med: any) => {
-          const timeSlotNames = slotsByMed[med.id] || [];
-          timeSlotNames.sort((a, b) => sortOrder.indexOf(a) - sortOrder.indexOf(b));
+      // Create medication objects with time slots (before hiding ended / future-start)
+      const mappedWithSlots: MedicationWithSlots[] = allMeds.map((med: any) => {
+        const timeSlotNames = slotsByMed[med.id] || [];
+        timeSlotNames.sort((a, b) => sortOrder.indexOf(a) - sortOrder.indexOf(b));
 
-          const dosingMode = (med.dosing_mode as MedicationWithSlots['dosing_mode']) ?? 'time_slots';
-          const targetDoses =
-            med.target_doses_per_day != null ? Number(med.target_doses_per_day) : null;
+        const dosingMode = (med.dosing_mode as MedicationWithSlots['dosing_mode']) ?? 'time_slots';
+        const targetDoses =
+          med.target_doses_per_day != null ? Number(med.target_doses_per_day) : null;
 
-          return {
-            ...med,
-            dosing_mode: dosingMode,
-            target_doses_per_day: targetDoses,
-            time_slot_names: timeSlotNames,
-            is_multiple: dosingMode === 'time_slots' && timeSlotNames.length > 1,
-          };
-        })
+        return {
+          ...med,
+          dosing_mode: dosingMode,
+          target_doses_per_day: targetDoses,
+          time_slot_names: timeSlotNames,
+          is_multiple: dosingMode === 'time_slots' && timeSlotNames.length > 1,
+        };
+      });
+
+      const endedResumable = mappedWithSlots
+        .filter(
+          (med) =>
+            med.end_date != null &&
+            med.end_date !== '' &&
+            med.end_date < viewingDate
+        )
+        .sort((a, b) => a.name.localeCompare(b.name));
+      setEndedResumableMedications(endedResumable);
+
+      const allMedsWithSlots: MedicationWithSlots[] = mappedWithSlots
         .filter((med: any) => {
           if (med.start_date && med.start_date > viewingDate) return false;
           if (med.end_date && med.end_date < viewingDate) return false;
@@ -254,7 +279,7 @@ export default function TrackerPage() {
     } catch (error) {
       console.error('Error loading medications:', error);
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   };
 
@@ -585,6 +610,30 @@ export default function TrackerPage() {
     }
   };
 
+  const handleRestartMedication = async (med: MedicationWithSlots) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    setRestartingMedId(med.id);
+    try {
+      const { error } = await supabase
+        .from('medications')
+        .update({ end_date: null })
+        .eq('id', med.id);
+
+      if (error) throw error;
+
+      await loadAvailableTimeSlots();
+      await loadMedications({ silent: true });
+    } catch (error) {
+      console.error('Error restarting medication:', error);
+      alert('Failed to restart medication. Please try again.');
+    } finally {
+      setRestartingMedId(null);
+    }
+  };
+
   const handleEditMedication = (med: MedicationWithSlots) => {
     if (!user) {
       setAuthModalOpen(true);
@@ -704,6 +753,64 @@ export default function TrackerPage() {
           </div>
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
+
+        {user && endedResumableMedications.length > 0 && (
+          <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-3 py-2.5 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setEndedCoursesOpen((o) => !o)}
+              className="flex w-full items-center justify-between gap-2 text-left font-semibold text-amber-950"
+            >
+              <span>
+                Ended courses ({endedResumableMedications.length})
+                <span className="ml-1.5 font-normal text-amber-800/90 text-sm">
+                  — restart rescue meds or past antibiotic courses
+                </span>
+              </span>
+              {endedCoursesOpen ? (
+                <ChevronDown className="h-5 w-5 shrink-0 text-amber-900" />
+              ) : (
+                <ChevronRight className="h-5 w-5 shrink-0 text-amber-900" />
+              )}
+            </button>
+            {endedCoursesOpen && (
+              <ul className="mt-3 space-y-2 border-t border-amber-200/80 pt-3">
+                {endedResumableMedications.map((med) => (
+                  <li
+                    key={med.id}
+                    className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 text-sm text-gray-800">
+                      <span className="font-medium">{med.name}</span>
+                      {med.end_date ? (
+                        <span className="text-gray-500"> · ended {med.end_date}</span>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={restartingMedId === med.id}
+                        onClick={() => handleRestartMedication(med)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        {restartingMedId === med.id ? 'Restarting…' : 'Restart'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleEditMedication(med)}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-800 hover:bg-gray-50"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <section className="bg-white border border-gray-300 rounded-2xl shadow-lg">
           <TimeSlotPicker
