@@ -551,6 +551,17 @@ export default function TrackerPage() {
         }
       }
 
+      const logRows = formData.coursePeriodLog ?? [];
+      const filledPeriods = logRows.filter((r) => r.startDate.trim());
+      for (const r of filledPeriods) {
+        if (r.endDate.trim() && r.startDate > r.endDate) {
+          alert('Course history: end date must be on or after start date for each row.');
+          return;
+        }
+      }
+
+      let savedMedId: string;
+
       if (formData.id) {
         const { error: medError } = await supabase
           .from('medications')
@@ -575,6 +586,7 @@ export default function TrackerPage() {
             await supabase.from('medication_slots').insert(slots);
           }
         }
+        savedMedId = formData.id;
       } else {
         const { data: newMed, error: medError } = await supabase
           .from('medications')
@@ -583,8 +595,9 @@ export default function TrackerPage() {
           .single();
 
         if (medError) throw medError;
+        if (!newMed) throw new Error('No medication returned after insert');
 
-        if (!isFlexible && newMed) {
+        if (!isFlexible) {
           const { data: timeSlots } = await supabase
             .from('time_slots')
             .select('id, name')
@@ -598,6 +611,27 @@ export default function TrackerPage() {
             await supabase.from('medication_slots').insert(slots);
           }
         }
+        savedMedId = newMed.id;
+      }
+
+      const { error: delPeriodsError } = await supabase
+        .from('medication_course_periods')
+        .delete()
+        .eq('medication_id', savedMedId);
+      if (delPeriodsError) throw delPeriodsError;
+
+      if (filledPeriods.length > 0) {
+        const { error: insPeriodsError } = await supabase
+          .from('medication_course_periods')
+          .insert(
+            filledPeriods.map((r) => ({
+              medication_id: savedMedId,
+              start_date: r.startDate,
+              end_date: r.endDate.trim() ? r.endDate : null,
+              notes: r.notes.trim() ? r.notes : null,
+            }))
+          );
+        if (insPeriodsError) throw insPeriodsError;
       }
 
       setIsModalOpen(false);

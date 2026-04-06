@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2, Plus } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface AddMedicationModalProps {
   isOpen: boolean;
@@ -7,6 +8,13 @@ interface AddMedicationModalProps {
   onSave: (medication: MedicationFormData) => void;
   onDelete?: (medicationId: string) => void;
   editingMedication?: MedicationFormData | null;
+}
+
+/** One row in the course start/end log (edit modal only). */
+export interface MedicationCoursePeriodLogRow {
+  startDate: string;
+  endDate: string;
+  notes: string;
 }
 
 export interface MedicationFormData {
@@ -23,6 +31,8 @@ export interface MedicationFormData {
   endDate: string;
   pauseStartDate: string;
   pauseEndDate: string;
+  /** Present when saving from the modal; historical courses for this med */
+  coursePeriodLog?: MedicationCoursePeriodLogRow[];
 }
 
 const TIME_SLOTS = ['Morning', 'Lunch', 'Evening', 'Night'];
@@ -57,10 +67,12 @@ export default function AddMedicationModal({
     pauseStartDate: '',
     pauseEndDate: '',
   });
+  const [coursePeriodLog, setCoursePeriodLog] = useState<MedicationCoursePeriodLogRow[]>([]);
 
   useEffect(() => {
     if (editingMedication) {
-      setFormData(editingMedication);
+      const { coursePeriodLog: _omit, ...rest } = editingMedication;
+      setFormData(rest);
     } else {
       setFormData({
         name: '',
@@ -78,6 +90,40 @@ export default function AddMedicationModal({
       });
     }
   }, [editingMedication, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const medId = editingMedication?.id;
+    if (!medId) {
+      setCoursePeriodLog([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('medication_course_periods')
+        .select('start_date, end_date, notes')
+        .eq('medication_id', medId)
+        .order('start_date', { ascending: false });
+
+      if (cancelled) return;
+      if (error) {
+        console.error('Error loading course periods:', error);
+        setCoursePeriodLog([]);
+        return;
+      }
+      setCoursePeriodLog(
+        (data || []).map((row) => ({
+          startDate: row.start_date || '',
+          endDate: row.end_date || '',
+          notes: row.notes || '',
+        }))
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, editingMedication?.id]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +147,16 @@ export default function AddMedicationModal({
       alert('Pause start date must be on or before the pause end date.');
       return;
     }
-    onSave(formData);
+
+    const filledPeriods = coursePeriodLog.filter((r) => r.startDate.trim());
+    for (const r of filledPeriods) {
+      if (r.endDate.trim() && r.startDate > r.endDate) {
+        alert('Course history: end date must be on or after start date for each row.');
+        return;
+      }
+    }
+
+    onSave({ ...formData, coursePeriodLog });
   };
 
   const toggleTimeSlot = (slot: string) => {
@@ -340,6 +395,102 @@ export default function AddMedicationModal({
               Medication will no longer appear after this date.
             </p>
           </div>
+
+          {editingMedication?.id && (
+            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/90">
+              <h3 className="text-sm font-semibold text-slate-900 mb-1">
+                Course history (start / end)
+              </h3>
+              <p className="text-sm text-slate-600 mb-3">
+                Record past courses for meds that stop and restart. This is a separate log from the
+                start and end dates above, which control the active schedule on the tracker.
+              </p>
+              {coursePeriodLog.length === 0 ? (
+                <p className="text-sm text-gray-500 mb-3">No past courses logged yet.</p>
+              ) : (
+                <ul className="space-y-3 mb-3">
+                  {coursePeriodLog.map((row, index) => (
+                    <li
+                      key={index}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end border border-gray-200 rounded-lg p-3 bg-white"
+                    >
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Start
+                        </label>
+                        <input
+                          type="date"
+                          value={row.startDate}
+                          onChange={(e) => {
+                            const next = [...coursePeriodLog];
+                            next[index] = { ...next[index], startDate: e.target.value };
+                            setCoursePeriodLog(next);
+                          }}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          End (optional)
+                        </label>
+                        <input
+                          type="date"
+                          value={row.endDate}
+                          onChange={(e) => {
+                            const next = [...coursePeriodLog];
+                            next[index] = { ...next[index], endDate: e.target.value };
+                            setCoursePeriodLog(next);
+                          }}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div className="sm:col-span-1 col-span-1">
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Notes
+                        </label>
+                        <input
+                          type="text"
+                          value={row.notes}
+                          onChange={(e) => {
+                            const next = [...coursePeriodLog];
+                            next[index] = { ...next[index], notes: e.target.value };
+                            setCoursePeriodLog(next);
+                          }}
+                          placeholder="e.g. 7-day course"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div className="flex justify-end sm:justify-center pb-0.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCoursePeriodLog(coursePeriodLog.filter((_, i) => i !== index))
+                          }
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          aria-label="Remove row"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <button
+                type="button"
+                onClick={() =>
+                  setCoursePeriodLog([
+                    ...coursePeriodLog,
+                    { startDate: '', endDate: '', notes: '' },
+                  ])
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50"
+              >
+                <Plus className="w-4 h-4" />
+                Add course row
+              </button>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-semibold mb-2">

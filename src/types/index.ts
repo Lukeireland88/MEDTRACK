@@ -71,6 +71,16 @@ export interface SlotDoseState {
   notTakenReason: string | null;
 }
 
+/** One historical course window for a medication (rescue / repeat courses). */
+export interface MedicationCoursePeriod {
+  id: string;
+  medication_id: string;
+  start_date: string;
+  end_date: string | null;
+  notes: string | null;
+  created_at?: string;
+}
+
 export type SymptomEventType = 'seizure';
 
 export interface SymptomEvent {
