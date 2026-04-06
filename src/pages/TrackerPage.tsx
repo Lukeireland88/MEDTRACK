@@ -45,7 +45,7 @@ export default function TrackerPage() {
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(['Morning', 'Lunch', 'Evening', 'Night']);
   const [logSeizureOpen, setLogSeizureOpen] = useState(false);
   const [endedResumableMedications, setEndedResumableMedications] = useState<MedicationWithSlots[]>([]);
-  const [endedCoursesOpen, setEndedCoursesOpen] = useState(true);
+  const [endedCoursesOpen, setEndedCoursesOpen] = useState(false);
   const [restartingMedId, setRestartingMedId] = useState<string | null>(null);
 
   useEffect(() => {
