@@ -672,6 +672,18 @@ export default function TrackerPage() {
     }
     setRestartingMedId(med.id);
     try {
+      const courseEnd = med.end_date;
+      if (courseEnd) {
+        const courseStart = med.start_date || courseEnd;
+        const { error: logError } = await supabase.from('medication_course_periods').insert({
+          medication_id: med.id,
+          start_date: courseStart,
+          end_date: courseEnd,
+          notes: 'Auto-logged (tracker restart)',
+        });
+        if (logError) throw logError;
+      }
+
       const { error } = await supabase
         .from('medications')
         .update({ end_date: null })
