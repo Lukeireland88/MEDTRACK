@@ -754,8 +754,33 @@ export default function TrackerPage() {
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
 
+        <section className="bg-white border border-gray-300 rounded-2xl shadow-lg">
+          <TimeSlotPicker
+            selectedTimeSlot={selectedTimeSlot}
+            onTimeSlotChange={setSelectedTimeSlot}
+            availableTimeSlots={availableTimeSlots}
+          />
+          <Notices
+            medications={medications}
+            selectedDate={selectedDate}
+            selectedTimeSlot={selectedTimeSlot}
+          />
+          <MedTable
+            medications={medications}
+            selectedDate={selectedDate}
+            slotDoseByMedId={slotDoseByMedId}
+            flexibleDoseEvents={flexibleDoseEvents}
+            onToggleTaken={handleToggleTaken}
+            onOpenMarkNotTaken={setMarkNotTakenMedId}
+            onLogFlexibleDose={handleLogFlexibleDose}
+            onRemoveLastFlexibleDose={handleRemoveLastFlexibleDose}
+            onEditMedication={handleEditMedication}
+            onShowHistory={handleShowHistory}
+          />
+        </section>
+
         {user && endedResumableMedications.length > 0 && (
-          <div className="mb-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-3 py-2.5 shadow-sm">
+          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-3 py-2.5 shadow-sm">
             <button
               type="button"
               onClick={() => setEndedCoursesOpen((o) => !o)}
@@ -811,31 +836,6 @@ export default function TrackerPage() {
             )}
           </div>
         )}
-
-        <section className="bg-white border border-gray-300 rounded-2xl shadow-lg">
-          <TimeSlotPicker
-            selectedTimeSlot={selectedTimeSlot}
-            onTimeSlotChange={setSelectedTimeSlot}
-            availableTimeSlots={availableTimeSlots}
-          />
-          <Notices
-            medications={medications}
-            selectedDate={selectedDate}
-            selectedTimeSlot={selectedTimeSlot}
-          />
-          <MedTable
-            medications={medications}
-            selectedDate={selectedDate}
-            slotDoseByMedId={slotDoseByMedId}
-            flexibleDoseEvents={flexibleDoseEvents}
-            onToggleTaken={handleToggleTaken}
-            onOpenMarkNotTaken={setMarkNotTakenMedId}
-            onLogFlexibleDose={handleLogFlexibleDose}
-            onRemoveLastFlexibleDose={handleRemoveLastFlexibleDose}
-            onEditMedication={handleEditMedication}
-            onShowHistory={handleShowHistory}
-          />
-        </section>
       </div>
 
       <AddMedicationModal
