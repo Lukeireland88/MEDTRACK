@@ -11,7 +11,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
-import { getDefaultTimeSlot, toLocalDateKey, toLocalDateOnly } from '../utils/dateUtils';
+import {
+  getDefaultTimeSlot,
+  toDateKeyFromDb,
+  toLocalDateKey,
+  toLocalDateOnly,
+} from '../utils/dateUtils';
 import { useAuth } from '../contexts/AuthContext';
 import DateNav from '../components/DateNav';
 import TimeSlotPicker from '../components/TimeSlotPicker';
@@ -672,9 +677,21 @@ export default function TrackerPage() {
     }
     setRestartingMedId(med.id);
     try {
-      const courseEnd = med.end_date;
+      // Always read fresh dates from the DB — the `med` object from the list can be stale
+      // (e.g. after editing start/end in the modal without the ended-courses row updating).
+      const { data: freshRow, error: freshErr } = await supabase
+        .from('medications')
+        .select('start_date, end_date')
+        .eq('id', med.id)
+        .single();
+
+      if (freshErr) throw freshErr;
+
+      const courseEnd = toDateKeyFromDb(freshRow?.end_date ?? null);
+      const courseStartRaw = toDateKeyFromDb(freshRow?.start_date ?? null);
+      const courseStart = courseStartRaw || courseEnd;
+
       if (courseEnd) {
-        const courseStart = med.start_date || courseEnd;
         const { error: logError } = await supabase.from('medication_course_periods').insert({
           medication_id: med.id,
           start_date: courseStart,

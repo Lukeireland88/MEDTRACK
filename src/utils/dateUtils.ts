@@ -14,6 +14,19 @@ export function toLocalDateKey(date: Date): string {
   return toDateInputValue(toLocalDateOnly(date));
 }
 
+/**
+ * Normalize a Postgres `date` or ISO timestamp string from the API to `YYYY-MM-DD`
+ * so inserts and comparisons match `<input type="date" />` values.
+ */
+export function toDateKeyFromDb(value: string | null | undefined): string | null {
+  if (value == null || value === '') return null;
+  const s = String(value).trim();
+  if (s.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(s)) {
+    return s.slice(0, 10);
+  }
+  return s || null;
+}
+
 export function fromDateInputValue(value: string): Date {
   const [y, m, d] = value.split('-').map(Number);
   return new Date(y, (m || 1) - 1, d || 1);
