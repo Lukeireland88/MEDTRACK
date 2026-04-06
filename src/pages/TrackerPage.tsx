@@ -530,6 +530,27 @@ export default function TrackerPage() {
         target_doses_per_day: isFlexible ? targetDoses : null,
       };
 
+      const nameNorm = formData.name.trim().toLowerCase();
+      if (nameNorm) {
+        const { data: activeForDupCheck, error: dupCheckError } = await supabase
+          .from('medications')
+          .select('id, name')
+          .eq('active', true);
+
+        if (dupCheckError) throw dupCheckError;
+
+        const conflicting = activeForDupCheck?.find(
+          (m) => m.name.trim().toLowerCase() === nameNorm && m.id !== formData.id
+        );
+
+        if (conflicting) {
+          const proceed = window.confirm(
+            `You already have a medication named "${conflicting.name}". Adding or saving this creates a separate entry and splits dose history.\n\nContinue anyway?`
+          );
+          if (!proceed) return;
+        }
+      }
+
       if (formData.id) {
         const { error: medError } = await supabase
           .from('medications')
