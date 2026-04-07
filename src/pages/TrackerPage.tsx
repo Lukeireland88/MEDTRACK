@@ -4,6 +4,7 @@ import {
   LogIn,
   LogOut,
   Activity,
+  StickyNote,
   RotateCcw,
   ChevronDown,
   ChevronRight,
@@ -27,6 +28,7 @@ import MedicationHistoryModal from '../components/MedicationHistoryModal';
 import AuthModal from '../components/AuthModal';
 import MarkNotTakenModal from '../components/MarkNotTakenModal';
 import LogSeizureModal from '../components/LogSeizureModal';
+import AddEventModal, { AddEventPayload } from '../components/AddEventModal';
 
 export default function TrackerPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -49,6 +51,7 @@ export default function TrackerPage() {
   const [historyDosingMode, setHistoryDosingMode] = useState<DosingMode>('time_slots');
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(['Morning', 'Lunch', 'Evening', 'Night']);
   const [logSeizureOpen, setLogSeizureOpen] = useState(false);
+  const [addEventOpen, setAddEventOpen] = useState(false);
   const [endedResumableMedications, setEndedResumableMedications] = useState<MedicationWithSlots[]>([]);
   const [endedCoursesOpen, setEndedCoursesOpen] = useState(false);
   const [restartingMedId, setRestartingMedId] = useState<string | null>(null);
@@ -444,6 +447,24 @@ export default function TrackerPage() {
     }
   };
 
+  const handleAddEvent = async (payload: AddEventPayload) => {
+    try {
+      const { error } = await supabase.from('timeline_events').insert({
+        event_type: payload.eventType,
+        occurred_at: payload.occurredAtIso,
+        event_date: payload.eventDate,
+        title: payload.title,
+        value_text: payload.valueText,
+        notes: payload.notes,
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error adding event:', error);
+      alert('Failed to save event. Please try again.');
+      throw error;
+    }
+  };
+
   const handleLogFlexibleDose = async (medId: string, takenAtIso: string) => {
     // Use the actual taken timestamp to determine the local dose day.
     // This prevents a dose taken just after midnight from being stored under the previous selected day.
@@ -809,6 +830,15 @@ export default function TrackerPage() {
                     <span className="sm:hidden">Seizure</span>
                   </button>
                   <button
+                    onClick={() => setAddEventOpen(true)}
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-indigo-700 text-white rounded-lg font-semibold hover:bg-indigo-800 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                    title="Add an event"
+                  >
+                    <StickyNote className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Add event</span>
+                    <span className="sm:hidden">Event</span>
+                  </button>
+                  <button
                     onClick={handleAddMedication}
                     className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap"
                   >
@@ -968,6 +998,13 @@ export default function TrackerPage() {
         selectedDate={selectedDate}
         onClose={() => setLogSeizureOpen(false)}
         onConfirm={handleLogSeizure}
+      />
+
+      <AddEventModal
+        isOpen={addEventOpen}
+        selectedDate={selectedDate}
+        onClose={() => setAddEventOpen(false)}
+        onConfirm={handleAddEvent}
       />
     </div>
   );

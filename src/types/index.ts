@@ -81,6 +81,19 @@ export interface MedicationCoursePeriod {
   created_at?: string;
 }
 
+export type TimelineEventType = 'note' | 'measurement' | 'visit';
+
+export interface TimelineEvent {
+  id: string;
+  event_type: TimelineEventType | string;
+  occurred_at: string;
+  event_date: string;
+  title: string;
+  value_text: string | null;
+  notes: string | null;
+  created_at?: string;
+}
+
 export type SymptomEventType = 'seizure';
 
 export interface SymptomEvent {

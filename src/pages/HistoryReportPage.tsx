@@ -4,7 +4,7 @@ import { ArrowLeft, ClipboardList, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
 
-type HistoryEventVariant = 'slot_taken' | 'slot_not_taken' | 'flexible_dose' | 'seizure';
+type HistoryEventVariant = 'slot_taken' | 'slot_not_taken' | 'flexible_dose' | 'seizure' | 'timeline_event';
 
 type EventFilter = 'all' | HistoryEventVariant;
 
@@ -14,7 +14,7 @@ type UnifiedRow = {
   doseDate: string;
   medicationId: string;
   medicationName: string;
-  kind: 'slot' | 'flexible' | 'symptom';
+  kind: 'slot' | 'flexible' | 'symptom' | 'timeline';
   detail: string;
   variant: HistoryEventVariant;
 };
@@ -29,6 +29,8 @@ function rowVariantBgClass(v: HistoryEventVariant): string {
       return 'bg-sky-50/90';
     case 'seizure':
       return 'bg-purple-50/90';
+    case 'timeline_event':
+      return 'bg-amber-50/90';
   }
 }
 
@@ -43,6 +45,8 @@ function rowVariantTableClass(v: HistoryEventVariant): string {
       return `${rowVariantBgClass(v)} border-l-4 border-l-sky-500`;
     case 'seizure':
       return `${rowVariantBgClass(v)} border-l-4 border-l-purple-500`;
+    case 'timeline_event':
+      return `${rowVariantBgClass(v)} border-l-4 border-l-amber-500`;
   }
 }
 
@@ -57,6 +61,8 @@ function variantAccentBarClass(v: HistoryEventVariant): string {
       return 'bg-sky-500';
     case 'seizure':
       return 'bg-purple-500';
+    case 'timeline_event':
+      return 'bg-amber-500';
   }
 }
 
@@ -70,6 +76,8 @@ function variantBadge(v: HistoryEventVariant): { label: string; className: strin
       return { label: 'Dose logged', className: 'bg-sky-100 text-sky-900 ring-1 ring-sky-200/80' };
     case 'seizure':
       return { label: 'Seizure', className: 'bg-purple-100 text-purple-900 ring-1 ring-purple-200/80' };
+    case 'timeline_event':
+      return { label: 'Event', className: 'bg-amber-100 text-amber-900 ring-1 ring-amber-200/80' };
   }
 }
 
@@ -207,6 +215,14 @@ export default function HistoryReportPage() {
         .order('occurred_at', { ascending: false });
       if (symptomsError) throw symptomsError;
 
+      const { data: events, error: eventsError } = await supabase
+        .from('timeline_events')
+        .select('id, occurred_at, event_date, event_type, title, value_text, notes')
+        .gte('event_date', from)
+        .lte('event_date', to)
+        .order('occurred_at', { ascending: false });
+      if (eventsError) throw eventsError;
+
       const unified: UnifiedRow[] = [];
 
       (logs as any[])?.forEach((log) => {
@@ -260,6 +276,27 @@ export default function HistoryReportPage() {
           kind: 'symptom',
           detail: `Duration: ${durationLabel}${notes ? ` · ${notes}` : ''}`,
           variant: 'seizure',
+        });
+      });
+
+      (events as any[])?.forEach((ev) => {
+        const typeLabel = (ev.event_type as string | null) ?? 'event';
+        const value = (ev.value_text as string | null) ?? null;
+        const notes = (ev.notes as string | null) ?? null;
+        const parts = [
+          typeLabel,
+          value ? `Value: ${value}` : null,
+          notes ? `Notes: ${notes}` : null,
+        ].filter(Boolean);
+        unified.push({
+          id: `evt-${ev.id}`,
+          at: ev.occurred_at,
+          doseDate: ev.event_date,
+          medicationId: '',
+          medicationName: ev.title ?? 'Event',
+          kind: 'timeline',
+          detail: parts.join(' · '),
+          variant: 'timeline_event',
         });
       });
 
@@ -355,7 +392,9 @@ export default function HistoryReportPage() {
           ? 'Flexible dose'
           : row.kind === 'symptom'
             ? 'Symptom'
-            : 'Time slot';
+            : row.kind === 'timeline'
+              ? 'Event'
+              : 'Time slot';
       return [
         csvQuote(row.at),
         csvQuote(formatWhen(row.at)),
@@ -390,8 +429,8 @@ export default function HistoryReportPage() {
             </div>
           </div>
           <p className="text-sm text-gray-600 mt-2 max-w-2xl">
-            Time-slot taken / not-taken events and flexible dose logs in one place. Filter by date, medication, and
-            event type.
+            Time-slot taken / not-taken events, flexible dose logs, and timestamped events in one place. Filter by date,
+            medication, and event type.
           </p>
         </header>
 
@@ -525,6 +564,7 @@ export default function HistoryReportPage() {
                 <option value="slot_not_taken">Not taken (time slot)</option>
                 <option value="flexible_dose">Flexible dose</option>
                 <option value="seizure">Seizure</option>
+                <option value="timeline_event">Event (notes/measurements)</option>
               </select>
             </div>
             <div className="self-end overflow-x-auto max-w-full">
