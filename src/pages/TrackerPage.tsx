@@ -3,8 +3,7 @@ import {
   Plus,
   LogIn,
   LogOut,
-  Activity,
-  StickyNote,
+  ClipboardList,
   RotateCcw,
   ChevronDown,
   ChevronRight,
@@ -29,6 +28,7 @@ import AuthModal from '../components/AuthModal';
 import MarkNotTakenModal from '../components/MarkNotTakenModal';
 import LogSeizureModal from '../components/LogSeizureModal';
 import AddEventModal, { AddEventPayload } from '../components/AddEventModal';
+import AddLogPickerModal from '../components/AddLogPickerModal';
 
 export default function TrackerPage() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -50,6 +50,7 @@ export default function TrackerPage() {
   const [historyMedicationName, setHistoryMedicationName] = useState<string>('');
   const [historyDosingMode, setHistoryDosingMode] = useState<DosingMode>('time_slots');
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(['Morning', 'Lunch', 'Evening', 'Night']);
+  const [addLogPickerOpen, setAddLogPickerOpen] = useState(false);
   const [logSeizureOpen, setLogSeizureOpen] = useState(false);
   const [addEventOpen, setAddEventOpen] = useState(false);
   const [endedResumableMedications, setEndedResumableMedications] = useState<MedicationWithSlots[]>([]);
@@ -821,22 +822,13 @@ export default function TrackerPage() {
               {user ? (
                 <>
                   <button
-                    onClick={() => setLogSeizureOpen(true)}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
-                    title="Log a seizure"
+                    onClick={() => setAddLogPickerOpen(true)}
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-950 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                    title="Add a log"
                   >
-                    <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Log seizure</span>
-                    <span className="sm:hidden">Seizure</span>
-                  </button>
-                  <button
-                    onClick={() => setAddEventOpen(true)}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-indigo-700 text-white rounded-lg font-semibold hover:bg-indigo-800 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
-                    title="Add an event"
-                  >
-                    <StickyNote className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Add event</span>
-                    <span className="sm:hidden">Event</span>
+                    <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Add log</span>
+                    <span className="sm:hidden">Log</span>
                   </button>
                   <button
                     onClick={handleAddMedication}
@@ -977,6 +969,19 @@ export default function TrackerPage() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+      />
+
+      <AddLogPickerModal
+        isOpen={addLogPickerOpen}
+        onClose={() => setAddLogPickerOpen(false)}
+        onPickSeizure={() => {
+          setAddLogPickerOpen(false);
+          setLogSeizureOpen(true);
+        }}
+        onPickNote={() => {
+          setAddLogPickerOpen(false);
+          setAddEventOpen(true);
+        }}
       />
 
       <MarkNotTakenModal

@@ -95,7 +95,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Add event</h2>
+            <h2 className="text-lg font-bold text-gray-900">Add note</h2>
             <p className="text-sm text-gray-600 mt-1">Record a timestamped note, visit, or measurement (backdating supported).</p>
           </div>
           <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Close">

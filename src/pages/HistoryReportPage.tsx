@@ -77,7 +77,7 @@ function variantBadge(v: HistoryEventVariant): { label: string; className: strin
     case 'seizure':
       return { label: 'Seizure', className: 'bg-purple-100 text-purple-900 ring-1 ring-purple-200/80' };
     case 'timeline_event':
-      return { label: 'Event', className: 'bg-amber-100 text-amber-900 ring-1 ring-amber-200/80' };
+      return { label: 'Note', className: 'bg-amber-100 text-amber-900 ring-1 ring-amber-200/80' };
   }
 }
 
@@ -223,7 +223,7 @@ export default function HistoryReportPage() {
         .order('occurred_at', { ascending: false });
       if (eventsError) throw eventsError;
 
-      const unified: UnifiedRow[] = [];
+        const unified: UnifiedRow[] = [];
 
       (logs as any[])?.forEach((log) => {
         const med = log.medications as { name: string } | null;
@@ -293,7 +293,7 @@ export default function HistoryReportPage() {
           at: ev.occurred_at,
           doseDate: ev.event_date,
           medicationId: '',
-          medicationName: ev.title ?? 'Event',
+          medicationName: ev.title ?? 'Note',
           kind: 'timeline',
           detail: parts.join(' · '),
           variant: 'timeline_event',
@@ -393,7 +393,7 @@ export default function HistoryReportPage() {
           : row.kind === 'symptom'
             ? 'Symptom'
             : row.kind === 'timeline'
-              ? 'Event'
+              ? 'Note'
               : 'Time slot';
       return [
         csvQuote(row.at),
@@ -564,7 +564,7 @@ export default function HistoryReportPage() {
                 <option value="slot_not_taken">Not taken (time slot)</option>
                 <option value="flexible_dose">Flexible dose</option>
                 <option value="seizure">Seizure</option>
-                <option value="timeline_event">Event (notes/measurements)</option>
+                <option value="timeline_event">Notes (visits/measurements)</option>
               </select>
             </div>
             <div className="self-end overflow-x-auto max-w-full">
@@ -645,6 +645,10 @@ export default function HistoryReportPage() {
                     <span className="inline-flex items-center gap-1.5 ml-3">
                       <span className="inline-block w-2 h-2 rounded-full bg-purple-500" aria-hidden />
                       Seizure
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 ml-3">
+                      <span className="inline-block w-2 h-2 rounded-full bg-amber-500" aria-hidden />
+                      Notes
                     </span>
                   </span>
                 </div>
