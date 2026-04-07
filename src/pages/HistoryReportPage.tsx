@@ -217,7 +217,7 @@ export default function HistoryReportPage() {
 
       const { data: events, error: eventsError } = await supabase
         .from('timeline_events')
-        .select('id, occurred_at, event_date, event_type, title, value_text, notes')
+        .select('id, occurred_at, event_date, event_type, measurement_type, title, value_text, notes')
         .gte('event_date', from)
         .lte('event_date', to)
         .order('occurred_at', { ascending: false });
@@ -281,10 +281,12 @@ export default function HistoryReportPage() {
 
       (events as any[])?.forEach((ev) => {
         const typeLabel = (ev.event_type as string | null) ?? 'event';
+        const measurementType = (ev.measurement_type as string | null) ?? null;
         const value = (ev.value_text as string | null) ?? null;
         const notes = (ev.notes as string | null) ?? null;
         const parts = [
           typeLabel,
+          measurementType ? `Metric: ${measurementType}` : null,
           value ? `Value: ${value}` : null,
           notes ? `Notes: ${notes}` : null,
         ].filter(Boolean);

@@ -452,6 +452,7 @@ export default function TrackerPage() {
     try {
       const { error } = await supabase.from('timeline_events').insert({
         event_type: payload.eventType,
+        measurement_type: payload.measurementType,
         occurred_at: payload.occurredAtIso,
         event_date: payload.eventDate,
         title: payload.title,

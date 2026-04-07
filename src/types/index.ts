@@ -86,6 +86,7 @@ export type TimelineEventType = 'note' | 'measurement' | 'visit';
 export interface TimelineEvent {
   id: string;
   event_type: TimelineEventType | string;
+  measurement_type?: string | null;
   occurred_at: string;
   event_date: string;
   title: string;

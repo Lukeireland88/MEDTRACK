@@ -15,6 +15,7 @@ export type AddEventPayload = {
   occurredAtIso: string;
   eventDate: string;
   eventType: string;
+  measurementType: string | null;
   title: string;
   valueText: string | null;
   notes: string | null;
@@ -33,6 +34,29 @@ const EVENT_TYPES: { id: string; label: string }[] = [
   { id: 'visit', label: 'Visit' },
 ];
 
+const MEASUREMENT_TYPES: { id: string; label: string; placeholder?: string }[] = [
+  { id: 'spo2', label: 'SpO₂', placeholder: 'e.g. 92%' },
+  { id: 'pulse', label: 'Pulse', placeholder: 'e.g. 84 bpm' },
+  { id: 'bp', label: 'Blood pressure', placeholder: 'e.g. 120/80' },
+  { id: 'temp', label: 'Temperature', placeholder: 'e.g. 37.8°C' },
+];
+
+type Template = {
+  id: string;
+  label: string;
+  eventType: string;
+  measurementType: string | null;
+  title: string;
+  valuePrefill?: string;
+};
+
+const TEMPLATES: Template[] = [
+  { id: 'out-of-hours-gp', label: 'Out-of-hours GP', eventType: 'visit', measurementType: null, title: 'Out-of-hours GP' },
+  { id: 'spo2', label: 'SpO₂', eventType: 'measurement', measurementType: 'spo2', title: 'SpO₂', valuePrefill: '' },
+  { id: 'bp', label: 'BP', eventType: 'measurement', measurementType: 'bp', title: 'Blood pressure', valuePrefill: '' },
+  { id: 'temp', label: 'Temp', eventType: 'measurement', measurementType: 'temp', title: 'Temperature', valuePrefill: '' },
+];
+
 export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm }: AddEventModalProps) {
   const defaultDateTime = useMemo(() => {
     const now = new Date();
@@ -42,6 +66,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
 
   const [occurredAtLocal, setOccurredAtLocal] = useState<string>(toDateTimeLocalValue(defaultDateTime));
   const [eventType, setEventType] = useState<string>('note');
+  const [measurementType, setMeasurementType] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [valueText, setValueText] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
@@ -51,11 +76,18 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
     if (!isOpen) return;
     setOccurredAtLocal(toDateTimeLocalValue(defaultDateTime));
     setEventType('note');
+    setMeasurementType('');
     setTitle('');
     setValueText('');
     setNotes('');
     setSaving(false);
   }, [isOpen, defaultDateTime]);
+
+  useEffect(() => {
+    if (eventType !== 'measurement') {
+      setMeasurementType('');
+    }
+  }, [eventType]);
 
   if (!isOpen) return null;
 
@@ -80,6 +112,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
         occurredAtIso: occurredAt.toISOString(),
         eventDate,
         eventType,
+        measurementType: eventType === 'measurement' && measurementType ? measurementType : null,
         title: title.trim(),
         valueText: valueText.trim() ? valueText.trim() : null,
         notes: notes.trim() ? notes.trim() : null,
@@ -104,6 +137,28 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
         </div>
 
         <form onSubmit={submit} className="p-4 space-y-4">
+          <div>
+            <div className="flex flex-wrap gap-2">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => {
+                    setEventType(t.eventType);
+                    setMeasurementType(t.measurementType ?? '');
+                    setTitle(t.title);
+                    if (t.valuePrefill != null) setValueText(t.valuePrefill);
+                  }}
+                  className="px-3 py-1.5 text-xs rounded-full border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 font-semibold"
+                  title="Fill from template"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Quick templates (optional).</p>
+          </div>
+
           <div>
             <label htmlFor="event-occurred" className="block text-xs font-semibold text-gray-600 mb-1">
               When
@@ -136,19 +191,58 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
                 ))}
               </select>
             </div>
+            {eventType === 'measurement' ? (
+              <div>
+                <label htmlFor="event-measure-type" className="block text-xs font-semibold text-gray-600 mb-1">
+                  Measurement type
+                </label>
+                <select
+                  id="event-measure-type"
+                  value={measurementType}
+                  onChange={(e) => setMeasurementType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white"
+                >
+                  <option value="">Other</option>
+                  {MEASUREMENT_TYPES.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="event-value" className="block text-xs font-semibold text-gray-600 mb-1">
+                  Value (optional)
+                </label>
+                <input
+                  id="event-value"
+                  value={valueText}
+                  onChange={(e) => setValueText(e.target.value)}
+                  placeholder="e.g. SpO₂ 92%"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                />
+              </div>
+            )}
+          </div>
+
+          {eventType === 'measurement' && (
             <div>
-              <label htmlFor="event-value" className="block text-xs font-semibold text-gray-600 mb-1">
+              <label htmlFor="event-value-measure" className="block text-xs font-semibold text-gray-600 mb-1">
                 Value (optional)
               </label>
               <input
-                id="event-value"
+                id="event-value-measure"
                 value={valueText}
                 onChange={(e) => setValueText(e.target.value)}
-                placeholder="e.g. SpO2 92%"
+                placeholder={
+                  MEASUREMENT_TYPES.find((m) => m.id === measurementType)?.placeholder ??
+                  'e.g. 92%'
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
               />
             </div>
-          </div>
+          )}
 
           <div>
             <label htmlFor="event-title" className="block text-xs font-semibold text-gray-600 mb-1">
@@ -191,7 +285,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
               disabled={saving}
               className="px-4 py-2 bg-indigo-700 text-white rounded-lg font-semibold hover:bg-indigo-800 disabled:opacity-60"
             >
-              {saving ? 'Saving…' : 'Save event'}
+              {saving ? 'Saving…' : 'Save note'}
             </button>
           </div>
         </form>
