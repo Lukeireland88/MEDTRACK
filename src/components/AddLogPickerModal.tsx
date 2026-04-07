@@ -48,7 +48,7 @@ export default function AddLogPickerModal({
           >
             <span className="inline-flex items-center gap-2 font-semibold text-amber-950">
               <StickyNote className="w-5 h-5" />
-              Note
+              Note / measurement
             </span>
             <span className="text-sm text-amber-800">Visits + measurements</span>
           </button>

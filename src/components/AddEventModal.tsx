@@ -129,7 +129,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Add note</h2>
+            <h2 className="text-lg font-bold text-gray-900">Add note / measurement</h2>
             <p className="text-sm text-gray-600 mt-1">Record a timestamped note, visit, or measurement (backdating supported).</p>
           </div>
           <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Close">
@@ -139,7 +139,8 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
 
         <form onSubmit={submit} className="p-4 space-y-4">
           <div>
-            <div className="flex flex-wrap gap-2">
+            <div className="overflow-x-auto -mx-1 px-1">
+              <div className="flex flex-nowrap gap-2 min-w-max">
               {TEMPLATES.map((t) => (
                 <button
                   key={t.id}
@@ -156,6 +157,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
                   {t.label}
                 </button>
               ))}
+              </div>
             </div>
             <p className="text-xs text-gray-500 mt-1">Quick templates (optional).</p>
           </div>

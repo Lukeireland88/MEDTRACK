@@ -19,6 +19,22 @@ type UnifiedRow = {
   variant: HistoryEventVariant;
 };
 
+function measurementTypeLabel(t: string | null): string | null {
+  if (!t) return null;
+  switch (t) {
+    case 'spo2':
+      return 'SpO₂';
+    case 'pulse':
+      return 'Pulse';
+    case 'bp':
+      return 'Blood pressure';
+    case 'temp':
+      return 'Temperature';
+    default:
+      return t;
+  }
+}
+
 function rowVariantBgClass(v: HistoryEventVariant): string {
   switch (v) {
     case 'slot_taken':
@@ -284,9 +300,10 @@ export default function HistoryReportPage() {
         const measurementType = (ev.measurement_type as string | null) ?? null;
         const value = (ev.value_text as string | null) ?? null;
         const notes = (ev.notes as string | null) ?? null;
+        const metricLabel = measurementTypeLabel(measurementType);
         const parts = [
           typeLabel,
-          measurementType ? `Metric: ${measurementType}` : null,
+          metricLabel ? `Metric: ${metricLabel}` : null,
           value ? `Value: ${value}` : null,
           notes ? `Notes: ${notes}` : null,
         ].filter(Boolean);
