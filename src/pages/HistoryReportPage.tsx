@@ -140,6 +140,10 @@ export default function HistoryReportPage() {
   const medPickerRef = useRef<HTMLDivElement | null>(null);
   const [eventFilter, setEventFilter] = useState<EventFilter>('all');
 
+  const toggleLegendFilter = (v: HistoryEventVariant) => {
+    setEventFilter((prev) => (prev === v ? 'all' : v));
+  };
+
   useEffect(() => {
     (async () => {
       const { data, error: e } = await supabase
@@ -648,28 +652,68 @@ export default function HistoryReportPage() {
                   <span className="text-gray-400 hidden sm:inline" aria-hidden>
                     |
                   </span>
-                  <span className="text-gray-500">
-                    <span className="inline-flex items-center gap-1.5 mr-3">
+                  <div className="flex flex-wrap items-center gap-1 text-gray-500">
+                    <button
+                      type="button"
+                      onClick={() => toggleLegendFilter('slot_taken')}
+                      aria-pressed={eventFilter === 'slot_taken'}
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-gray-200/70 ${
+                        eventFilter === 'slot_taken' ? 'bg-gray-200/80 text-gray-900' : ''
+                      }`}
+                      title="Filter: Taken"
+                    >
                       <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" aria-hidden />
                       Taken
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 mr-3">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleLegendFilter('slot_not_taken')}
+                      aria-pressed={eventFilter === 'slot_not_taken'}
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-gray-200/70 ${
+                        eventFilter === 'slot_not_taken' ? 'bg-gray-200/80 text-gray-900' : ''
+                      }`}
+                      title="Filter: Not taken"
+                    >
                       <span className="inline-block w-2 h-2 rounded-full bg-rose-500" aria-hidden />
                       Not taken
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleLegendFilter('flexible_dose')}
+                      aria-pressed={eventFilter === 'flexible_dose'}
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-gray-200/70 ${
+                        eventFilter === 'flexible_dose' ? 'bg-gray-200/80 text-gray-900' : ''
+                      }`}
+                      title="Filter: Flexible dose"
+                    >
                       <span className="inline-block w-2 h-2 rounded-full bg-sky-500" aria-hidden />
                       Flexible
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 ml-3">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleLegendFilter('seizure')}
+                      aria-pressed={eventFilter === 'seizure'}
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-gray-200/70 ${
+                        eventFilter === 'seizure' ? 'bg-gray-200/80 text-gray-900' : ''
+                      }`}
+                      title="Filter: Seizure"
+                    >
                       <span className="inline-block w-2 h-2 rounded-full bg-purple-500" aria-hidden />
                       Seizure
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 ml-3">
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleLegendFilter('timeline_event')}
+                      aria-pressed={eventFilter === 'timeline_event'}
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-gray-200/70 ${
+                        eventFilter === 'timeline_event' ? 'bg-gray-200/80 text-gray-900' : ''
+                      }`}
+                      title="Filter: Notes"
+                    >
                       <span className="inline-block w-2 h-2 rounded-full bg-amber-500" aria-hidden />
                       Notes
-                    </span>
-                  </span>
+                    </button>
+                  </div>
                 </div>
                 <button
                   type="button"
