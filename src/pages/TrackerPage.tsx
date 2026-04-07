@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   Pencil,
+  X,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
@@ -56,6 +57,8 @@ export default function TrackerPage() {
   const [endedResumableMedications, setEndedResumableMedications] = useState<MedicationWithSlots[]>([]);
   const [endedCoursesOpen, setEndedCoursesOpen] = useState(false);
   const [restartingMedId, setRestartingMedId] = useState<string | null>(null);
+  const [restartPromptMed, setRestartPromptMed] = useState<MedicationWithSlots | null>(null);
+  const [restartNewStartDate, setRestartNewStartDate] = useState<string>('');
 
   useEffect(() => {
     loadMedications();
@@ -693,7 +696,7 @@ export default function TrackerPage() {
     }
   };
 
-  const handleRestartMedication = async (med: MedicationWithSlots) => {
+  const handleRestartMedication = async (med: MedicationWithSlots, newStartDate: string) => {
     if (!user) {
       setAuthModalOpen(true);
       return;
@@ -726,7 +729,7 @@ export default function TrackerPage() {
 
       const { error } = await supabase
         .from('medications')
-        .update({ end_date: null })
+        .update({ end_date: null, start_date: newStartDate || null })
         .eq('id', med.id);
 
       if (error) throw error;
@@ -739,6 +742,11 @@ export default function TrackerPage() {
     } finally {
       setRestartingMedId(null);
     }
+  };
+
+  const openRestartPrompt = (med: MedicationWithSlots) => {
+    setRestartPromptMed(med);
+    setRestartNewStartDate(toLocalDateKey(selectedDate));
   };
 
   const handleEditMedication = (med: MedicationWithSlots) => {
@@ -922,7 +930,7 @@ export default function TrackerPage() {
                       <button
                         type="button"
                         disabled={restartingMedId === med.id}
-                        onClick={() => handleRestartMedication(med)}
+                        onClick={() => openRestartPrompt(med)}
                         className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
                       >
                         <RotateCcw className="h-4 w-4" />
@@ -1012,6 +1020,74 @@ export default function TrackerPage() {
         onClose={() => setAddEventOpen(false)}
         onConfirm={handleAddEvent}
       />
+
+      {restartPromptMed && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Restart medication</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Choose the new start date. We’ll log the previous course to history using the old start/end dates.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRestartPromptMed(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div className="text-sm text-gray-900">
+                <span className="font-semibold">{restartPromptMed.name}</span>
+              </div>
+              <div>
+                <label htmlFor="restart-start" className="block text-xs font-semibold text-gray-600 mb-1">
+                  New start date
+                </label>
+                <input
+                  id="restart-start"
+                  type="date"
+                  value={restartNewStartDate}
+                  onChange={(e) => setRestartNewStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  This updates the medication’s `start_date` so repeat courses don’t keep the original start.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRestartPromptMed(null)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-800 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!restartNewStartDate || restartingMedId === restartPromptMed.id}
+                  onClick={async () => {
+                    const med = restartPromptMed;
+                    const start = restartNewStartDate;
+                    setRestartPromptMed(null);
+                    await handleRestartMedication(med, start);
+                  }}
+                  className="px-4 py-2 bg-emerald-700 text-white rounded-lg font-semibold hover:bg-emerald-800 disabled:opacity-60"
+                >
+                  {restartingMedId === restartPromptMed.id ? 'Restarting…' : 'Restart'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
