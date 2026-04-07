@@ -51,6 +51,7 @@ type Template = {
 };
 
 const TEMPLATES: Template[] = [
+  { id: 'call-for-help', label: 'Call for help', eventType: 'note', measurementType: null, title: 'Call for help' },
   { id: 'out-of-hours-gp', label: 'Out-of-hours GP', eventType: 'visit', measurementType: null, title: 'Out-of-hours GP' },
   { id: 'spo2', label: 'SpO₂', eventType: 'measurement', measurementType: 'spo2', title: 'SpO₂', valuePrefill: '' },
   { id: 'bp', label: 'BP', eventType: 'measurement', measurementType: 'bp', title: 'Blood pressure', valuePrefill: '' },
