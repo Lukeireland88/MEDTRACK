@@ -194,7 +194,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
                 ))}
               </select>
             </div>
-            {eventType === 'measurement' ? (
+            {eventType === 'measurement' && (
               <div>
                 <label htmlFor="event-measure-type" className="block text-xs font-semibold text-gray-600 mb-1">
                   Measurement type
@@ -212,19 +212,6 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
                     </option>
                   ))}
                 </select>
-              </div>
-            ) : (
-              <div>
-                <label htmlFor="event-value" className="block text-xs font-semibold text-gray-600 mb-1">
-                  Value (optional)
-                </label>
-                <input
-                  id="event-value"
-                  value={valueText}
-                  onChange={(e) => setValueText(e.target.value)}
-                  placeholder="e.g. SpO₂ 92%"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                />
               </div>
             )}
           </div>
