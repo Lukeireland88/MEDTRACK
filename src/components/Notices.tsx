@@ -42,7 +42,7 @@ export default function Notices({ medications, selectedDate, selectedTimeSlot }:
     : `${count} medications are not due on this date.`;
 
   return (
-    <div className="mx-2 sm:mx-3 mt-2">
+    <div className="mx-2 sm:mx-3 mt-2 mb-2">
       {count === 1 ? (
         <div className="bg-red-100 border border-gray-300 rounded-lg p-2 sm:p-3 text-gray-900 text-xs sm:text-sm">
           <div className="font-semibold">Not due</div>
