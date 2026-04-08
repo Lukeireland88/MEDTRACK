@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -137,7 +138,28 @@ export default function HistoryReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [medPickerOpen, setMedPickerOpen] = useState(false);
-  const medPickerRef = useRef<HTMLDivElement | null>(null);
+  const medTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const medPopoverRef = useRef<HTMLDivElement | null>(null);
+  const [medPopoverPos, setMedPopoverPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  const updateMedPopoverPos = useCallback(() => {
+    const el = medTriggerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const gap = 8;
+    const margin = 8;
+    const maxPopoverH = Math.min(22 * 16, window.innerHeight - margin * 2);
+    let top = r.bottom + gap;
+    const overflowBottom = top + maxPopoverH - (window.innerHeight - margin);
+    if (overflowBottom > 0) {
+      top = Math.max(margin, top - overflowBottom);
+    }
+    setMedPopoverPos({ top, left: r.left, width: r.width });
+  }, []);
   const [eventFilter, setEventFilter] = useState<EventFilter>('all');
 
   const toggleLegendFilter = (v: HistoryEventVariant) => {
@@ -155,14 +177,27 @@ export default function HistoryReportPage() {
     })();
   }, []);
 
+  useLayoutEffect(() => {
+    if (!medPickerOpen) {
+      setMedPopoverPos(null);
+      return;
+    }
+    updateMedPopoverPos();
+    window.addEventListener('resize', updateMedPopoverPos);
+    window.addEventListener('scroll', updateMedPopoverPos, true);
+    return () => {
+      window.removeEventListener('resize', updateMedPopoverPos);
+      window.removeEventListener('scroll', updateMedPopoverPos, true);
+    };
+  }, [medPickerOpen, updateMedPopoverPos]);
+
   useEffect(() => {
     if (!medPickerOpen) return;
     const onPointerDown = (ev: PointerEvent) => {
-      const el = medPickerRef.current;
-      if (!el) return;
-      if (ev.target instanceof Node && !el.contains(ev.target)) {
-        setMedPickerOpen(false);
-      }
+      const node = ev.target;
+      if (!(node instanceof Node)) return;
+      if (medTriggerRef.current?.contains(node) || medPopoverRef.current?.contains(node)) return;
+      setMedPickerOpen(false);
     };
     const onKeyDown = (ev: KeyboardEvent) => {
       if (ev.key === 'Escape') setMedPickerOpen(false);
@@ -586,8 +621,9 @@ export default function HistoryReportPage() {
                       </button>
                     </div>
                   </div>
-                  <div className="relative" ref={medPickerRef}>
+                  <div>
                     <button
+                      ref={medTriggerRef}
                       id="hist-med"
                       type="button"
                       onClick={() => setMedPickerOpen((v) => !v)}
@@ -597,61 +633,74 @@ export default function HistoryReportPage() {
                     >
                       <span className="block truncate text-gray-900">{medicationSummary}</span>
                     </button>
-                    {medPickerOpen && (
-                      <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-300 bg-white shadow-lg">
-                        <div className="p-2 border-b border-gray-200 flex items-center justify-between gap-2">
-                          <div className="text-xs font-semibold text-gray-600">
-                            Select medication(s)
+                    {medPickerOpen &&
+                      medPopoverPos &&
+                      createPortal(
+                        <div
+                          ref={medPopoverRef}
+                          className="fixed z-[300] flex max-h-[min(22rem,calc(100dvh-1.5rem))] flex-col overflow-hidden rounded-xl border border-gray-300 bg-white shadow-xl outline-none"
+                          style={{
+                            top: medPopoverPos.top,
+                            left: medPopoverPos.left,
+                            width: medPopoverPos.width,
+                          }}
+                          role="dialog"
+                          aria-label="Select medications"
+                        >
+                          <div className="shrink-0 border-b border-gray-200 p-2 flex items-center justify-between gap-2">
+                            <div className="text-xs font-semibold text-gray-600">
+                              Select medication(s)
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setMedicationIds([])}
+                              className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                            >
+                              Clear
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => setMedicationIds([])}
-                            className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                          >
-                            Clear
-                          </button>
-                        </div>
-                        <div className="max-h-64 overflow-auto p-2">
-                          {medications.length === 0 ? (
-                            <div className="p-2 text-sm text-gray-500">No medications found.</div>
-                          ) : (
-                            <ul role="listbox" aria-label="Medications" className="space-y-1">
-                              {medications.map((m) => {
-                                const checked = medicationIds.includes(m.id);
-                                return (
-                                  <li key={m.id}>
-                                    <label className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={() => {
-                                          setMedicationIds((prev) =>
-                                            prev.includes(m.id)
-                                              ? prev.filter((x) => x !== m.id)
-                                              : [...prev, m.id]
-                                          );
-                                        }}
-                                        className="w-4 h-4 accent-blue-600"
-                                      />
-                                      <span className="text-sm text-gray-900">{m.name}</span>
-                                    </label>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
-                        </div>
-                        <div className="p-2 border-t border-gray-200 flex items-center justify-end">
-                          <button
-                            type="button"
-                            onClick={() => setMedPickerOpen(false)}
-                            className="px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                          >
-                            Done
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
+                            {medications.length === 0 ? (
+                              <div className="p-2 text-sm text-gray-500">No medications found.</div>
+                            ) : (
+                              <ul role="listbox" aria-label="Medications" className="space-y-1">
+                                {medications.map((m) => {
+                                  const checked = medicationIds.includes(m.id);
+                                  return (
+                                    <li key={m.id}>
+                                      <label className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={() => {
+                                            setMedicationIds((prev) =>
+                                              prev.includes(m.id)
+                                                ? prev.filter((x) => x !== m.id)
+                                                : [...prev, m.id]
+                                            );
+                                          }}
+                                          className="w-4 h-4 accent-blue-600"
+                                        />
+                                        <span className="text-sm text-gray-900">{m.name}</span>
+                                      </label>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </div>
+                          <div className="shrink-0 border-t border-gray-200 p-2 flex items-center justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setMedPickerOpen(false)}
+                              className="px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </div>,
+                        document.body
+                      )}
                   </div>
                   <p className="mt-1.5 min-h-[2.5rem] text-xs leading-snug text-gray-500">
                     {medicationIds.length === 0
