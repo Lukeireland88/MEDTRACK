@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ClipboardList, Download } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
 
@@ -367,6 +367,30 @@ export default function HistoryReportPage() {
     return `${names.slice(0, 2).join(', ')} +${names.length - 2} more`;
   }, [medicationIds, medications]);
 
+  const eventFilterSummary = useMemo(() => {
+    switch (eventFilter) {
+      case 'all':
+        return 'All events';
+      case 'slot_taken':
+        return 'Taken';
+      case 'slot_not_taken':
+        return 'Not taken';
+      case 'flexible_dose':
+        return 'Flexible';
+      case 'seizure':
+        return 'Seizure';
+      case 'timeline_event':
+        return 'Notes';
+      default:
+        return 'All events';
+    }
+  }, [eventFilter]);
+
+  const [filtersExpanded, setFiltersExpanded] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.matchMedia('(min-width: 768px)').matches;
+  });
+
   const formatWhen = (iso: string) =>
     new Date(iso).toLocaleString(undefined, {
       month: 'short',
@@ -457,8 +481,38 @@ export default function HistoryReportPage() {
           </p>
         </header>
 
-        <div className="bg-white border border-gray-300 rounded-2xl shadow-lg p-4 sm:p-5 mb-4">
-          <div className="space-y-5">
+        <div className="mb-4 overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-lg">
+          <button
+            type="button"
+            onClick={() => setFiltersExpanded((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-gray-50 sm:p-4"
+            aria-expanded={filtersExpanded}
+          >
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-gray-900">Report filters</div>
+              {!filtersExpanded && (
+                <p className="mt-1 line-clamp-2 text-xs text-gray-600">
+                  <span className="font-medium text-gray-700">
+                    {dateFrom <= dateTo ? dateFrom : dateTo} → {dateFrom <= dateTo ? dateTo : dateFrom}
+                  </span>
+                  <span className="text-gray-400"> · </span>
+                  {medicationSummary}
+                  <span className="text-gray-400"> · </span>
+                  {eventFilterSummary}
+                </p>
+              )}
+            </div>
+            <span className="shrink-0 text-gray-700" aria-hidden>
+              {filtersExpanded ? (
+                <ChevronDown className="h-5 w-5" />
+              ) : (
+                <ChevronRight className="h-5 w-5" />
+              )}
+            </span>
+          </button>
+
+          {filtersExpanded && (
+            <div className="space-y-5 border-t border-gray-200 px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
             {/* Date range + quick presets */}
             <div>
               <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
@@ -635,7 +689,8 @@ export default function HistoryReportPage() {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </div>
 
         <section className="bg-white border border-gray-300 rounded-2xl shadow-lg overflow-hidden">
