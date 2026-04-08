@@ -517,20 +517,22 @@ export default function HistoryReportPage() {
 
             <div className="border-t border-gray-200 pt-5">
               <p className="text-xs font-semibold text-gray-600 mb-3">Filters</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 md:items-end">
-                <div className="min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 md:items-start">
+                <div className="flex min-w-0 flex-col">
+                  <div className="mb-1 flex min-h-[1.75rem] items-center justify-between gap-2">
                     <label htmlFor="hist-med" className="text-xs font-semibold text-gray-600">
                       Medication
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setMedicationIds([])}
-                      className="text-xs font-semibold text-blue-700 hover:text-blue-900 disabled:text-gray-400 disabled:pointer-events-none"
-                      disabled={medicationIds.length === 0}
-                    >
-                      Clear
-                    </button>
+                    <div className="flex shrink-0 justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setMedicationIds([])}
+                        className="text-xs font-semibold text-blue-700 hover:text-blue-900 disabled:text-gray-400 disabled:pointer-events-none"
+                        disabled={medicationIds.length === 0}
+                      >
+                        Clear
+                      </button>
+                    </div>
                   </div>
                   <div className="relative" ref={medPickerRef}>
                     <button
@@ -599,22 +601,26 @@ export default function HistoryReportPage() {
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1.5">
+                  <p className="mt-1.5 min-h-[2.5rem] text-xs leading-snug text-gray-500">
                     {medicationIds.length === 0
                       ? 'Reporting on all medications.'
                       : `Selected ${medicationIds.length} medication${medicationIds.length !== 1 ? 's' : ''}.`}
                   </p>
                 </div>
 
-                <div className="min-w-0">
-                  <label htmlFor="hist-event" className="block text-xs font-semibold text-gray-600 mb-1">
-                    Event type
-                  </label>
+                <div className="flex min-w-0 flex-col">
+                  <div className="mb-1 flex min-h-[1.75rem] items-center justify-between gap-2">
+                    <label htmlFor="hist-event" className="text-xs font-semibold text-gray-600">
+                      Event type
+                    </label>
+                    {/* Keeps label row height aligned with Medication + Clear */}
+                    <div className="min-w-[2.75rem] shrink-0" aria-hidden />
+                  </div>
                   <select
                     id="hist-event"
                     value={eventFilter}
                     onChange={(e) => setEventFilter(e.target.value as EventFilter)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white min-h-[42px]"
+                    className="w-full min-h-[42px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium"
                   >
                     <option value="all">All events</option>
                     <option value="slot_taken">Taken (time slot)</option>
@@ -623,6 +629,9 @@ export default function HistoryReportPage() {
                     <option value="seizure">Seizure</option>
                     <option value="timeline_event">Notes (visits/measurements)</option>
                   </select>
+                  <p className="mt-1.5 min-h-[2.5rem] text-xs leading-snug text-gray-500">
+                    Slot doses, flexible doses, seizures, and notes.
+                  </p>
                 </div>
               </div>
             </div>
