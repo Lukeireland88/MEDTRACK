@@ -482,21 +482,74 @@ export default function HistoryReportPage() {
         </header>
 
         <div className="mb-4 overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-lg">
+          <div className="px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
+            <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="flex flex-wrap gap-2 sm:gap-3 items-end">
+                <div>
+                  <label htmlFor="hist-from" className="block text-xs font-semibold text-gray-600 mb-1">
+                    From
+                  </label>
+                  <input
+                    id="hist-from"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-full min-w-[10.5rem] px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="hist-to" className="block text-xs font-semibold text-gray-600 mb-1">
+                    To
+                  </label>
+                  <input
+                    id="hist-to"
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="w-full min-w-[10.5rem] px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 sm:ml-1">
+                <button
+                  type="button"
+                  onClick={setToday}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={setYesterday}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                >
+                  Yesterday
+                </button>
+                <button
+                  type="button"
+                  onClick={setLast7Days}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                >
+                  Last 7 days
+                </button>
+              </div>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => setFiltersExpanded((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-gray-50 sm:p-4"
+            className="flex w-full items-center justify-between gap-3 border-t border-gray-200 p-3 text-left hover:bg-gray-50 sm:p-4"
             aria-expanded={filtersExpanded}
+            aria-controls="history-detail-filters"
+            id="history-detail-filters-toggle"
           >
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold text-gray-900">Report filters</div>
+              <div className="text-sm font-semibold text-gray-900">Filters</div>
               {!filtersExpanded && (
                 <p className="mt-1 line-clamp-2 text-xs text-gray-600">
-                  <span className="font-medium text-gray-700">
-                    {dateFrom <= dateTo ? dateFrom : dateTo} → {dateFrom <= dateTo ? dateTo : dateFrom}
-                  </span>
-                  <span className="text-gray-400"> · </span>
-                  {medicationSummary}
+                  <span className="font-medium text-gray-700">{medicationSummary}</span>
                   <span className="text-gray-400"> · </span>
                   {eventFilterSummary}
                 </p>
@@ -512,65 +565,10 @@ export default function HistoryReportPage() {
           </button>
 
           {filtersExpanded && (
-            <div className="space-y-5 border-t border-gray-200 px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
-            {/* Date range + quick presets */}
-            <div>
-              <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-                <div className="flex flex-wrap gap-2 sm:gap-3 items-end">
-                  <div>
-                    <label htmlFor="hist-from" className="block text-xs font-semibold text-gray-600 mb-1">
-                      From
-                    </label>
-                    <input
-                      id="hist-from"
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full min-w-[10.5rem] px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="hist-to" className="block text-xs font-semibold text-gray-600 mb-1">
-                      To
-                    </label>
-                    <input
-                      id="hist-to"
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full min-w-[10.5rem] px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 sm:ml-1">
-                  <button
-                    type="button"
-                    onClick={setToday}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
-                  >
-                    Today
-                  </button>
-                  <button
-                    type="button"
-                    onClick={setYesterday}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
-                  >
-                    Yesterday
-                  </button>
-                  <button
-                    type="button"
-                    onClick={setLast7Days}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
-                  >
-                    Last 7 days
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 pt-5">
-              <p className="text-xs font-semibold text-gray-600 mb-3">Filters</p>
+            <div
+              id="history-detail-filters"
+              className="border-t border-gray-200 px-4 pb-4 pt-4 sm:px-5 sm:pb-5"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 md:items-start">
                 <div className="flex min-w-0 flex-col">
                   <div className="mb-1 flex min-h-[1.75rem] items-center justify-between gap-2">
@@ -688,7 +686,6 @@ export default function HistoryReportPage() {
                   </p>
                 </div>
               </div>
-            </div>
             </div>
           )}
         </div>
