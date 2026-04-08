@@ -181,8 +181,8 @@ export default function AddMedicationModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-300 p-4 flex justify-between items-center rounded-t-2xl">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="shrink-0 bg-white border-b border-gray-300 p-4 flex justify-between items-center rounded-t-2xl">
           <h2 className="text-xl font-bold">
             {editingMedication ? 'Edit medication' : 'Add medication'}
           </h2>
@@ -195,7 +195,8 @@ export default function AddMedicationModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
           <div>
             <label className="block text-sm font-semibold mb-2">Name</label>
             <input
@@ -537,8 +538,9 @@ export default function AddMedicationModal({
               </p>
             </div>
           </div>
+          </div>
 
-          <div className="flex justify-between items-center gap-3 pt-4">
+          <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3 sm:px-6 flex justify-between items-center gap-3 rounded-b-2xl">
             {editingMedication && onDelete && (
               <button
                 type="button"
