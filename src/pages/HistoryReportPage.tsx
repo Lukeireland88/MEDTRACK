@@ -457,162 +457,173 @@ export default function HistoryReportPage() {
           </p>
         </header>
 
-        <div className="bg-white border border-gray-300 rounded-2xl shadow-lg p-3 sm:p-4 mb-4">
-          <div className="flex flex-col lg:flex-row lg:flex-wrap gap-3 lg:items-end">
-            <div className="flex flex-wrap gap-2 sm:gap-3 items-end">
-              <div>
-                <label htmlFor="hist-from" className="block text-xs font-semibold text-gray-600 mb-1">
-                  From
-                </label>
-                <input
-                  id="hist-from"
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
-                />
-              </div>
-              <div>
-                <label htmlFor="hist-to" className="block text-xs font-semibold text-gray-600 mb-1">
-                  To
-                </label>
-                <input
-                  id="hist-to"
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
-                />
-              </div>
-            </div>
-            <div className="flex-1 min-w-[200px]">
-              <label htmlFor="hist-med" className="block text-xs font-semibold text-gray-600 mb-1">
-                Medication
-              </label>
-              <div className="relative" ref={medPickerRef}>
-                <button
-                  id="hist-med"
-                  type="button"
-                  onClick={() => setMedPickerOpen((v) => !v)}
-                  aria-haspopup="listbox"
-                  aria-expanded={medPickerOpen}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-left hover:bg-gray-50"
-                >
-                  <span className="block truncate text-gray-900">{medicationSummary}</span>
-                </button>
-                {medPickerOpen && (
-                  <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-300 bg-white shadow-lg">
-                    <div className="p-2 border-b border-gray-200 flex items-center justify-between gap-2">
-                      <div className="text-xs font-semibold text-gray-600">
-                        Select medication(s)
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setMedicationIds([])}
-                        className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                    <div className="max-h-64 overflow-auto p-2">
-                      {medications.length === 0 ? (
-                        <div className="p-2 text-sm text-gray-500">No medications found.</div>
-                      ) : (
-                        <ul role="listbox" aria-label="Medications" className="space-y-1">
-                          {medications.map((m) => {
-                            const checked = medicationIds.includes(m.id);
-                            return (
-                              <li key={m.id}>
-                                <label className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => {
-                                      setMedicationIds((prev) =>
-                                        prev.includes(m.id)
-                                          ? prev.filter((x) => x !== m.id)
-                                          : [...prev, m.id]
-                                      );
-                                    }}
-                                    className="w-4 h-4 accent-blue-600"
-                                  />
-                                  <span className="text-sm text-gray-900">{m.name}</span>
-                                </label>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </div>
-                    <div className="p-2 border-t border-gray-200 flex items-center justify-end">
-                      <button
-                        type="button"
-                        onClick={() => setMedPickerOpen(false)}
-                        className="px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-                      >
-                        Done
-                      </button>
-                    </div>
+        <div className="bg-white border border-gray-300 rounded-2xl shadow-lg p-4 sm:p-5 mb-4">
+          <div className="space-y-5">
+            {/* Date range + quick presets */}
+            <div>
+              <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                <div className="flex flex-wrap gap-2 sm:gap-3 items-end">
+                  <div>
+                    <label htmlFor="hist-from" className="block text-xs font-semibold text-gray-600 mb-1">
+                      From
+                    </label>
+                    <input
+                      id="hist-from"
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-full min-w-[10.5rem] px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
+                    />
                   </div>
-                )}
+                  <div>
+                    <label htmlFor="hist-to" className="block text-xs font-semibold text-gray-600 mb-1">
+                      To
+                    </label>
+                    <input
+                      id="hist-to"
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-full min-w-[10.5rem] px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 sm:ml-1">
+                  <button
+                    type="button"
+                    onClick={setToday}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={setYesterday}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                  >
+                    Yesterday
+                  </button>
+                  <button
+                    type="button"
+                    onClick={setLast7Days}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
+                  >
+                    Last 7 days
+                  </button>
+                </div>
               </div>
+            </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setMedicationIds([])}
-                  className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                  Clear medication filter
-                </button>
-                <span className="text-xs text-gray-500">
-                  {medicationIds.length === 0
-                    ? 'Reporting on all medications.'
-                    : `Selected ${medicationIds.length} medication${medicationIds.length !== 1 ? 's' : ''}.`}
-                </span>
-              </div>
-            </div>
-            <div className="w-full min-w-0 sm:min-w-[200px] sm:max-w-xs">
-              <label htmlFor="hist-event" className="block text-xs font-semibold text-gray-600 mb-1">
-                Event type
-              </label>
-              <select
-                id="hist-event"
-                value={eventFilter}
-                onChange={(e) => setEventFilter(e.target.value as EventFilter)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white"
-              >
-                <option value="all">All events</option>
-                <option value="slot_taken">Taken (time slot)</option>
-                <option value="slot_not_taken">Not taken (time slot)</option>
-                <option value="flexible_dose">Flexible dose</option>
-                <option value="seizure">Seizure</option>
-                <option value="timeline_event">Notes (visits/measurements)</option>
-              </select>
-            </div>
-            <div className="self-end overflow-x-auto max-w-full">
-              <div className="flex gap-2 flex-nowrap">
-                <button
-                  type="button"
-                  onClick={setToday}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
-                >
-                  Today
-                </button>
-                <button
-                  type="button"
-                  onClick={setYesterday}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
-                >
-                  Yesterday
-                </button>
-                <button
-                  type="button"
-                  onClick={setLast7Days}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-50 whitespace-nowrap"
-                >
-                  Last 7 days
-                </button>
+            <div className="border-t border-gray-200 pt-5">
+              <p className="text-xs font-semibold text-gray-600 mb-3">Filters</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 md:items-end">
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <label htmlFor="hist-med" className="text-xs font-semibold text-gray-600">
+                      Medication
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setMedicationIds([])}
+                      className="text-xs font-semibold text-blue-700 hover:text-blue-900 disabled:text-gray-400 disabled:pointer-events-none"
+                      disabled={medicationIds.length === 0}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="relative" ref={medPickerRef}>
+                    <button
+                      id="hist-med"
+                      type="button"
+                      onClick={() => setMedPickerOpen((v) => !v)}
+                      aria-haspopup="listbox"
+                      aria-expanded={medPickerOpen}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white text-left hover:bg-gray-50 min-h-[42px]"
+                    >
+                      <span className="block truncate text-gray-900">{medicationSummary}</span>
+                    </button>
+                    {medPickerOpen && (
+                      <div className="absolute z-20 mt-2 w-full rounded-xl border border-gray-300 bg-white shadow-lg">
+                        <div className="p-2 border-b border-gray-200 flex items-center justify-between gap-2">
+                          <div className="text-xs font-semibold text-gray-600">
+                            Select medication(s)
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setMedicationIds([])}
+                            className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                        <div className="max-h-64 overflow-auto p-2">
+                          {medications.length === 0 ? (
+                            <div className="p-2 text-sm text-gray-500">No medications found.</div>
+                          ) : (
+                            <ul role="listbox" aria-label="Medications" className="space-y-1">
+                              {medications.map((m) => {
+                                const checked = medicationIds.includes(m.id);
+                                return (
+                                  <li key={m.id}>
+                                    <label className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={() => {
+                                          setMedicationIds((prev) =>
+                                            prev.includes(m.id)
+                                              ? prev.filter((x) => x !== m.id)
+                                              : [...prev, m.id]
+                                          );
+                                        }}
+                                        className="w-4 h-4 accent-blue-600"
+                                      />
+                                      <span className="text-sm text-gray-900">{m.name}</span>
+                                    </label>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                        <div className="p-2 border-t border-gray-200 flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setMedPickerOpen(false)}
+                            className="px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                          >
+                            Done
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    {medicationIds.length === 0
+                      ? 'Reporting on all medications.'
+                      : `Selected ${medicationIds.length} medication${medicationIds.length !== 1 ? 's' : ''}.`}
+                  </p>
+                </div>
+
+                <div className="min-w-0">
+                  <label htmlFor="hist-event" className="block text-xs font-semibold text-gray-600 mb-1">
+                    Event type
+                  </label>
+                  <select
+                    id="hist-event"
+                    value={eventFilter}
+                    onChange={(e) => setEventFilter(e.target.value as EventFilter)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium bg-white min-h-[42px]"
+                  >
+                    <option value="all">All events</option>
+                    <option value="slot_taken">Taken (time slot)</option>
+                    <option value="slot_not_taken">Not taken (time slot)</option>
+                    <option value="flexible_dose">Flexible dose</option>
+                    <option value="seizure">Seizure</option>
+                    <option value="timeline_event">Notes (visits/measurements)</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
