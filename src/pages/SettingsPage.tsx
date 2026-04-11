@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ListOrdered, Settings } from 'lucide-react';
+import { Archive, ArrowLeft, ListOrdered, Settings } from 'lucide-react';
 import ManageTimeSlotsModal from '../components/ManageTimeSlotsModal';
-import EndedCoursesSection from '../components/EndedCoursesSection';
+import EndedCoursesModal from '../components/EndedCoursesModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [endedCoursesOpen, setEndedCoursesOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
@@ -52,7 +55,32 @@ export default function SettingsPage() {
               </div>
             </button>
           </li>
-          <EndedCoursesSection />
+          {user ? (
+            <li>
+              <button
+                type="button"
+                onClick={() => setEndedCoursesOpen(true)}
+                className="flex w-full items-start gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-brand-sm ring-1 ring-slate-200/80 transition-colors hover:border-slate-300 hover:bg-slate-50/80"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                  <Archive className="h-5 w-5" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-slate-900">Ended courses</div>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    Restart rescue meds or past antibiotic courses, or edit medications that are past their end date.
+                  </p>
+                  <span className="mt-2 inline-block text-sm font-semibold text-brand-700">Configure →</span>
+                </div>
+              </button>
+            </li>
+          ) : (
+            <li>
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4 text-sm text-slate-600">
+                Sign in to manage ended courses.
+              </div>
+            </li>
+          )}
         </ul>
       </div>
 
@@ -63,6 +91,7 @@ export default function SettingsPage() {
           /* Tracker reloads slot list on next visit; optional: could broadcast a custom event */
         }}
       />
+      <EndedCoursesModal isOpen={endedCoursesOpen} onClose={() => setEndedCoursesOpen(false)} />
     </div>
   );
 }
