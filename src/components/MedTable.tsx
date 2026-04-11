@@ -508,7 +508,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Teal: flexible doses. X in box: not taken (click to mark taken). Circle-off: reason.
+          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). Circle-off: reason.
         </div>
       </div>
 

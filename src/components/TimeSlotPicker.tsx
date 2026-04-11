@@ -20,7 +20,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
 
   if (availableTimeSlots.length === 0) {
     return (
-      <div className="p-2 sm:p-3 border-b border-brand-100/80 bg-gradient-to-r from-brand-50/90 to-slate-50/80 text-center text-brand-800/80 text-sm sm:text-base rounded-t-2xl font-medium">
+      <div className="p-2 sm:p-3 border-b border-slate-200/90 bg-slate-50/95 text-center text-slate-600 text-sm sm:text-base rounded-t-2xl font-medium">
         No medications scheduled
       </div>
     );
@@ -28,7 +28,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
 
   if (availableTimeSlots.length === 1) {
     return (
-      <div className="p-2 sm:p-3 border-b border-brand-100/80 bg-gradient-to-r from-brand-50/90 to-slate-50/80 font-semibold text-sm sm:text-base text-brand-950 rounded-t-2xl">
+      <div className="p-2 sm:p-3 border-b border-slate-200/90 bg-slate-50/95 font-semibold text-sm sm:text-base text-slate-800 rounded-t-2xl">
         <span>Showing: {availableTimeSlots[0]}</span>
       </div>
     );
@@ -37,7 +37,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
   return (
     <div>
       <div
-        className="p-2 sm:p-3 border-b border-brand-100/80 bg-gradient-to-r from-brand-50/90 to-slate-50/80 flex justify-between items-center cursor-pointer font-semibold text-sm sm:text-base text-brand-950 touch-manipulation rounded-t-2xl"
+        className="p-2 sm:p-3 border-b border-slate-200/90 bg-slate-50/95 flex justify-between items-center cursor-pointer font-semibold text-sm sm:text-base text-slate-800 touch-manipulation rounded-t-2xl"
         onClick={toggleOptions}
       >
         <span>Showing: {selectedTimeSlot}</span>

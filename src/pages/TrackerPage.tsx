@@ -816,26 +816,26 @@ export default function TrackerPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-50/80 via-white to-slate-100/90 flex items-center justify-center">
-        <div className="text-brand-700/80 text-sm font-medium animate-pulse">Loading…</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95 flex items-center justify-center">
+        <div className="text-slate-500 text-sm font-medium animate-pulse">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50/70 via-white to-slate-100/90">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
       <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <header className="mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-start gap-3 mb-3">
             <div className="flex items-start gap-3 min-w-0">
               <div
-                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-brand-sm"
+                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm"
                 aria-hidden
               >
                 <Pill className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wider text-brand-700/90">Medtrack</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">Medtrack</p>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                   Today&apos;s medications
                 </h1>
@@ -884,7 +884,7 @@ export default function TrackerPage() {
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
 
-        <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-brand-200/30">
+        <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-slate-200/80">
           <TimeSlotPicker
             selectedTimeSlot={selectedTimeSlot}
             onTimeSlotChange={setSelectedTimeSlot}

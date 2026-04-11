@@ -494,7 +494,7 @@ export default function HistoryReportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50/70 via-white to-slate-100/90">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <header className="mb-4 sm:mb-6">
           <Link
@@ -507,13 +507,13 @@ export default function HistoryReportPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0">
               <div
-                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-brand-sm"
+                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm"
                 aria-hidden
               >
                 <ClipboardList className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wider text-brand-700/90">Medtrack</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">Medtrack</p>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">History report</h1>
               </div>
             </div>
@@ -524,7 +524,7 @@ export default function HistoryReportPage() {
           </p>
         </header>
 
-        <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-brand-sm ring-1 ring-brand-200/25">
+        <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-brand-sm ring-1 ring-slate-200/80">
           <div className="px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
             <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -747,7 +747,7 @@ export default function HistoryReportPage() {
           )}
         </div>
 
-        <section className="bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-brand-200/25 overflow-hidden">
+        <section className="bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-slate-200/80 overflow-hidden">
           {loading ? (
             <div className="p-8 text-center text-slate-500 text-sm animate-pulse">Loading…</div>
           ) : error ? (
