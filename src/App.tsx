@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import TrackerPage from './pages/TrackerPage';
 import HistoryReportPage from './pages/HistoryReportPage';
+import SettingsPage from './pages/SettingsPage';
 import { isSupabaseConfigured } from './lib/supabase';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<TrackerPage />} />
         <Route path="/history" element={<HistoryReportPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </>
   );

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Settings } from 'lucide-react';
 import { toDateInputValue, fromDateInputValue, formatDateLine } from '../utils/dateUtils';
 
 interface DateNavProps {
@@ -72,6 +72,14 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
         >
           <ClipboardList className="w-4 h-4 sm:w-[18px] sm:h-[18px] shrink-0" />
           <span className="hidden sm:inline">History</span>
+        </Link>
+        <Link
+          to="/settings"
+          className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border border-slate-200 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base touch-manipulation"
+          title="Settings"
+        >
+          <Settings className="w-4 h-4 sm:w-[18px] sm:h-[18px] shrink-0" aria-hidden />
+          <span className="hidden sm:inline">Settings</span>
         </Link>
       </div>
       <div className="text-slate-500 text-xs sm:text-sm font-medium tabular-nums">

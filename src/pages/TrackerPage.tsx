@@ -9,7 +9,6 @@ import {
   ChevronRight,
   Pencil,
   Pill,
-  ListOrdered,
   X,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -37,14 +36,12 @@ import MarkNotTakenModal from '../components/MarkNotTakenModal';
 import LogSeizureModal from '../components/LogSeizureModal';
 import AddEventModal, { AddEventPayload } from '../components/AddEventModal';
 import AddLogPickerModal from '../components/AddLogPickerModal';
-import ManageTimeSlotsModal from '../components/ManageTimeSlotsModal';
 
 export default function TrackerPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
   const [slotDefinitions, setSlotDefinitions] = useState<TimeSlot[]>([]);
-  const [sessionsModalOpen, setSessionsModalOpen] = useState(false);
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>('');
   const [medications, setMedications] = useState<MedicationWithSlots[]>([]);
   const [slotDoseByMedId, setSlotDoseByMedId] = useState<Record<string, SlotDoseState>>({});
@@ -893,20 +890,7 @@ export default function TrackerPage() {
               )}
             </div>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-            <div className="min-w-0 flex-1">
-              <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
-            </div>
-            <button
-              type="button"
-              onClick={() => setSessionsModalOpen(true)}
-              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
-              title="Rename, reorder, or add sessions (Morning, Evening, …)"
-            >
-              <ListOrdered className="h-4 w-4 text-slate-600" aria-hidden />
-              Sessions
-            </button>
-          </div>
+          <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
 
         <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-slate-200/80">
@@ -1004,14 +988,6 @@ export default function TrackerPage() {
         onDelete={handleDeleteMedication}
         editingMedication={editingMedication}
         sessionOptions={slotDefinitions.map((s) => s.name)}
-      />
-
-      <ManageTimeSlotsModal
-        isOpen={sessionsModalOpen}
-        onClose={() => setSessionsModalOpen(false)}
-        onSaved={() => {
-          void refreshSlotDefinitions();
-        }}
       />
 
       <MedicationHistoryModal
