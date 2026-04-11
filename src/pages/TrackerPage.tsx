@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, LogIn, LogOut, ClipboardList, Pill } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Plus, LogIn, LogOut, ClipboardList, Pill, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState, TimeSlot } from '../types';
 import {
@@ -806,6 +806,14 @@ export default function TrackerPage() {
                     <span className="hidden sm:inline">Add log</span>
                     <span className="sm:hidden">Log</span>
                   </button>
+                  <Link
+                    to="/settings"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-slate-200 bg-white text-slate-800 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
+                    <span className="hidden sm:inline">Settings</span>
+                  </Link>
                   <button
                     onClick={handleAddMedication}
                     className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap shadow-brand-sm"
@@ -823,13 +831,23 @@ export default function TrackerPage() {
                   </button>
                 </>
               ) : (
-                <button
-                  onClick={() => setAuthModalOpen(true)}
-                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 text-sm sm:text-base shadow-brand-sm"
-                >
-                  <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Sign In
-                </button>
+                <>
+                  <Link
+                    to="/settings"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-slate-200 bg-white text-slate-800 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
+                    <span className="hidden sm:inline">Settings</span>
+                  </Link>
+                  <button
+                    onClick={() => setAuthModalOpen(true)}
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 text-sm sm:text-base shadow-brand-sm"
+                  >
+                    <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
+                    Sign In
+                  </button>
+                </>
               )}
             </div>
           </div>
