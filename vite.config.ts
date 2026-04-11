@@ -11,7 +11,7 @@ export default defineConfig({
       base: '/MEDTRACK/',
       manifest: {
         name: 'Medication Tracker',
-        short_name: 'MedTrack',
+        short_name: 'Medication Tracker',
         start_url: '/MEDTRACK/',
         scope: '/MEDTRACK/',
         display: 'standalone',

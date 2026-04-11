@@ -779,8 +779,8 @@ export default function TrackerPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
       <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <header className="mb-3 sm:mb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-start gap-3 mb-3">
-            <div className="flex items-start gap-3 min-w-0">
+          <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex min-w-0 flex-1 items-start gap-3">
               <div
                 className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm"
                 aria-hidden
@@ -788,13 +788,12 @@ export default function TrackerPage() {
                 <Pill className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-slate-900 tracking-tight">
                   Today&apos;s medications
                 </h1>
-                <p className="text-sm text-slate-500 mt-0.5">Daily schedule · mark doses as you go</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
               {user ? (
                 <>
                   <Link

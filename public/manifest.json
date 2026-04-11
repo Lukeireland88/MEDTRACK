@@ -1,7 +1,7 @@
 {
   "id": "/MEDTRACK/",
-  "name": "Medtrack",
-  "short_name": "Medtrack",
+  "name": "Medication Tracker",
+  "short_name": "Medication Tracker",
   "start_url": "/MEDTRACK/",
   "scope": "/MEDTRACK/",
   "display": "standalone",

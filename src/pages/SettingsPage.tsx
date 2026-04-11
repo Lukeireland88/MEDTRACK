@@ -27,7 +27,7 @@ export default function SettingsPage() {
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Settings</h1>
-              <p className="mt-1 text-sm text-slate-600">Configure how Medtrack works for you.</p>
+              <p className="mt-1 text-sm text-slate-600">Configure how Medication Tracker works for you.</p>
             </div>
           </div>
         </header>
