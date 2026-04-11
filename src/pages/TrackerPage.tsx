@@ -20,7 +20,11 @@ import {
   toLocalDateKey,
   toLocalDateOnly,
 } from '../utils/dateUtils';
-import { getDefaultTimeSlotFromOrder, sortMedicationSlotNames } from '../utils/timeSlotUtils';
+import {
+  getDefaultTimeSlotFromOrder,
+  pickDefaultSessionForHour,
+  sortMedicationSlotNames,
+} from '../utils/timeSlotUtils';
 import { useAuth } from '../contexts/AuthContext';
 import DateNav from '../components/DateNav';
 import TimeSlotPicker from '../components/TimeSlotPicker';
@@ -70,7 +74,7 @@ export default function TrackerPage() {
     try {
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, name, sort_order')
+        .select('id, name, sort_order, default_after_hour')
         .order('sort_order', { ascending: true });
       if (error) throw error;
       const defs = (data as TimeSlot[]) ?? [];
@@ -79,7 +83,7 @@ export default function TrackerPage() {
       if (names.length > 0) {
         setSelectedTimeSlot((prev) => {
           if (names.includes(prev)) return prev;
-          return getDefaultTimeSlotFromOrder(names);
+          return pickDefaultSessionForHour(defs, names);
         });
       }
     } catch (e) {
@@ -151,9 +155,7 @@ export default function TrackerPage() {
 
       if (!allMeds || allMeds.length === 0) {
         setMedications([]);
-        setAvailableTimeSlots(
-          slotDefinitions.length > 0 ? slotDefinitions.map((s) => s.name) : []
-        );
+        setAvailableTimeSlots([]);
         setFlexibleDoseEvents({});
         setEndedResumableMedications([]);
         if (!opts?.silent) setLoading(false);
@@ -185,10 +187,16 @@ export default function TrackerPage() {
 
       const viewingDate = toLocalDateKey(selectedDate);
       const legacyOrder = ['Morning', 'Lunch', 'Evening', 'Night'];
+      const legacyDefaultHours = [0, 12, 15, 19];
       const orderForSort: TimeSlot[] =
         slotDefinitions.length > 0
           ? slotDefinitions
-          : legacyOrder.map((name, i) => ({ id: '', name, sort_order: i + 1 }));
+          : legacyOrder.map((name, i) => ({
+              id: '',
+              name,
+              sort_order: i + 1,
+              default_after_hour: legacyDefaultHours[i] ?? 12,
+            }));
 
       // Create medication objects with time slots (before hiding ended / future-start)
       const mappedWithSlots: MedicationWithSlots[] = allMeds.map((med: any) => {
@@ -225,7 +233,8 @@ export default function TrackerPage() {
         })
         .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-      // Determine tab labels: all configured sessions when loaded from DB; else only slots in use (legacy)
+      // Tabs: only sessions that have at least one medication (hide empty sessions).
+      // If only flexible-daily meds exist, show all configured sessions so tabs stay usable.
       const activeTimeSlots = new Set<string>();
       allMedsWithSlots.forEach((med: any) => {
         med.time_slot_names.forEach((slot: string) => activeTimeSlots.add(slot));
@@ -237,20 +246,19 @@ export default function TrackerPage() {
         slotDefinitions.length > 0
           ? slotDefinitions.map((s) => s.name)
           : legacyOrder;
-      let sortedSlots: string[];
-      if (slotDefinitions.length > 0) {
-        sortedSlots = orderNames;
-      } else {
-        sortedSlots = orderNames.filter((slot) => activeTimeSlots.has(slot));
-        if (sortedSlots.length === 0 && hasFlexibleDaily) {
-          sortedSlots = [...orderNames];
-        }
+      let sortedSlots = orderNames.filter((slot) => activeTimeSlots.has(slot));
+      if (sortedSlots.length === 0 && hasFlexibleDaily) {
+        sortedSlots = [...orderNames];
       }
       setAvailableTimeSlots(sortedSlots);
 
-      // Reset selected time slot if it's no longer available
+      // Reset selected tab if hidden; otherwise pick default by time of day (configurable per session).
       if (sortedSlots.length > 0 && !sortedSlots.includes(selectedTimeSlot)) {
-        setSelectedTimeSlot(sortedSlots[0]);
+        setSelectedTimeSlot(
+          slotDefinitions.length > 0
+            ? pickDefaultSessionForHour(slotDefinitions, sortedSlots)
+            : getDefaultTimeSlotFromOrder(sortedSlots)
+        );
       }
 
       // Time-slot meds for this tab; flexible meds appear on every tab
@@ -911,7 +919,7 @@ export default function TrackerPage() {
             medications={medications}
             selectedDate={selectedDate}
             selectedTimeSlot={selectedTimeSlot}
-            firstSessionName={slotDefinitions[0]?.name ?? ''}
+            firstSessionName={availableTimeSlots[0] ?? ''}
           />
           <MedTable
             medications={medications}

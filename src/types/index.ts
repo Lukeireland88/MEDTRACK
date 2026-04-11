@@ -2,6 +2,8 @@ export interface TimeSlot {
   id: string;
   name: string;
   sort_order: number;
+  /** Local hour 0–23: default tab when current time is in this session’s band (see timeSlotUtils). */
+  default_after_hour: number;
 }
 
 export type DosingMode = 'time_slots' | 'flexible_daily';

@@ -15,17 +15,20 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
   const [savingId, setSavingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [edits, setEdits] = useState<Record<string, string>>({});
+  /** Local string for hour inputs until blur */
+  const [hourEdits, setHourEdits] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, name, sort_order')
+        .select('id, name, sort_order, default_after_hour')
         .order('sort_order', { ascending: true });
       if (error) throw error;
       setRows((data as TimeSlot[]) || []);
       setEdits({});
+      setHourEdits({});
     } catch (e) {
       console.error(e);
       alert('Could not load sessions.');
@@ -104,6 +107,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
       const { error } = await supabase.from('time_slots').insert({
         name,
         sort_order: maxOrder + 1,
+        default_after_hour: 12,
       });
       if (error) throw error;
       setNewName('');
@@ -144,6 +148,40 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
     }
   };
 
+  const handleHourBlur = async (slot: TimeSlot) => {
+    const raw = (hourEdits[slot.id] ?? String(slot.default_after_hour ?? 12)).trim();
+    let n = parseInt(raw, 10);
+    if (Number.isNaN(n)) {
+      setHourEdits((h) => {
+        const next = { ...h };
+        delete next[slot.id];
+        return next;
+      });
+      return;
+    }
+    n = Math.max(0, Math.min(23, n));
+    if (n === (slot.default_after_hour ?? 12)) {
+      setHourEdits((h) => {
+        const next = { ...h };
+        delete next[slot.id];
+        return next;
+      });
+      return;
+    }
+    setSavingId(slot.id);
+    try {
+      const { error } = await supabase.from('time_slots').update({ default_after_hour: n }).eq('id', slot.id);
+      if (error) throw error;
+      await load();
+      onSaved();
+    } catch (e) {
+      console.error(e);
+      alert('Could not update default hour.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -169,7 +207,10 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
         </div>
 
         <p className="border-b border-slate-100 px-4 py-2 text-sm text-slate-600">
-          Names appear in the day tabs and when scheduling medications. Order is left-to-right in the picker.
+          Names appear in the day tabs and when scheduling medications. Order is left-to-right in the picker.{' '}
+          <strong className="font-medium text-slate-800">Default at (hour)</strong> sets which tab opens first when
+          the app loads (local time): the last session whose hour is ≤ the current time is selected among visible
+          tabs.
         </p>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
@@ -180,7 +221,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
               {rows.map((slot, index) => (
                 <li
                   key={slot.id}
-                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-2 py-2"
+                  className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-2 py-2 sm:flex-nowrap"
                 >
                   <div className="flex flex-col gap-0.5">
                     <button
@@ -210,6 +251,25 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
                     className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     disabled={savingId === slot.id}
                   />
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <label className="whitespace-nowrap text-xs text-slate-600" htmlFor={`hour-${slot.id}`}>
+                      Default at
+                    </label>
+                    <input
+                      id={`hour-${slot.id}`}
+                      type="number"
+                      min={0}
+                      max={23}
+                      inputMode="numeric"
+                      value={hourEdits[slot.id] ?? String(slot.default_after_hour ?? 12)}
+                      onChange={(e) => setHourEdits((prev) => ({ ...prev, [slot.id]: e.target.value }))}
+                      onBlur={() => handleHourBlur(slot)}
+                      className="w-14 rounded-lg border border-slate-200 bg-white px-2 py-2 text-center text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      disabled={savingId === slot.id}
+                      title="Local hour (0–23) when this session becomes the default tab"
+                    />
+                    <span className="text-xs text-slate-500">h</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleDelete(slot)}
