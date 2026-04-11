@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Pencil, History, CircleOff, X } from 'lucide-react';
+import { Pencil, History, CircleOff, X } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -37,7 +37,7 @@ function SlotTakenControl({
       <button
         type="button"
         onClick={() => onToggleTaken(medId)}
-        className={`touch-manipulation w-6 h-6 shrink-0 rounded border-2 border-gray-500 bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 ${className}`}
+        className={`w-6 h-6 shrink-0 rounded border-2 border-gray-500 bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 ${className}`}
         title="Not taken — click to mark as taken"
         aria-label="Not taken. Click to mark as taken."
       >
@@ -45,23 +45,14 @@ function SlotTakenControl({
       </button>
     );
   }
-  // Button, not <input type="checkbox">: native checkboxes capture touches and block parent scroll on iOS/tablet WebKit.
   return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={taken}
-      onClick={() => onToggleTaken(medId)}
-      className={`touch-manipulation w-6 h-6 shrink-0 rounded border-2 flex items-center justify-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 ${
-        taken
-          ? 'border-brand-600 bg-brand-600 text-white'
-          : 'border-slate-400 bg-white hover:bg-slate-50'
-      } ${className}`}
+    <input
+      type="checkbox"
+      checked={taken}
+      onChange={() => onToggleTaken(medId)}
+      className={`w-6 h-6 accent-brand-600 cursor-pointer ${className}`}
       title="Mark as taken"
-      aria-label={taken ? 'Taken. Click to mark as not taken.' : 'Mark as taken'}
-    >
-      {taken && <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />}
-    </button>
+    />
   );
 }
 
@@ -144,13 +135,12 @@ export default function MedTable({
     });
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col">
-      <div className="relative min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] [scrollbar-gutter:stable]">
-        {/* Desktop table view */}
-        <div className="hidden md:block px-3 pb-3">
-          <table className="w-full touch-pan-y border-collapse">
-            <thead>
-              <tr className="sticky top-0 z-10 bg-slate-100/90 shadow-[0_1px_0_0_rgb(226_232_240)]">
+    <>
+      {/* Desktop table view */}
+      <div className="hidden md:block px-3 pb-3">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-slate-100/90">
               <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-14">
                 Taken
               </th>
@@ -333,12 +323,12 @@ export default function MedTable({
                 </tr>
               );
             })}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
+      </div>
 
-        {/* Mobile card view */}
-        <div className="space-y-2 px-2 pb-3 md:hidden">
+      {/* Mobile card view */}
+      <div className="md:hidden px-2 pb-3 space-y-2">
         {sortedMedications.map((med) => {
           const due = isDue(med, selectedDate);
           const paused = isPaused(med, selectedDate);
@@ -511,10 +501,9 @@ export default function MedTable({
             </div>
           );
         })}
-        </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-start justify-between gap-2 border-t border-slate-200 px-2 py-2 text-xs text-slate-600 sm:flex-row sm:px-3 sm:py-3 sm:text-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-2 px-2 sm:px-3 py-2 sm:py-3 border-t border-slate-200 text-slate-600 text-xs sm:text-sm">
         <div>
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
@@ -537,6 +526,6 @@ export default function MedTable({
           await onLogFlexibleDose(logDoseMedId, takenAtIso);
         }}
       />
-    </div>
+    </>
   );
 }

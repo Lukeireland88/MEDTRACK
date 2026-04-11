@@ -769,16 +769,16 @@ export default function TrackerPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="flex min-h-dvh flex-1 items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95 flex items-center justify-center">
         <div className="text-slate-500 text-sm font-medium animate-pulse">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
-      <div className="mx-auto grid min-h-0 w-full max-w-4xl flex-1 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden px-2 py-3 sm:gap-4 sm:px-4 sm:py-6">
-        <header className="min-w-0">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
+        <header className="mb-3 sm:mb-4">
           <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex min-w-0 flex-1 items-start gap-3">
               <div
@@ -853,36 +853,30 @@ export default function TrackerPage() {
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
 
-        <section className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-brand-sm ring-1 ring-slate-200/80">
-          <div className="min-w-0">
-            <TimeSlotPicker
-              selectedTimeSlot={selectedTimeSlot}
-              onTimeSlotChange={setSelectedTimeSlot}
-              availableTimeSlots={availableTimeSlots}
-            />
-          </div>
-          <div className="min-w-0">
-            <Notices
-              medications={medications}
-              selectedDate={selectedDate}
-              selectedTimeSlot={selectedTimeSlot}
-              firstSessionName={availableTimeSlots[0] ?? ''}
-            />
-          </div>
-          <div className="flex min-h-0 min-w-0 flex-col overflow-hidden">
-            <MedTable
-              medications={medications}
-              selectedDate={selectedDate}
-              slotDoseByMedId={slotDoseByMedId}
-              flexibleDoseEvents={flexibleDoseEvents}
-              onToggleTaken={handleToggleTaken}
-              onOpenMarkNotTaken={setMarkNotTakenMedId}
-              onLogFlexibleDose={handleLogFlexibleDose}
-              onRemoveLastFlexibleDose={handleRemoveLastFlexibleDose}
-              onEditMedication={handleEditMedication}
-              onShowHistory={handleShowHistory}
-            />
-          </div>
+        <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-slate-200/80">
+          <TimeSlotPicker
+            selectedTimeSlot={selectedTimeSlot}
+            onTimeSlotChange={setSelectedTimeSlot}
+            availableTimeSlots={availableTimeSlots}
+          />
+          <Notices
+            medications={medications}
+            selectedDate={selectedDate}
+            selectedTimeSlot={selectedTimeSlot}
+            firstSessionName={availableTimeSlots[0] ?? ''}
+          />
+          <MedTable
+            medications={medications}
+            selectedDate={selectedDate}
+            slotDoseByMedId={slotDoseByMedId}
+            flexibleDoseEvents={flexibleDoseEvents}
+            onToggleTaken={handleToggleTaken}
+            onOpenMarkNotTaken={setMarkNotTakenMedId}
+            onLogFlexibleDose={handleLogFlexibleDose}
+            onRemoveLastFlexibleDose={handleRemoveLastFlexibleDose}
+            onEditMedication={handleEditMedication}
+            onShowHistory={handleShowHistory}
+          />
         </section>
       </div>
 
