@@ -1,24 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Plus,
-  LogIn,
-  LogOut,
-  ClipboardList,
-  RotateCcw,
-  ChevronDown,
-  ChevronRight,
-  Pencil,
-  Pill,
-  X,
-} from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Plus, LogIn, LogOut, ClipboardList, Pill } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState, TimeSlot } from '../types';
 import {
   getDefaultTimeSlot,
-  toDateKeyFromDb,
   toLocalDateKey,
   toLocalDateOnly,
 } from '../utils/dateUtils';
+import { fetchMedicationWithSlotsById } from '../utils/fetchMedicationWithSlots';
 import {
   getDefaultTimeSlotFromOrder,
   pickDefaultSessionForHour,
@@ -38,6 +28,8 @@ import AddEventModal, { AddEventPayload } from '../components/AddEventModal';
 import AddLogPickerModal from '../components/AddLogPickerModal';
 
 export default function TrackerPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
@@ -61,11 +53,6 @@ export default function TrackerPage() {
   const [addLogPickerOpen, setAddLogPickerOpen] = useState(false);
   const [logSeizureOpen, setLogSeizureOpen] = useState(false);
   const [addEventOpen, setAddEventOpen] = useState(false);
-  const [endedResumableMedications, setEndedResumableMedications] = useState<MedicationWithSlots[]>([]);
-  const [endedCoursesOpen, setEndedCoursesOpen] = useState(false);
-  const [restartingMedId, setRestartingMedId] = useState<string | null>(null);
-  const [restartPromptMed, setRestartPromptMed] = useState<MedicationWithSlots | null>(null);
-  const [restartNewStartDate, setRestartNewStartDate] = useState<string>('');
 
   const refreshSlotDefinitions = useCallback(async () => {
     try {
@@ -145,7 +132,6 @@ export default function TrackerPage() {
         console.error('Error loading medications:', medsError);
         setMedications([]);
         setFlexibleDoseEvents({});
-        setEndedResumableMedications([]);
         if (!opts?.silent) setLoading(false);
         return;
       }
@@ -154,7 +140,6 @@ export default function TrackerPage() {
         setMedications([]);
         setAvailableTimeSlots([]);
         setFlexibleDoseEvents({});
-        setEndedResumableMedications([]);
         if (!opts?.silent) setLoading(false);
         return;
       }
@@ -211,16 +196,6 @@ export default function TrackerPage() {
           is_multiple: dosingMode === 'time_slots' && timeSlotNames.length > 1,
         };
       });
-
-      const endedResumable = mappedWithSlots
-        .filter(
-          (med) =>
-            med.end_date != null &&
-            med.end_date !== '' &&
-            med.end_date < viewingDate
-        )
-        .sort((a, b) => a.name.localeCompare(b.name));
-      setEndedResumableMedications(endedResumable);
 
       const allMedsWithSlots: MedicationWithSlots[] = mappedWithSlots
         .filter((med: any) => {
@@ -678,7 +653,7 @@ export default function TrackerPage() {
 
       setIsModalOpen(false);
       setEditingMedication(null);
-      await loadAvailableTimeSlots();
+      void refreshSlotDefinitions();
       loadMedications();
     } catch (error) {
       console.error('Error saving medication:', error);
@@ -705,59 +680,6 @@ export default function TrackerPage() {
     } else {
       return `Every ${formData.intervalDays} day${formData.intervalDays > 1 ? 's' : ''}`;
     }
-  };
-
-  const handleRestartMedication = async (med: MedicationWithSlots, newStartDate: string) => {
-    if (!user) {
-      setAuthModalOpen(true);
-      return;
-    }
-    setRestartingMedId(med.id);
-    try {
-      // Always read fresh dates from the DB — the `med` object from the list can be stale
-      // (e.g. after editing start/end in the modal without the ended-courses row updating).
-      const { data: freshRow, error: freshErr } = await supabase
-        .from('medications')
-        .select('start_date, end_date')
-        .eq('id', med.id)
-        .single();
-
-      if (freshErr) throw freshErr;
-
-      const courseEnd = toDateKeyFromDb(freshRow?.end_date ?? null);
-      const courseStartRaw = toDateKeyFromDb(freshRow?.start_date ?? null);
-      const courseStart = courseStartRaw || courseEnd;
-
-      if (courseEnd) {
-        const { error: logError } = await supabase.from('medication_course_periods').insert({
-          medication_id: med.id,
-          start_date: courseStart,
-          end_date: courseEnd,
-          notes: 'Auto-logged (tracker restart)',
-        });
-        if (logError) throw logError;
-      }
-
-      const { error } = await supabase
-        .from('medications')
-        .update({ end_date: null, start_date: newStartDate || null })
-        .eq('id', med.id);
-
-      if (error) throw error;
-
-      await loadAvailableTimeSlots();
-      await loadMedications({ silent: true });
-    } catch (error) {
-      console.error('Error restarting medication:', error);
-      alert('Failed to restart medication. Please try again.');
-    } finally {
-      setRestartingMedId(null);
-    }
-  };
-
-  const openRestartPrompt = (med: MedicationWithSlots) => {
-    setRestartPromptMed(med);
-    setRestartNewStartDate(toLocalDateKey(selectedDate));
   };
 
   const handleEditMedication = (med: MedicationWithSlots) => {
@@ -809,7 +731,7 @@ export default function TrackerPage() {
 
       setIsModalOpen(false);
       setEditingMedication(null);
-      await loadAvailableTimeSlots();
+      void refreshSlotDefinitions();
       loadMedications();
     } catch (error) {
       console.error('Error deleting medication:', error);
@@ -823,6 +745,27 @@ export default function TrackerPage() {
     setHistoryDosingMode(dosingMode);
     setHistoryModalOpen(true);
   };
+
+  /** Open edit modal when navigating from Settings → Ended courses → Edit */
+  useEffect(() => {
+    const editId = (location.state as { editMedicationId?: string } | null)?.editMedicationId;
+    if (!editId || !user || authLoading) return;
+
+    let cancelled = false;
+    (async () => {
+      const med = await fetchMedicationWithSlotsById(editId, slotDefinitions);
+      if (cancelled) return;
+      navigate('.', { replace: true, state: {} });
+      if (med) {
+        handleEditMedication(med);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot from navigation state
+  }, [location.state, user, authLoading, slotDefinitions]);
 
   if (loading || authLoading) {
     return (
@@ -918,64 +861,6 @@ export default function TrackerPage() {
             onShowHistory={handleShowHistory}
           />
         </section>
-
-        {user && endedResumableMedications.length > 0 && (
-          <div className="mt-3 rounded-2xl border border-amber-200/90 bg-amber-50/90 px-3 py-2.5 shadow-sm ring-1 ring-amber-900/[0.06]">
-            <button
-              type="button"
-              onClick={() => setEndedCoursesOpen((o) => !o)}
-              className="flex w-full items-center justify-between gap-2 text-left font-semibold text-amber-950"
-            >
-              <span>
-                Ended courses ({endedResumableMedications.length})
-                <span className="ml-1.5 font-normal text-amber-800/90 text-sm">
-                  — restart rescue meds or past antibiotic courses
-                </span>
-              </span>
-              {endedCoursesOpen ? (
-                <ChevronDown className="h-5 w-5 shrink-0 text-amber-900" />
-              ) : (
-                <ChevronRight className="h-5 w-5 shrink-0 text-amber-900" />
-              )}
-            </button>
-            {endedCoursesOpen && (
-              <ul className="mt-3 space-y-2 border-t border-amber-200/80 pt-3">
-                {endedResumableMedications.map((med) => (
-                  <li
-                    key={med.id}
-                    className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0 text-sm text-gray-800">
-                      <span className="font-medium">{med.name}</span>
-                      {med.end_date ? (
-                        <span className="text-gray-500"> · ended {med.end_date}</span>
-                      ) : null}
-                    </div>
-                    <div className="flex shrink-0 flex-wrap gap-2">
-                      <button
-                        type="button"
-                        disabled={restartingMedId === med.id}
-                        onClick={() => openRestartPrompt(med)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        {restartingMedId === med.id ? 'Restarting…' : 'Restart'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleEditMedication(med)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-800 hover:bg-gray-50"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
       </div>
 
       <AddMedicationModal
@@ -1046,74 +931,6 @@ export default function TrackerPage() {
         onClose={() => setAddEventOpen(false)}
         onConfirm={handleAddEvent}
       />
-
-      {restartPromptMed && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-            <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Restart medication</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Choose the new start date. We’ll log the previous course to history using the old start/end dates.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setRestartPromptMed(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4">
-              <div className="text-sm text-gray-900">
-                <span className="font-semibold">{restartPromptMed.name}</span>
-              </div>
-              <div>
-                <label htmlFor="restart-start" className="block text-xs font-semibold text-gray-600 mb-1">
-                  New start date
-                </label>
-                <input
-                  id="restart-start"
-                  type="date"
-                  value={restartNewStartDate}
-                  onChange={(e) => setRestartNewStartDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  This updates the medication’s `start_date` so repeat courses don’t keep the original start.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setRestartPromptMed(null)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-800 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={!restartNewStartDate || restartingMedId === restartPromptMed.id}
-                  onClick={async () => {
-                    const med = restartPromptMed;
-                    const start = restartNewStartDate;
-                    setRestartPromptMed(null);
-                    await handleRestartMedication(med, start);
-                  }}
-                  className="px-4 py-2 bg-emerald-700 text-white rounded-lg font-semibold hover:bg-emerald-800 disabled:opacity-60"
-                >
-                  {restartingMedId === restartPromptMed.id ? 'Restarting…' : 'Restart'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

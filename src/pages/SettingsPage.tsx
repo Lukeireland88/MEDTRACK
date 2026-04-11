@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ListOrdered, Settings } from 'lucide-react';
 import ManageTimeSlotsModal from '../components/ManageTimeSlotsModal';
+import EndedCoursesSection from '../components/EndedCoursesSection';
 
 export default function SettingsPage() {
   const [sessionsOpen, setSessionsOpen] = useState(false);
@@ -51,6 +52,7 @@ export default function SettingsPage() {
               </div>
             </button>
           </li>
+          <EndedCoursesSection />
         </ul>
       </div>
 
