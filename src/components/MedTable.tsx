@@ -140,20 +140,20 @@ export default function MedTable({
       <div className="hidden md:block px-3 pb-3">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3 w-14">
+            <tr className="bg-slate-100/90">
+              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-14">
                 Taken
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
+              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
                 Medication
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
+              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
                 When
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3">
+              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
                 Notes
               </th>
-              <th className="text-left text-sm text-gray-600 border-b border-gray-300 p-3 w-32">
+              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-32">
                 Actions
               </th>
             </tr>
@@ -192,7 +192,7 @@ export default function MedTable({
                     ${tone}
                   `}
                 >
-                  <td className="p-3 border-b border-gray-300 align-top">
+                  <td className="p-3 border-b border-slate-200 align-top">
                     {isFlexible ? (
                       due ? (
                         <div className="flex flex-col gap-1.5 min-w-[7rem]">
@@ -207,7 +207,7 @@ export default function MedTable({
                             <button
                               type="button"
                               onClick={() => onRemoveLastFlexibleDose(med.id)}
-                              className="px-2 py-1 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                              className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100"
                             >
                               Undo last
                             </button>
@@ -231,7 +231,7 @@ export default function MedTable({
                       </div>
                     )}
                   </td>
-                  <td className="p-3 border-b border-gray-300 font-semibold">
+                  <td className="p-3 border-b border-slate-200 font-semibold">
                     {med.name}
                     {paused && (
                       <span className="ml-2 inline-flex flex-col align-middle text-xs px-2 py-1 border border-gray-400 rounded-full text-gray-700 bg-gray-100">
@@ -264,7 +264,7 @@ export default function MedTable({
                       </ul>
                     )}
                     {!isFlexible && med.is_multiple && (
-                      <span className="block mt-1 text-xs px-2 py-1 border border-gray-300 rounded-full w-fit text-gray-600">
+                      <span className="block mt-1 text-xs px-2 py-1 border border-slate-200 rounded-full w-fit text-gray-600">
                         Multiple: {med.time_slot_names.join(', ')}
                       </span>
                     )}
@@ -274,11 +274,11 @@ export default function MedTable({
                       </p>
                     )}
                   </td>
-                  <td className="p-3 border-b border-gray-300">{med.when_text}</td>
-                  <td className="p-3 border-b border-gray-300 text-sm text-gray-600">
+                  <td className="p-3 border-b border-slate-200">{med.when_text}</td>
+                  <td className="p-3 border-b border-slate-200 text-sm text-gray-600">
                     {med.notes || '—'}
                   </td>
-                  <td className="p-3 border-b border-gray-300">
+                  <td className="p-3 border-b border-slate-200">
                     <div className="flex items-center gap-0.5">
                       {due && !isFlexible && (
                         <button
@@ -352,7 +352,7 @@ export default function MedTable({
             <div
               key={med.id}
               className={`
-                border border-gray-300 rounded-lg p-3
+                border border-slate-200 rounded-lg p-3
                 ${!isFlexible && taken ? 'text-gray-500' : ''}
                 ${isFlexible && flexComplete ? 'text-gray-500' : ''}
                 ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
@@ -375,7 +375,7 @@ export default function MedTable({
                         <button
                           type="button"
                           onClick={() => onRemoveLastFlexibleDose(med.id)}
-                          className="px-2 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 touch-manipulation"
+                          className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation"
                         >
                           Undo last
                         </button>
@@ -444,12 +444,12 @@ export default function MedTable({
                     </ul>
                   )}
                   {!isFlexible && med.is_multiple && (
-                    <span className="inline-block text-xs px-2 py-0.5 border border-gray-300 rounded-full text-gray-600">
+                    <span className="inline-block text-xs px-2 py-0.5 border border-slate-200 rounded-full text-gray-600">
                       Multiple: {med.time_slot_names.join(', ')}
                     </span>
                   )}
                   {med.notes && (
-                    <div className="mt-2 pt-2 border-t border-gray-300">
+                    <div className="mt-2 pt-2 border-t border-slate-200">
                       <div className="text-xs text-gray-500 mb-0.5">Notes:</div>
                       <div className="text-xs text-gray-600">
                         {med.notes}
@@ -503,7 +503,7 @@ export default function MedTable({
         })}
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-2 px-2 sm:px-3 py-2 sm:py-3 border-t border-gray-300 text-gray-600 text-xs sm:text-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-2 px-2 sm:px-3 py-2 sm:py-3 border-t border-slate-200 text-slate-600 text-xs sm:text-sm">
         <div>
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>

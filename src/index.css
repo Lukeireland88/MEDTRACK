@@ -4,6 +4,7 @@
 
 @layer base {
   body {
+    @apply antialiased text-slate-900;
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 }

@@ -494,12 +494,12 @@ export default function HistoryReportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80">
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <header className="mb-4 sm:mb-6">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900 mb-3"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900 mb-3 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to tracker
@@ -507,16 +507,16 @@ export default function HistoryReportPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <ClipboardList className="w-8 h-8 text-gray-700" />
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">History report</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">History report</h1>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mt-2 max-w-2xl">
+          <p className="text-sm text-slate-600 mt-2 max-w-2xl">
             Time-slot taken / not-taken events, flexible dose logs, and timestamped events in one place. Filter by date,
             medication, and event type.
           </p>
         </header>
 
-        <div className="mb-4 overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-lg">
+        <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md shadow-slate-200/50 ring-1 ring-slate-900/[0.04]">
           <div className="px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
             <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -739,9 +739,9 @@ export default function HistoryReportPage() {
           )}
         </div>
 
-        <section className="bg-white border border-gray-300 rounded-2xl shadow-lg overflow-hidden">
+        <section className="bg-white border border-slate-200/90 rounded-2xl shadow-md shadow-slate-200/50 ring-1 ring-slate-900/[0.04] overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-gray-600">Loading…</div>
+            <div className="p-8 text-center text-slate-500 text-sm animate-pulse">Loading…</div>
           ) : error ? (
             <div className="p-8 text-center text-red-700">{error}</div>
           ) : rows.length === 0 ? (
@@ -762,8 +762,8 @@ export default function HistoryReportPage() {
             </div>
           ) : (
             <>
-              <div className="px-3 py-2 border-b border-gray-200 bg-gray-50 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600 min-w-0">
+              <div className="px-3 py-2 border-b border-slate-200 bg-slate-50/90 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 min-w-0">
                   <span>
                     {filteredRows.length} event{filteredRows.length !== 1 ? 's' : ''}
                     {eventFilter !== 'all' && rows.length !== filteredRows.length

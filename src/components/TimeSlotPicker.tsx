@@ -20,7 +20,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
 
   if (availableTimeSlots.length === 0) {
     return (
-      <div className="p-2 sm:p-3 border-b border-gray-300 text-center text-gray-500 text-sm sm:text-base">
+      <div className="p-2 sm:p-3 border-b border-slate-200 bg-slate-50/80 text-center text-slate-500 text-sm sm:text-base rounded-t-2xl">
         No medications scheduled
       </div>
     );
@@ -28,7 +28,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
 
   if (availableTimeSlots.length === 1) {
     return (
-      <div className="p-2 sm:p-3 border-b border-gray-300 font-semibold text-sm sm:text-base">
+      <div className="p-2 sm:p-3 border-b border-slate-200 bg-slate-50/80 font-semibold text-sm sm:text-base text-slate-800 rounded-t-2xl">
         <span>Showing: {availableTimeSlots[0]}</span>
       </div>
     );
@@ -37,14 +37,14 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
   return (
     <div>
       <div
-        className="p-2 sm:p-3 border-b border-gray-300 flex justify-between items-center cursor-pointer font-semibold text-sm sm:text-base touch-manipulation"
+        className="p-2 sm:p-3 border-b border-slate-200 bg-slate-50/80 flex justify-between items-center cursor-pointer font-semibold text-sm sm:text-base text-slate-800 touch-manipulation rounded-t-2xl"
         onClick={toggleOptions}
       >
         <span>Showing: {selectedTimeSlot}</span>
         <span className="text-lg">{isOpen ? '▲' : '▼'}</span>
       </div>
       {isOpen && (
-        <div className="grid grid-cols-2 gap-2 p-2 sm:p-3 border-b border-gray-300">
+        <div className="grid grid-cols-2 gap-2 p-2 sm:p-3 border-b border-slate-200 bg-white">
           {availableTimeSlots.map((slot) => (
             <button
               key={slot}
@@ -52,8 +52,8 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
               aria-pressed={selectedTimeSlot === slot}
               className={`px-3 py-2 border rounded-xl font-semibold text-center text-sm sm:text-base touch-manipulation ${
                 selectedTimeSlot === slot
-                  ? 'border-blue-600 bg-blue-50 text-blue-600'
-                  : 'border-gray-300 bg-white text-gray-900 hover:bg-gray-50'
+                  ? 'border-blue-600 bg-blue-50 text-blue-700'
+                  : 'border-slate-200 bg-white text-slate-900 hover:bg-slate-50'
               }`}
             >
               {slot}

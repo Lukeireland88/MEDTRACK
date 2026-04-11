@@ -815,18 +815,23 @@ export default function TrackerPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600 text-lg">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80 flex items-center justify-center">
+        <div className="text-slate-500 text-sm animate-pulse">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80">
       <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <header className="mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-start gap-3 mb-3">
-            <h1 className="text-2xl sm:text-3xl font-bold">Medication Tracker</h1>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                Medication Tracker
+              </h1>
+              <p className="text-sm text-slate-500 mt-0.5">Daily medication schedule</p>
+            </div>
             <div className="flex items-center gap-2">
               {user ? (
                 <>
@@ -869,7 +874,7 @@ export default function TrackerPage() {
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
 
-        <section className="bg-white border border-gray-300 rounded-2xl shadow-lg">
+        <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-md shadow-slate-200/50 ring-1 ring-slate-900/[0.04]">
           <TimeSlotPicker
             selectedTimeSlot={selectedTimeSlot}
             onTimeSlotChange={setSelectedTimeSlot}
@@ -895,7 +900,7 @@ export default function TrackerPage() {
         </section>
 
         {user && endedResumableMedications.length > 0 && (
-          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50/90 px-3 py-2.5 shadow-sm">
+          <div className="mt-3 rounded-2xl border border-amber-200/90 bg-amber-50/90 px-3 py-2.5 shadow-sm ring-1 ring-amber-900/[0.06]">
             <button
               type="button"
               onClick={() => setEndedCoursesOpen((o) => !o)}

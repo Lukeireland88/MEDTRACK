@@ -35,10 +35,10 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
 
   return (
     <div>
-      <div className="flex gap-1.5 sm:gap-2 items-center flex-wrap mb-2">
+      <div className="flex gap-1.5 sm:gap-2 items-center flex-wrap mb-2 rounded-xl border border-slate-200/90 bg-white/90 shadow-sm px-2 py-2">
         <button
           onClick={handlePrevDay}
-          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px text-sm sm:text-base min-w-[40px] touch-manipulation"
+          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-slate-200 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base min-w-[40px] touch-manipulation"
           title="Previous day"
           aria-label="Previous day"
         >
@@ -48,11 +48,11 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
           type="date"
           value={toDateInputValue(selectedDate)}
           onChange={handleInputChange}
-          className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white rounded-lg font-semibold text-gray-900 text-sm sm:text-base touch-manipulation"
+          className="px-2 sm:px-3 py-1.5 sm:py-2 border border-slate-200 bg-white rounded-lg font-semibold text-slate-900 text-sm sm:text-base touch-manipulation"
         />
         <button
           onClick={handleNextDay}
-          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px text-sm sm:text-base min-w-[40px] touch-manipulation"
+          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-slate-200 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base min-w-[40px] touch-manipulation"
           title="Next day"
           aria-label="Next day"
         >
@@ -60,21 +60,21 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
         </button>
         <button
           onClick={handleToday}
-          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px text-sm sm:text-base touch-manipulation"
+          className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-slate-200 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base touch-manipulation"
           title="Jump to today"
         >
           Today
         </button>
         <Link
           to="/history"
-          className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-50 active:translate-y-px text-sm sm:text-base touch-manipulation"
+          className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border border-slate-200 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base touch-manipulation"
           title="View history across all medications"
         >
           <ClipboardList className="w-4 h-4 sm:w-[18px] sm:h-[18px] shrink-0" />
           <span className="hidden sm:inline">History</span>
         </Link>
       </div>
-      <div className="text-gray-600 text-xs sm:text-sm">
+      <div className="text-slate-500 text-xs sm:text-sm font-medium tabular-nums">
         {weekday} · {fullDate}
       </div>
     </div>
