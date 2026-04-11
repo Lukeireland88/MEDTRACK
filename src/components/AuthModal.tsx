@@ -47,7 +47,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <div className="h-1.5 bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-800" aria-hidden />
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">Medtrack</p>
             <h2 className="text-2xl font-bold text-slate-900">Sign in</h2>
           </div>
           <button

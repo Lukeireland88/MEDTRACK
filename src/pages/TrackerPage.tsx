@@ -835,7 +835,6 @@ export default function TrackerPage() {
                 <Pill className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">Medtrack</p>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                   Today&apos;s medications
                 </h1>
