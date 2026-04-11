@@ -135,12 +135,13 @@ export default function MedTable({
     });
 
   return (
-    <>
-      {/* Desktop table view */}
-      <div className="hidden md:block px-3 pb-3">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-slate-100/90">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable]">
+        {/* Desktop table view */}
+        <div className="hidden md:block px-3 pb-3">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="sticky top-0 z-10 bg-slate-100/90 shadow-[0_1px_0_0_rgb(226_232_240)]">
               <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-14">
                 Taken
               </th>
@@ -323,12 +324,12 @@ export default function MedTable({
                 </tr>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
 
-      {/* Mobile card view */}
-      <div className="md:hidden px-2 pb-3 space-y-2">
+        {/* Mobile card view */}
+        <div className="space-y-2 px-2 pb-3 md:hidden">
         {sortedMedications.map((med) => {
           const due = isDue(med, selectedDate);
           const paused = isPaused(med, selectedDate);
@@ -501,9 +502,10 @@ export default function MedTable({
             </div>
           );
         })}
+        </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-2 px-2 sm:px-3 py-2 sm:py-3 border-t border-slate-200 text-slate-600 text-xs sm:text-sm">
+      <div className="flex shrink-0 flex-col items-start justify-between gap-2 border-t border-slate-200 px-2 py-2 text-xs text-slate-600 sm:flex-row sm:px-3 sm:py-3 sm:text-sm">
         <div>
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
@@ -526,6 +528,6 @@ export default function MedTable({
           await onLogFlexibleDose(logDoseMedId, takenAtIso);
         }}
       />
-    </>
+    </div>
   );
 }

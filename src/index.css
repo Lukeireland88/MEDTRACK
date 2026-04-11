@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  #root {
+    @apply flex min-h-dvh flex-col;
+  }
+
   body {
     @apply antialiased text-slate-900 font-sans;
   }
