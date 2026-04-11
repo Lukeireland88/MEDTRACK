@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Plus,
   LogIn,
@@ -9,16 +9,18 @@ import {
   ChevronRight,
   Pencil,
   Pill,
+  ListOrdered,
   X,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
+import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState, TimeSlot } from '../types';
 import {
   getDefaultTimeSlot,
   toDateKeyFromDb,
   toLocalDateKey,
   toLocalDateOnly,
 } from '../utils/dateUtils';
+import { getDefaultTimeSlotFromOrder, sortMedicationSlotNames } from '../utils/timeSlotUtils';
 import { useAuth } from '../contexts/AuthContext';
 import DateNav from '../components/DateNav';
 import TimeSlotPicker from '../components/TimeSlotPicker';
@@ -31,11 +33,14 @@ import MarkNotTakenModal from '../components/MarkNotTakenModal';
 import LogSeizureModal from '../components/LogSeizureModal';
 import AddEventModal, { AddEventPayload } from '../components/AddEventModal';
 import AddLogPickerModal from '../components/AddLogPickerModal';
+import ManageTimeSlotsModal from '../components/ManageTimeSlotsModal';
 
 export default function TrackerPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
+  const [slotDefinitions, setSlotDefinitions] = useState<TimeSlot[]>([]);
+  const [sessionsModalOpen, setSessionsModalOpen] = useState(false);
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string>('');
   const [medications, setMedications] = useState<MedicationWithSlots[]>([]);
   const [slotDoseByMedId, setSlotDoseByMedId] = useState<Record<string, SlotDoseState>>({});
@@ -51,7 +56,7 @@ export default function TrackerPage() {
   const [historyMedicationId, setHistoryMedicationId] = useState<string>('');
   const [historyMedicationName, setHistoryMedicationName] = useState<string>('');
   const [historyDosingMode, setHistoryDosingMode] = useState<DosingMode>('time_slots');
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>(['Morning', 'Lunch', 'Evening', 'Night']);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [addLogPickerOpen, setAddLogPickerOpen] = useState(false);
   const [logSeizureOpen, setLogSeizureOpen] = useState(false);
   const [addEventOpen, setAddEventOpen] = useState(false);
@@ -61,49 +66,35 @@ export default function TrackerPage() {
   const [restartPromptMed, setRestartPromptMed] = useState<MedicationWithSlots | null>(null);
   const [restartNewStartDate, setRestartNewStartDate] = useState<string>('');
 
+  const refreshSlotDefinitions = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('time_slots')
+        .select('id, name, sort_order')
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      const defs = (data as TimeSlot[]) ?? [];
+      setSlotDefinitions(defs);
+      const names = defs.map((d) => d.name);
+      if (names.length > 0) {
+        setSelectedTimeSlot((prev) => {
+          if (names.includes(prev)) return prev;
+          return getDefaultTimeSlotFromOrder(names);
+        });
+      }
+    } catch (e) {
+      console.error('Error loading time slots:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshSlotDefinitions();
+  }, [refreshSlotDefinitions]);
+
   useEffect(() => {
     loadMedications();
     loadTakenStatus();
-  }, [selectedTimeSlot, selectedDate]);
-
-  useEffect(() => {
-    loadAvailableTimeSlots();
-  }, []);
-
-  const loadAvailableTimeSlots = async () => {
-    try {
-      const { data: allSlots } = await supabase
-        .from('medication_slots')
-        .select(`
-          time_slots (name)
-        `);
-
-      if (!allSlots || allSlots.length === 0) {
-        setAvailableTimeSlots([]);
-        return;
-      }
-
-      const uniqueSlots = new Set<string>();
-      allSlots.forEach((slot: any) => {
-        if (slot.time_slots?.name) {
-          uniqueSlots.add(slot.time_slots.name);
-        }
-      });
-
-      const sortedSlots = Array.from(uniqueSlots).sort((a, b) => {
-        const order = ['Morning', 'Lunch', 'Evening', 'Night'];
-        return order.indexOf(a) - order.indexOf(b);
-      });
-
-      setAvailableTimeSlots(sortedSlots);
-
-      if (sortedSlots.length > 0 && !sortedSlots.includes(selectedTimeSlot)) {
-        setSelectedTimeSlot(sortedSlots[0]);
-      }
-    } catch (error) {
-      console.error('Error loading available time slots:', error);
-    }
-  };
+  }, [selectedTimeSlot, selectedDate, slotDefinitions]);
 
   const loadTakenStatus = async () => {
     try {
@@ -160,7 +151,9 @@ export default function TrackerPage() {
 
       if (!allMeds || allMeds.length === 0) {
         setMedications([]);
-        setAvailableTimeSlots([]);
+        setAvailableTimeSlots(
+          slotDefinitions.length > 0 ? slotDefinitions.map((s) => s.name) : []
+        );
         setFlexibleDoseEvents({});
         setEndedResumableMedications([]);
         if (!opts?.silent) setLoading(false);
@@ -191,12 +184,15 @@ export default function TrackerPage() {
       });
 
       const viewingDate = toLocalDateKey(selectedDate);
-      const sortOrder = ['Morning', 'Lunch', 'Evening', 'Night'];
+      const legacyOrder = ['Morning', 'Lunch', 'Evening', 'Night'];
+      const orderForSort: TimeSlot[] =
+        slotDefinitions.length > 0
+          ? slotDefinitions
+          : legacyOrder.map((name, i) => ({ id: '', name, sort_order: i + 1 }));
 
       // Create medication objects with time slots (before hiding ended / future-start)
       const mappedWithSlots: MedicationWithSlots[] = allMeds.map((med: any) => {
-        const timeSlotNames = slotsByMed[med.id] || [];
-        timeSlotNames.sort((a, b) => sortOrder.indexOf(a) - sortOrder.indexOf(b));
+        const timeSlotNames = sortMedicationSlotNames(slotsByMed[med.id] || [], orderForSort);
 
         const dosingMode = (med.dosing_mode as MedicationWithSlots['dosing_mode']) ?? 'time_slots';
         const targetDoses =
@@ -229,7 +225,7 @@ export default function TrackerPage() {
         })
         .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-      // Determine available time slots from all active medications
+      // Determine tab labels: all configured sessions when loaded from DB; else only slots in use (legacy)
       const activeTimeSlots = new Set<string>();
       allMedsWithSlots.forEach((med: any) => {
         med.time_slot_names.forEach((slot: string) => activeTimeSlots.add(slot));
@@ -237,9 +233,18 @@ export default function TrackerPage() {
       const hasFlexibleDaily = allMedsWithSlots.some(
         (m: MedicationWithSlots) => m.dosing_mode === 'flexible_daily'
       );
-      let sortedSlots = sortOrder.filter((slot) => activeTimeSlots.has(slot));
-      if (sortedSlots.length === 0 && hasFlexibleDaily) {
-        sortedSlots = [...sortOrder];
+      const orderNames =
+        slotDefinitions.length > 0
+          ? slotDefinitions.map((s) => s.name)
+          : legacyOrder;
+      let sortedSlots: string[];
+      if (slotDefinitions.length > 0) {
+        sortedSlots = orderNames;
+      } else {
+        sortedSlots = orderNames.filter((slot) => activeTimeSlots.has(slot));
+        if (sortedSlots.length === 0 && hasFlexibleDaily) {
+          sortedSlots = [...orderNames];
+        }
       }
       setAvailableTimeSlots(sortedSlots);
 
@@ -880,7 +885,20 @@ export default function TrackerPage() {
               )}
             </div>
           </div>
-          <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+            <div className="min-w-0 flex-1">
+              <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
+            </div>
+            <button
+              type="button"
+              onClick={() => setSessionsModalOpen(true)}
+              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
+              title="Rename, reorder, or add sessions (Morning, Evening, …)"
+            >
+              <ListOrdered className="h-4 w-4 text-slate-600" aria-hidden />
+              Sessions
+            </button>
+          </div>
         </header>
 
         <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-slate-200/80">
@@ -893,6 +911,7 @@ export default function TrackerPage() {
             medications={medications}
             selectedDate={selectedDate}
             selectedTimeSlot={selectedTimeSlot}
+            firstSessionName={slotDefinitions[0]?.name ?? ''}
           />
           <MedTable
             medications={medications}
@@ -976,6 +995,15 @@ export default function TrackerPage() {
         onSave={handleSaveMedication}
         onDelete={handleDeleteMedication}
         editingMedication={editingMedication}
+        sessionOptions={slotDefinitions.map((s) => s.name)}
+      />
+
+      <ManageTimeSlotsModal
+        isOpen={sessionsModalOpen}
+        onClose={() => setSessionsModalOpen(false)}
+        onSaved={() => {
+          void refreshSlotDefinitions();
+        }}
       />
 
       <MedicationHistoryModal

@@ -8,6 +8,8 @@ interface AddMedicationModalProps {
   onSave: (medication: MedicationFormData) => void;
   onDelete?: (medicationId: string) => void;
   editingMedication?: MedicationFormData | null;
+  /** Session names from Settings (falls back to Morning/Lunch/Evening/Night if empty) */
+  sessionOptions?: string[];
 }
 
 /** One row in the course start/end log (edit modal only). */
@@ -52,6 +54,7 @@ export default function AddMedicationModal({
   onSave,
   onDelete,
   editingMedication,
+  sessionOptions,
 }: AddMedicationModalProps) {
   const [formData, setFormData] = useState<MedicationFormData>({
     name: '',
@@ -179,6 +182,8 @@ export default function AddMedicationModal({
 
   if (!isOpen) return null;
 
+  const sessionLabels = sessionOptions?.length ? sessionOptions : TIME_SLOTS;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -220,9 +225,9 @@ export default function AddMedicationModal({
                   className="mt-1 accent-brand-600"
                 />
                 <span>
-                  <span className="font-medium">Morning / Lunch / Evening / Night</span>
+                  <span className="font-medium">Time-of-day sessions</span>
                   <span className="block text-sm text-gray-600">
-                    One check per selected time block (same as now).
+                    One check per selected session (tabs at the top of the tracker).
                   </span>
                 </span>
               </label>
@@ -246,9 +251,9 @@ export default function AddMedicationModal({
 
           {formData.dosingMode === 'time_slots' && (
             <div>
-              <label className="block text-sm font-semibold mb-2">Times of day</label>
+              <label className="block text-sm font-semibold mb-2">Sessions</label>
               <div className="grid grid-cols-2 gap-3">
-                {TIME_SLOTS.map((slot) => (
+                {sessionLabels.map((slot) => (
                   <label
                     key={slot}
                     className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg"

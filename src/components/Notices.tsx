@@ -7,20 +7,23 @@ interface NoticesProps {
   medications: MedicationWithSlots[];
   selectedDate: Date;
   selectedTimeSlot: string;
+  /** First session in sort order (e.g. “Morning”) — “not due” notice only shows in this tab */
+  firstSessionName: string;
 }
 
-export default function Notices({ medications, selectedDate, selectedTimeSlot }: NoticesProps) {
-  if (selectedTimeSlot !== 'Morning') {
-    return null;
-  }
-
+export default function Notices({
+  medications,
+  selectedDate,
+  selectedTimeSlot,
+  firstSessionName,
+}: NoticesProps) {
   const notDueMeds = useMemo(
     () => medications.filter((med) => !isDue(med, selectedDate)),
     [medications, selectedDate]
   );
   const [open, setOpen] = useState(false);
 
-  if (notDueMeds.length === 0) {
+  if (!firstSessionName || selectedTimeSlot !== firstSessionName || notDueMeds.length === 0) {
     return null;
   }
 
