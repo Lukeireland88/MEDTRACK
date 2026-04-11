@@ -91,7 +91,7 @@ export default function MarkNotTakenModal({
                     name="not-taken-reason"
                     checked={preset === p}
                     onChange={() => setPreset(p)}
-                    className="accent-blue-600"
+                    className="accent-brand-600"
                   />
                   {p}
                 </label>

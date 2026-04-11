@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   Pencil,
+  Pill,
   X,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -815,22 +816,31 @@ export default function TrackerPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80 flex items-center justify-center">
-        <div className="text-slate-500 text-sm animate-pulse">Loading…</div>
+      <div className="min-h-screen bg-gradient-to-br from-brand-50/80 via-white to-slate-100/90 flex items-center justify-center">
+        <div className="text-brand-700/80 text-sm font-medium animate-pulse">Loading…</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50/70 via-white to-slate-100/90">
       <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <header className="mb-3 sm:mb-4">
           <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-start gap-3 mb-3">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                Medication Tracker
-              </h1>
-              <p className="text-sm text-slate-500 mt-0.5">Daily medication schedule</p>
+            <div className="flex items-start gap-3 min-w-0">
+              <div
+                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-brand-sm"
+                aria-hidden
+              >
+                <Pill className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-700/90">Medtrack</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  Today&apos;s medications
+                </h1>
+                <p className="text-sm text-slate-500 mt-0.5">Daily schedule · mark doses as you go</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {user ? (
@@ -846,7 +856,7 @@ export default function TrackerPage() {
                   </button>
                   <button
                     onClick={handleAddMedication}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap shadow-brand-sm"
                   >
                     <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span className="hidden sm:inline">Add medication</span>
@@ -863,7 +873,7 @@ export default function TrackerPage() {
               ) : (
                 <button
                   onClick={() => setAuthModalOpen(true)}
-                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 active:translate-y-px flex-1 text-sm sm:text-base"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 text-sm sm:text-base shadow-brand-sm"
                 >
                   <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
                   Sign In
@@ -874,7 +884,7 @@ export default function TrackerPage() {
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
 
-        <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-md shadow-slate-200/50 ring-1 ring-slate-900/[0.04]">
+        <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-brand-200/30">
           <TimeSlotPicker
             selectedTimeSlot={selectedTimeSlot}
             onTimeSlotChange={setSelectedTimeSlot}

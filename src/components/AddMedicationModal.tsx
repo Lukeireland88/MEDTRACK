@@ -204,7 +204,7 @@ export default function AddMedicationModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g. Bumetanide"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
 
@@ -217,7 +217,7 @@ export default function AddMedicationModal({
                   name="dosingMode"
                   checked={formData.dosingMode === 'time_slots'}
                   onChange={() => setFormData({ ...formData, dosingMode: 'time_slots' })}
-                  className="mt-1 accent-blue-600"
+                  className="mt-1 accent-brand-600"
                 />
                 <span>
                   <span className="font-medium">Morning / Lunch / Evening / Night</span>
@@ -232,7 +232,7 @@ export default function AddMedicationModal({
                   name="dosingMode"
                   checked={formData.dosingMode === 'flexible_daily'}
                   onChange={() => setFormData({ ...formData, dosingMode: 'flexible_daily' })}
-                  className="mt-1 accent-blue-600"
+                  className="mt-1 accent-brand-600"
                 />
                 <span>
                   <span className="font-medium">Flexible — multiple times per day</span>
@@ -257,7 +257,7 @@ export default function AddMedicationModal({
                       type="checkbox"
                       checked={formData.timeSlots.includes(slot)}
                       onChange={() => toggleTimeSlot(slot)}
-                      className="w-5 h-5 accent-blue-600"
+                      className="w-5 h-5 accent-brand-600"
                     />
                     <span>{slot}</span>
                   </label>
@@ -283,7 +283,7 @@ export default function AddMedicationModal({
                     targetDosesPerDay: v === '' ? '' : parseInt(v, 10) || '',
                   });
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               <p className="text-sm text-gray-600 mt-1">
                 You can log more or fewer doses; this is just a daily goal for progress.
@@ -301,7 +301,7 @@ export default function AddMedicationModal({
                   pattern: e.target.value as MedicationFormData['pattern'],
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="daily">Daily</option>
               <option value="days_of_week">Specific days of week</option>
@@ -321,7 +321,7 @@ export default function AddMedicationModal({
                     onClick={() => toggleDayOfWeek(day.value)}
                     className={`px-4 py-2 border rounded-lg font-semibold ${
                       formData.daysOfWeek.includes(day.value)
-                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        ? 'border-brand-600 bg-brand-50 text-brand-700'
                         : 'border-gray-300 bg-white text-gray-900 hover:bg-gray-50'
                     }`}
                   >
@@ -347,7 +347,7 @@ export default function AddMedicationModal({
                     intervalDays: parseInt(e.target.value) || 1,
                   })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           )}
@@ -362,7 +362,7 @@ export default function AddMedicationModal({
               onChange={(e) =>
                 setFormData({ ...formData, startDate: e.target.value })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <p className="text-sm text-gray-600 mt-1">
               When you started taking this medication.
@@ -378,7 +378,7 @@ export default function AddMedicationModal({
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Any extra info..."
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
 
@@ -390,7 +390,7 @@ export default function AddMedicationModal({
               type="date"
               value={formData.endDate}
               onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <p className="text-sm text-gray-600 mt-1">
               Medication will no longer appear after this date.
@@ -485,7 +485,7 @@ export default function AddMedicationModal({
                     { startDate: '', endDate: '', notes: '' },
                   ])
                 }
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-brand-800 border border-brand-200 rounded-lg hover:bg-brand-50"
               >
                 <Plus className="w-4 h-4" />
                 Add course row
@@ -508,7 +508,7 @@ export default function AddMedicationModal({
                   onChange={(e) =>
                     setFormData({ ...formData, pauseStartDate: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
               <div>
@@ -521,7 +521,7 @@ export default function AddMedicationModal({
                   onChange={(e) =>
                     setFormData({ ...formData, pauseEndDate: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -568,7 +568,7 @@ export default function AddMedicationModal({
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
+                className="px-6 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 shadow-brand-sm"
               >
                 Save
               </button>

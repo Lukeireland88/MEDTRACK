@@ -37,7 +37,7 @@ function SlotTakenControl({
       <button
         type="button"
         onClick={() => onToggleTaken(medId)}
-        className={`w-6 h-6 shrink-0 rounded border-2 border-gray-500 bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${className}`}
+        className={`w-6 h-6 shrink-0 rounded border-2 border-gray-500 bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 ${className}`}
         title="Not taken — click to mark as taken"
         aria-label="Not taken. Click to mark as taken."
       >
@@ -50,7 +50,7 @@ function SlotTakenControl({
       type="checkbox"
       checked={taken}
       onChange={() => onToggleTaken(medId)}
-      className={`w-6 h-6 accent-blue-600 cursor-pointer ${className}`}
+      className={`w-6 h-6 accent-brand-600 cursor-pointer ${className}`}
       title="Mark as taken"
     />
   );
@@ -188,7 +188,7 @@ export default function MedTable({
                     ${!isFlexible && taken ? 'text-gray-500 line-through' : ''}
                     ${isFlexible && flexComplete ? 'text-gray-500' : ''}
                     ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
-                    ${isFlexible ? 'bg-sky-50' : ''}
+                    ${isFlexible ? 'bg-brand-50/90' : ''}
                     ${tone}
                   `}
                 >
@@ -199,7 +199,7 @@ export default function MedTable({
                           <button
                             type="button"
                             onClick={() => setLogDoseMedId(med.id)}
-                            className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                            className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700"
                           >
                             Log dose
                           </button>
@@ -356,7 +356,7 @@ export default function MedTable({
                 ${!isFlexible && taken ? 'text-gray-500' : ''}
                 ${isFlexible && flexComplete ? 'text-gray-500' : ''}
                 ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
-                ${isFlexible ? 'bg-sky-50' : !med.is_multiple ? 'bg-white' : ''}
+                ${isFlexible ? 'bg-brand-50/90' : !med.is_multiple ? 'bg-white' : ''}
                 ${tone}
               `}
             >
@@ -367,7 +367,7 @@ export default function MedTable({
                       <button
                         type="button"
                         onClick={() => setLogDoseMedId(med.id)}
-                        className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 touch-manipulation"
+                        className="px-3 py-2 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 touch-manipulation"
                       >
                         Log dose
                       </button>
@@ -508,7 +508,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). Circle-off: reason.
+          Yellow: multiple time blocks. Teal: flexible doses. X in box: not taken (click to mark taken). Circle-off: reason.
         </div>
       </div>
 

@@ -35,7 +35,7 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
 
   return (
     <div>
-      <div className="flex gap-1.5 sm:gap-2 items-center flex-wrap mb-2 rounded-xl border border-slate-200/90 bg-white/90 shadow-sm px-2 py-2">
+      <div className="flex gap-1.5 sm:gap-2 items-center flex-wrap mb-2 rounded-xl border border-slate-200/90 border-l-4 border-l-brand-500 bg-white/90 shadow-sm px-2 py-2">
         <button
           onClick={handlePrevDay}
           className="px-2.5 sm:px-3 py-1.5 sm:py-2 border border-slate-200 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base min-w-[40px] touch-manipulation"

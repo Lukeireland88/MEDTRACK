@@ -43,9 +43,13 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-900">Sign In</h2>
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl ring-1 ring-brand-200/40 overflow-hidden">
+        <div className="h-1.5 bg-gradient-to-r from-brand-500 via-brand-600 to-brand-700" aria-hidden />
+        <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-brand-700/90">Medtrack</p>
+            <h2 className="text-2xl font-bold text-slate-900">Sign in</h2>
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -72,7 +76,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 placeholder="you@example.com"
                 required
               />
@@ -89,7 +93,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                 placeholder="••••••••"
                 required
                 minLength={6}
@@ -101,7 +105,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-blue-300 disabled:cursor-not-allowed"
+            className="w-full bg-brand-600 text-white py-3 rounded-xl font-medium hover:bg-brand-700 transition-colors disabled:bg-brand-300 disabled:cursor-not-allowed shadow-brand-sm"
           >
             {loading ? 'Loading...' : 'Sign In'}
           </button>

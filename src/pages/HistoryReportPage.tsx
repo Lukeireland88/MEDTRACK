@@ -43,7 +43,7 @@ function rowVariantBgClass(v: HistoryEventVariant): string {
     case 'slot_not_taken':
       return 'bg-rose-50/90';
     case 'flexible_dose':
-      return 'bg-sky-50/90';
+      return 'bg-brand-50/90';
     case 'seizure':
       return 'bg-purple-50/90';
     case 'timeline_event':
@@ -59,7 +59,7 @@ function rowVariantTableClass(v: HistoryEventVariant): string {
     case 'slot_not_taken':
       return `${rowVariantBgClass(v)} border-l-4 border-l-rose-500`;
     case 'flexible_dose':
-      return `${rowVariantBgClass(v)} border-l-4 border-l-sky-500`;
+      return `${rowVariantBgClass(v)} border-l-4 border-l-brand-500`;
     case 'seizure':
       return `${rowVariantBgClass(v)} border-l-4 border-l-purple-500`;
     case 'timeline_event':
@@ -75,7 +75,7 @@ function variantAccentBarClass(v: HistoryEventVariant): string {
     case 'slot_not_taken':
       return 'bg-rose-500';
     case 'flexible_dose':
-      return 'bg-sky-500';
+      return 'bg-brand-500';
     case 'seizure':
       return 'bg-purple-500';
     case 'timeline_event':
@@ -90,7 +90,7 @@ function variantBadge(v: HistoryEventVariant): { label: string; className: strin
     case 'slot_not_taken':
       return { label: 'Not taken', className: 'bg-rose-100 text-rose-900 ring-1 ring-rose-200/80' };
     case 'flexible_dose':
-      return { label: 'Dose logged', className: 'bg-sky-100 text-sky-900 ring-1 ring-sky-200/80' };
+      return { label: 'Dose logged', className: 'bg-brand-100 text-brand-900 ring-1 ring-brand-200/80' };
     case 'seizure':
       return { label: 'Seizure', className: 'bg-purple-100 text-purple-900 ring-1 ring-purple-200/80' };
     case 'timeline_event':
@@ -494,20 +494,28 @@ export default function HistoryReportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/80">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50/70 via-white to-slate-100/90">
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <header className="mb-4 sm:mb-6">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-blue-700 hover:text-blue-900 mb-3 transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-brand-800 hover:text-brand-950 mb-3 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to tracker
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <ClipboardList className="w-8 h-8 text-gray-700" />
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">History report</h1>
+            <div className="flex items-start gap-3 min-w-0">
+              <div
+                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-brand-sm"
+                aria-hidden
+              >
+                <ClipboardList className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-brand-700/90">Medtrack</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">History report</h1>
+              </div>
             </div>
           </div>
           <p className="text-sm text-slate-600 mt-2 max-w-2xl">
@@ -516,7 +524,7 @@ export default function HistoryReportPage() {
           </p>
         </header>
 
-        <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-md shadow-slate-200/50 ring-1 ring-slate-900/[0.04]">
+        <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-brand-sm ring-1 ring-brand-200/25">
           <div className="px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
             <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -614,7 +622,7 @@ export default function HistoryReportPage() {
                       <button
                         type="button"
                         onClick={() => setMedicationIds([])}
-                        className="text-xs font-semibold text-blue-700 hover:text-blue-900 disabled:text-gray-400 disabled:pointer-events-none"
+                        className="text-xs font-semibold text-brand-800 hover:text-brand-950 disabled:text-gray-400 disabled:pointer-events-none"
                         disabled={medicationIds.length === 0}
                       >
                         Clear
@@ -679,7 +687,7 @@ export default function HistoryReportPage() {
                                                 : [...prev, m.id]
                                             );
                                           }}
-                                          className="w-4 h-4 accent-blue-600"
+                                          className="w-4 h-4 accent-brand-600"
                                         />
                                         <span className="text-sm text-gray-900">{m.name}</span>
                                       </label>
@@ -693,7 +701,7 @@ export default function HistoryReportPage() {
                             <button
                               type="button"
                               onClick={() => setMedPickerOpen(false)}
-                              className="px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                              className="px-3 py-1.5 text-xs rounded-xl bg-brand-600 text-white hover:bg-brand-700 shadow-brand-sm"
                             >
                               Done
                             </button>
@@ -739,7 +747,7 @@ export default function HistoryReportPage() {
           )}
         </div>
 
-        <section className="bg-white border border-slate-200/90 rounded-2xl shadow-md shadow-slate-200/50 ring-1 ring-slate-900/[0.04] overflow-hidden">
+        <section className="bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-brand-200/25 overflow-hidden">
           {loading ? (
             <div className="p-8 text-center text-slate-500 text-sm animate-pulse">Loading…</div>
           ) : error ? (
@@ -755,7 +763,7 @@ export default function HistoryReportPage() {
               <button
                 type="button"
                 onClick={() => setEventFilter('all')}
-                className="text-sm font-semibold text-blue-700 hover:text-blue-900"
+                className="text-sm font-semibold text-brand-800 hover:text-brand-950"
               >
                 Show all events
               </button>
@@ -807,7 +815,7 @@ export default function HistoryReportPage() {
                       }`}
                       title="Filter: Flexible dose"
                     >
-                      <span className="inline-block w-2 h-2 rounded-full bg-sky-500" aria-hidden />
+                      <span className="inline-block w-2 h-2 rounded-full bg-brand-500" aria-hidden />
                       Flexible
                     </button>
                     <button

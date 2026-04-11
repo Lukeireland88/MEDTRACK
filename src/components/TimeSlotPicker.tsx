@@ -20,7 +20,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
 
   if (availableTimeSlots.length === 0) {
     return (
-      <div className="p-2 sm:p-3 border-b border-slate-200 bg-slate-50/80 text-center text-slate-500 text-sm sm:text-base rounded-t-2xl">
+      <div className="p-2 sm:p-3 border-b border-brand-100/80 bg-gradient-to-r from-brand-50/90 to-slate-50/80 text-center text-brand-800/80 text-sm sm:text-base rounded-t-2xl font-medium">
         No medications scheduled
       </div>
     );
@@ -28,7 +28,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
 
   if (availableTimeSlots.length === 1) {
     return (
-      <div className="p-2 sm:p-3 border-b border-slate-200 bg-slate-50/80 font-semibold text-sm sm:text-base text-slate-800 rounded-t-2xl">
+      <div className="p-2 sm:p-3 border-b border-brand-100/80 bg-gradient-to-r from-brand-50/90 to-slate-50/80 font-semibold text-sm sm:text-base text-brand-950 rounded-t-2xl">
         <span>Showing: {availableTimeSlots[0]}</span>
       </div>
     );
@@ -37,7 +37,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
   return (
     <div>
       <div
-        className="p-2 sm:p-3 border-b border-slate-200 bg-slate-50/80 flex justify-between items-center cursor-pointer font-semibold text-sm sm:text-base text-slate-800 touch-manipulation rounded-t-2xl"
+        className="p-2 sm:p-3 border-b border-brand-100/80 bg-gradient-to-r from-brand-50/90 to-slate-50/80 flex justify-between items-center cursor-pointer font-semibold text-sm sm:text-base text-brand-950 touch-manipulation rounded-t-2xl"
         onClick={toggleOptions}
       >
         <span>Showing: {selectedTimeSlot}</span>
@@ -52,7 +52,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
               aria-pressed={selectedTimeSlot === slot}
               className={`px-3 py-2 border rounded-xl font-semibold text-center text-sm sm:text-base touch-manipulation ${
                 selectedTimeSlot === slot
-                  ? 'border-blue-600 bg-blue-50 text-blue-700'
+                  ? 'border-brand-600 bg-brand-50 text-brand-800 shadow-sm'
                   : 'border-slate-200 bg-white text-slate-900 hover:bg-slate-50'
               }`}
             >

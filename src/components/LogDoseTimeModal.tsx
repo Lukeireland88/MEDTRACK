@@ -85,7 +85,7 @@ export default function LogDoseTimeModal({
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <p className="text-xs text-gray-500 mt-2">
               Defaults to now — change this if you&apos;re logging a dose from earlier.
@@ -103,7 +103,7 @@ export default function LogDoseTimeModal({
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-60"
+              className="px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-60 shadow-brand-sm"
             >
               {submitting ? 'Saving…' : 'Log dose'}
             </button>

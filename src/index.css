@@ -4,8 +4,11 @@
 
 @layer base {
   body {
-    @apply antialiased text-slate-900;
-    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    @apply antialiased text-slate-900 font-sans;
+  }
+
+  ::selection {
+    @apply bg-brand-100 text-brand-900;
   }
 }
 
