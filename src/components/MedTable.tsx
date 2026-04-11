@@ -136,7 +136,7 @@ export default function MedTable({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [scrollbar-gutter:stable]">
+      <div className="relative z-0 min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] [scrollbar-gutter:stable]">
         {/* Desktop table view */}
         <div className="hidden md:block px-3 pb-3">
           <table className="w-full border-collapse">

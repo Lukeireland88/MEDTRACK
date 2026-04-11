@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Plus, LogIn, LogOut, ClipboardList, Pill, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -78,6 +78,20 @@ export default function TrackerPage() {
   useEffect(() => {
     void refreshSlotDefinitions();
   }, [refreshSlotDefinitions]);
+
+  /** Lock document scroll so only the medication list scrolls (avoids iPad “two‑finger” nested scroll). */
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     loadMedications();
@@ -776,8 +790,8 @@ export default function TrackerPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
-      <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col px-2 py-3 sm:px-4 sm:py-6">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
+      <div className="mx-auto flex min-h-0 min-w-0 w-full max-w-4xl flex-1 flex-col overflow-hidden px-2 py-3 sm:px-4 sm:py-6">
         <header className="mb-3 shrink-0 sm:mb-4">
           <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex min-w-0 flex-1 items-start gap-3">
