@@ -798,6 +798,14 @@ export default function TrackerPage() {
               {user ? (
                 <>
                   <button
+                    onClick={handleAddMedication}
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap shadow-brand-sm"
+                  >
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Add medication</span>
+                    <span className="sm:hidden">Add</span>
+                  </button>
+                  <button
                     onClick={() => setAddLogPickerOpen(true)}
                     className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-950 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
                     title="Add a log"
@@ -814,14 +822,6 @@ export default function TrackerPage() {
                     <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
                     <span className="hidden sm:inline">Settings</span>
                   </Link>
-                  <button
-                    onClick={handleAddMedication}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap shadow-brand-sm"
-                  >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Add medication</span>
-                    <span className="sm:hidden">Add</span>
-                  </button>
                   <button
                     onClick={signOut}
                     className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 active:translate-y-px text-sm sm:text-base"
