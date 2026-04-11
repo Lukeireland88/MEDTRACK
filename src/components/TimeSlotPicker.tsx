@@ -21,7 +21,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
   if (availableTimeSlots.length === 0) {
     return (
       <div className="p-2 sm:p-3 border-b border-slate-200/90 bg-slate-50/95 text-center text-slate-600 text-sm sm:text-base rounded-t-2xl font-medium">
-        No sessions yet — open <strong className="font-semibold text-slate-800">Settings</strong> (next to Add log)
+        No sessions yet — open <strong className="font-semibold text-slate-800">Settings</strong> (tracker header)
         and configure Sessions to add Morning, Evening, etc.
       </div>
     );

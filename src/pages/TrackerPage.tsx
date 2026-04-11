@@ -797,6 +797,14 @@ export default function TrackerPage() {
             <div className="flex items-center gap-2">
               {user ? (
                 <>
+                  <Link
+                    to="/settings"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-slate-200 bg-white text-slate-800 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
+                    <span className="hidden sm:inline">Settings</span>
+                  </Link>
                   <button
                     onClick={handleAddMedication}
                     className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap shadow-brand-sm"
@@ -814,14 +822,6 @@ export default function TrackerPage() {
                     <span className="hidden sm:inline">Add log</span>
                     <span className="sm:hidden">Log</span>
                   </button>
-                  <Link
-                    to="/settings"
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-slate-200 bg-white text-slate-800 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
-                    title="Settings"
-                  >
-                    <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
-                    <span className="hidden sm:inline">Settings</span>
-                  </Link>
                   <button
                     onClick={signOut}
                     className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 active:translate-y-px text-sm sm:text-base"
