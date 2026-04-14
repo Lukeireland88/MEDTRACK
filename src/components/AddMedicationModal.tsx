@@ -593,7 +593,7 @@ export default function AddMedicationModal({
                 Pause history (from / until)
               </h3>
               <p className="text-sm text-slate-600 mb-3">
-                Automatically logged when you clear an active pause early.
+                Automatically logged when you clear an active pause early, or when a pause-until date has passed.
               </p>
               {pausePeriodLog.length === 0 ? (
                 <p className="text-sm text-gray-500">No pause history logged yet.</p>

@@ -144,6 +144,51 @@ export default function TrackerPage() {
         return;
       }
 
+      // Auto-log ended pauses (pause-until has passed) and clear pause fields so we don't log repeatedly.
+      // This runs opportunistically on load (client-side) since we don't have a server scheduler here.
+      const todayLocal = toLocalDateKey(new Date());
+      const endedPauseMeds = allMeds.filter((m: any) => {
+        const end = (m.pause_end_date as string | null) || null;
+        const start = (m.pause_start_date as string | null) || null;
+        if (!end) return false;
+        // Pause ended before today (i.e. should be resumed now)
+        if (end >= todayLocal) return false;
+        // Needs at least one pause boundary to be meaningful
+        return Boolean(start || end);
+      });
+
+      for (const med of endedPauseMeds) {
+        try {
+          const prevStart = (med.pause_start_date as string | null) || null;
+          const prevEnd = (med.pause_end_date as string | null) || null;
+          if (!prevEnd) continue;
+
+          const startDay = prevStart ?? prevEnd;
+          const endDay = prevEnd;
+
+          const { error: pauseLogError } = await supabase.from('medication_pause_periods').insert({
+            medication_id: med.id,
+            pause_start_date: startDay,
+            pause_end_date: endDay,
+            notes: 'Auto-logged (pause ended)',
+          });
+          if (pauseLogError) throw pauseLogError;
+
+          const { error: clearPauseError } = await supabase
+            .from('medications')
+            .update({ pause_start_date: null, pause_end_date: null })
+            .eq('id', med.id);
+          if (clearPauseError) throw clearPauseError;
+
+          // Keep local list consistent for this load cycle.
+          med.pause_start_date = null;
+          med.pause_end_date = null;
+        } catch (e) {
+          console.error('Error auto-logging ended pause:', e);
+          // Non-fatal: continue loading meds even if auto-log fails for one.
+        }
+      }
+
       const medIds = allMeds.map(m => m.id);
 
       // Load all time slots for all medications
