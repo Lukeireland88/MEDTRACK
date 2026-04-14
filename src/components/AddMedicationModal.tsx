@@ -19,6 +19,13 @@ export interface MedicationCoursePeriodLogRow {
   notes: string;
 }
 
+/** One row in the pause from/until log (edit modal only; read-only). */
+export interface MedicationPausePeriodLogRow {
+  pauseStartDate: string;
+  pauseEndDate: string;
+  notes: string;
+}
+
 export interface MedicationFormData {
   id?: string;
   name: string;
@@ -71,6 +78,7 @@ export default function AddMedicationModal({
     pauseEndDate: '',
   });
   const [coursePeriodLog, setCoursePeriodLog] = useState<MedicationCoursePeriodLogRow[]>([]);
+  const [pausePeriodLog, setPausePeriodLog] = useState<MedicationPausePeriodLogRow[]>([]);
 
   useEffect(() => {
     if (editingMedication) {
@@ -99,6 +107,7 @@ export default function AddMedicationModal({
     const medId = editingMedication?.id;
     if (!medId) {
       setCoursePeriodLog([]);
+      setPausePeriodLog([]);
       return;
     }
     let cancelled = false;
@@ -119,6 +128,40 @@ export default function AddMedicationModal({
         (data || []).map((row) => ({
           startDate: row.start_date || '',
           endDate: row.end_date || '',
+          notes: row.notes || '',
+        }))
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, editingMedication?.id]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const medId = editingMedication?.id;
+    if (!medId) {
+      setPausePeriodLog([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('medication_pause_periods')
+        .select('pause_start_date, pause_end_date, notes')
+        .eq('medication_id', medId)
+        .order('pause_start_date', { ascending: false });
+
+      if (cancelled) return;
+      if (error) {
+        console.error('Error loading pause periods:', error);
+        setPausePeriodLog([]);
+        return;
+      }
+      setPausePeriodLog(
+        (data || []).map((row) => ({
+          pauseStartDate: row.pause_start_date || '',
+          pauseEndDate: row.pause_end_date || '',
           notes: row.notes || '',
         }))
       );
@@ -543,6 +586,42 @@ export default function AddMedicationModal({
               </p>
             </div>
           </div>
+
+          {editingMedication?.id && (
+            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/90">
+              <h3 className="text-sm font-semibold text-slate-900 mb-1">
+                Pause history (from / until)
+              </h3>
+              <p className="text-sm text-slate-600 mb-3">
+                Automatically logged when you clear an active pause early.
+              </p>
+              {pausePeriodLog.length === 0 ? (
+                <p className="text-sm text-gray-500">No pause history logged yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {pausePeriodLog.map((row, index) => (
+                    <li
+                      key={`${row.pauseStartDate}-${row.pauseEndDate}-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_2fr] gap-2 items-end border border-gray-200 rounded-lg p-3 bg-white"
+                    >
+                      <div>
+                        <div className="block text-xs font-semibold text-gray-600 mb-1">From</div>
+                        <div className="text-sm text-slate-900">{row.pauseStartDate || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="block text-xs font-semibold text-gray-600 mb-1">Until</div>
+                        <div className="text-sm text-slate-900">{row.pauseEndDate || '—'}</div>
+                      </div>
+                      <div>
+                        <div className="block text-xs font-semibold text-gray-600 mb-1">Notes</div>
+                        <div className="text-sm text-slate-700">{row.notes || '—'}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
           </div>
 
           <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3 sm:px-6 flex justify-between items-center gap-3 rounded-b-2xl">

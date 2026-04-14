@@ -582,7 +582,7 @@ export default function TrackerPage() {
       if (formData.id) {
         // If the user clears an active pause, preserve it as a historical pause window.
         // (Auto-logs the *previous* pause range; the update below clears pause_start/end.)
-        if (!pauseStart && !pauseEnd && (formData.pauseStartDate || formData.pauseEndDate)) {
+        if (!pauseStart && !pauseEnd) {
           const { data: freshRow, error: freshErr } = await supabase
             .from('medications')
             .select('pause_start_date, pause_end_date')
@@ -592,6 +592,7 @@ export default function TrackerPage() {
 
           const prevStart = (freshRow?.pause_start_date as string | null) || null;
           const prevEnd = (freshRow?.pause_end_date as string | null) || null;
+          // Only log if there actually was a pause on the saved row.
           if (prevStart || prevEnd) {
             const startDay = prevStart ?? prevEnd ?? todayLocal;
             const endDay = prevEnd ?? prevStart ?? todayLocal;
