@@ -79,6 +79,10 @@ export default function AddMedicationModal({
   });
   const [coursePeriodLog, setCoursePeriodLog] = useState<MedicationCoursePeriodLogRow[]>([]);
   const [pausePeriodLog, setPausePeriodLog] = useState<MedicationPausePeriodLogRow[]>([]);
+  const [dateErrors, setDateErrors] = useState<{
+    endDate?: string;
+    pauseEndDate?: string;
+  }>({});
 
   useEffect(() => {
     if (editingMedication) {
@@ -100,6 +104,7 @@ export default function AddMedicationModal({
         pauseEndDate: '',
       });
     }
+    setDateErrors({});
   }, [editingMedication, isOpen]);
 
   useEffect(() => {
@@ -188,6 +193,10 @@ export default function AddMedicationModal({
         alert('Target doses per day must be at least 1, or leave blank to track without a daily goal.');
         return;
       }
+    }
+    if ((formData.startDate && formData.endDate) && formData.startDate > formData.endDate) {
+      alert('End date must be on or after the start date.');
+      return;
     }
     if ((formData.pauseStartDate && formData.pauseEndDate) && formData.pauseStartDate > formData.pauseEndDate) {
       alert('Pause start date must be on or before the pause end date.');
@@ -407,9 +416,21 @@ export default function AddMedicationModal({
             <input
               type="date"
               value={formData.startDate}
-              onChange={(e) =>
-                setFormData({ ...formData, startDate: e.target.value })
-              }
+              onChange={(e) => {
+                const nextStart = e.target.value;
+                setFormData((prev) => {
+                  const shouldClearEnd = prev.endDate && nextStart && prev.endDate < nextStart;
+                  return {
+                    ...prev,
+                    startDate: nextStart,
+                    endDate: shouldClearEnd ? '' : prev.endDate,
+                  };
+                });
+                setDateErrors((prev) => ({
+                  ...prev,
+                  endDate: undefined,
+                }));
+              }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
             <p className="text-sm text-gray-600 mt-1">
@@ -437,9 +458,24 @@ export default function AddMedicationModal({
             <input
               type="date"
               value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              min={formData.startDate || undefined}
+              onChange={(e) => {
+                const nextEnd = e.target.value;
+                if (formData.startDate && nextEnd && nextEnd < formData.startDate) {
+                  setDateErrors((prev) => ({
+                    ...prev,
+                    endDate: 'End date must be on or after the start date.',
+                  }));
+                  return;
+                }
+                setDateErrors((prev) => ({ ...prev, endDate: undefined }));
+                setFormData({ ...formData, endDate: nextEnd });
+              }}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
+            {dateErrors.endDate && (
+              <p className="text-sm text-red-600 mt-1">{dateErrors.endDate}</p>
+            )}
             <p className="text-sm text-gray-600 mt-1">
               Medication will no longer appear after this date.
             </p>
@@ -553,9 +589,22 @@ export default function AddMedicationModal({
                 <input
                   type="date"
                   value={formData.pauseStartDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pauseStartDate: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const nextPauseStart = e.target.value;
+                    setFormData((prev) => {
+                      const shouldClearPauseEnd =
+                        prev.pauseEndDate && nextPauseStart && prev.pauseEndDate < nextPauseStart;
+                      return {
+                        ...prev,
+                        pauseStartDate: nextPauseStart,
+                        pauseEndDate: shouldClearPauseEnd ? '' : prev.pauseEndDate,
+                      };
+                    });
+                    setDateErrors((prev) => ({
+                      ...prev,
+                      pauseEndDate: undefined,
+                    }));
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
@@ -566,17 +615,37 @@ export default function AddMedicationModal({
                 <input
                   type="date"
                   value={formData.pauseEndDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pauseEndDate: e.target.value })
-                  }
+                  min={formData.pauseStartDate || undefined}
+                  onChange={(e) => {
+                    const nextPauseEnd = e.target.value;
+                    if (
+                      formData.pauseStartDate &&
+                      nextPauseEnd &&
+                      nextPauseEnd < formData.pauseStartDate
+                    ) {
+                      setDateErrors((prev) => ({
+                        ...prev,
+                        pauseEndDate: 'Pause until must be on or after pause from.',
+                      }));
+                      return;
+                    }
+                    setDateErrors((prev) => ({ ...prev, pauseEndDate: undefined }));
+                    setFormData({ ...formData, pauseEndDate: nextPauseEnd });
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
             </div>
+            {dateErrors.pauseEndDate && (
+              <p className="text-sm text-red-600 mt-2">{dateErrors.pauseEndDate}</p>
+            )}
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <button
                 type="button"
-                onClick={() => setFormData({ ...formData, pauseStartDate: '', pauseEndDate: '' })}
+                onClick={() => {
+                  setFormData({ ...formData, pauseStartDate: '', pauseEndDate: '' });
+                  setDateErrors((prev) => ({ ...prev, pauseEndDate: undefined }));
+                }}
                 className="px-3 py-1.5 text-xs rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 Clear pause
