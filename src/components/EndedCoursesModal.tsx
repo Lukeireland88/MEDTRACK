@@ -64,9 +64,11 @@ export default function EndedCoursesModal({ isOpen, onClose }: EndedCoursesModal
         .in('medication_id', medIds);
 
       const slotsByMed: Record<string, string[]> = {};
-      allSlots?.forEach((slot: { medication_id: string; time_slots?: { name: string } | null }) => {
+      allSlots?.forEach((slot: any) => {
         const medId = slot.medication_id;
-        const slotName = slot.time_slots?.name;
+        const slotName = Array.isArray(slot.time_slots)
+          ? slot.time_slots[0]?.name
+          : slot.time_slots?.name;
         if (!slotsByMed[medId]) slotsByMed[medId] = [];
         if (slotName && !slotsByMed[medId].includes(slotName)) {
           slotsByMed[medId].push(slotName);

@@ -580,6 +580,38 @@ export default function TrackerPage() {
       let savedMedId: string;
 
       if (formData.id) {
+        // If the user clears an active pause, preserve it as a historical pause window.
+        // (Auto-logs the *previous* pause range; the update below clears pause_start/end.)
+        if (!pauseStart && !pauseEnd && (formData.pauseStartDate || formData.pauseEndDate)) {
+          const { data: freshRow, error: freshErr } = await supabase
+            .from('medications')
+            .select('pause_start_date, pause_end_date')
+            .eq('id', formData.id)
+            .single();
+          if (freshErr) throw freshErr;
+
+          const prevStart = (freshRow?.pause_start_date as string | null) || null;
+          const prevEnd = (freshRow?.pause_end_date as string | null) || null;
+          if (prevStart || prevEnd) {
+            const startDay = prevStart ?? prevEnd ?? todayLocal;
+            const endDay = prevEnd ?? prevStart ?? todayLocal;
+            const wasActive = todayLocal >= startDay && todayLocal <= endDay;
+
+            if (wasActive) {
+              // If the user resumes early, cap the pause end at the manual clear date.
+              const pauseEndLogged = prevEnd && prevEnd < todayLocal ? prevEnd : todayLocal;
+
+              const { error: pauseLogError } = await supabase.from('medication_pause_periods').insert({
+                medication_id: formData.id,
+                pause_start_date: startDay,
+                pause_end_date: pauseEndLogged,
+                notes: prevEnd && prevEnd > todayLocal ? 'Auto-logged (manual resume early)' : 'Auto-logged (manual resume)',
+              });
+              if (pauseLogError) throw pauseLogError;
+            }
+          }
+        }
+
         const { error: medError } = await supabase
           .from('medications')
           .update(medPayload)

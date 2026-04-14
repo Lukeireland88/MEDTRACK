@@ -34,8 +34,10 @@ export async function fetchMedicationWithSlotsById(
     .eq('medication_id', medId);
 
   const names: string[] = [];
-  slotRows?.forEach((row: { time_slots?: { name: string } | null }) => {
-    const n = row.time_slots?.name;
+  slotRows?.forEach((row: any) => {
+    const n = Array.isArray(row.time_slots)
+      ? row.time_slots[0]?.name
+      : row.time_slots?.name;
     if (n && !names.includes(n)) names.push(n);
   });
   const timeSlotNames = sortMedicationSlotNames(names, orderForSort);
