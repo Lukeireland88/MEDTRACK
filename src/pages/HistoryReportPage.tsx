@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
+import EditTimelineEventModal, { EditTimelineEventInitial } from '../components/EditTimelineEventModal';
 
 type HistoryEventVariant = 'slot_taken' | 'slot_not_taken' | 'flexible_dose' | 'seizure' | 'timeline_event';
 
@@ -18,6 +19,51 @@ type UnifiedRow = {
   kind: 'slot' | 'flexible' | 'symptom' | 'timeline';
   detail: string;
   variant: HistoryEventVariant;
+  timeline?: {
+    id: string;
+    occurredAt: string;
+    title: string;
+    notes: string | null;
+  };
+};
+
+type MedicationLogRow = {
+  id: string;
+  logged_at: string;
+  dose_date: string;
+  action: 'checked' | 'unchecked';
+  reason: string | null;
+  medication_id: string;
+  medications: { name: string } | null;
+  time_slots: { name: string } | null;
+};
+
+type DoseEventRow = {
+  id: string;
+  taken_at: string;
+  dose_date: string;
+  medication_id: string;
+  medications: { name: string } | null;
+};
+
+type SymptomEventRow = {
+  id: string;
+  occurred_at: string;
+  event_date: string;
+  duration_seconds: number | null;
+  notes: string | null;
+  event_type: string;
+};
+
+type TimelineEventRow = {
+  id: string;
+  occurred_at: string;
+  event_date: string;
+  event_type: string | null;
+  measurement_type: string | null;
+  title: string | null;
+  value_text: string | null;
+  notes: string | null;
 };
 
 function measurementTypeLabel(t: string | null): string | null {
@@ -161,6 +207,7 @@ export default function HistoryReportPage() {
     setMedPopoverPos({ top, left: r.left, width: r.width });
   }, []);
   const [eventFilter, setEventFilter] = useState<EventFilter>('all');
+  const [editingNote, setEditingNote] = useState<EditTimelineEventInitial | null>(null);
 
   const toggleLegendFilter = (v: HistoryEventVariant) => {
     setEventFilter((prev) => (prev === v ? 'all' : v));
@@ -280,9 +327,10 @@ export default function HistoryReportPage() {
 
         const unified: UnifiedRow[] = [];
 
-      (logs as any[])?.forEach((log) => {
-        const med = log.medications as { name: string } | null;
-        const slot = log.time_slots as { name: string } | null;
+      const logRows = (logs ?? []) as MedicationLogRow[];
+      logRows.forEach((log) => {
+        const med = log.medications;
+        const slot = log.time_slots;
         const name = med?.name ?? 'Unknown';
         const slotName = slot?.name ?? '—';
         const actionLabel =
@@ -301,8 +349,9 @@ export default function HistoryReportPage() {
         });
       });
 
-      (doses as any[])?.forEach((d) => {
-        const med = d.medications as { name: string } | null;
+      const doseRows = (doses ?? []) as DoseEventRow[];
+      doseRows.forEach((d) => {
+        const med = d.medications;
         unified.push({
           id: `dose-${d.id}`,
           at: d.taken_at,
@@ -315,13 +364,14 @@ export default function HistoryReportPage() {
         });
       });
 
-      (symptoms as any[])?.forEach((s) => {
+      const symptomRows = (symptoms ?? []) as SymptomEventRow[];
+      symptomRows.forEach((s) => {
         if (s.event_type !== 'seizure') return;
         const dur = Number(s.duration_seconds) || 0;
         const mins = Math.floor(dur / 60);
         const secs = dur % 60;
         const durationLabel = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-        const notes = (s.notes as string | null) ?? null;
+        const notes = s.notes ?? null;
         unified.push({
           id: `sym-${s.id}`,
           at: s.occurred_at,
@@ -334,11 +384,12 @@ export default function HistoryReportPage() {
         });
       });
 
-      (events as any[])?.forEach((ev) => {
-        const typeLabel = (ev.event_type as string | null) ?? 'event';
-        const measurementType = (ev.measurement_type as string | null) ?? null;
-        const value = (ev.value_text as string | null) ?? null;
-        const notes = (ev.notes as string | null) ?? null;
+      const timelineRows = (events ?? []) as TimelineEventRow[];
+      timelineRows.forEach((ev) => {
+        const typeLabel = ev.event_type ?? 'event';
+        const measurementType = ev.measurement_type ?? null;
+        const value = ev.value_text ?? null;
+        const notes = ev.notes ?? null;
         const metricLabel = measurementTypeLabel(measurementType);
         const parts = [
           typeLabel,
@@ -355,6 +406,12 @@ export default function HistoryReportPage() {
           kind: 'timeline',
           detail: parts.join(' · '),
           variant: 'timeline_event',
+          timeline: {
+            id: String(ev.id),
+            occurredAt: String(ev.occurred_at),
+            title: String(ev.title ?? 'Note'),
+            notes,
+          },
         });
       });
 
@@ -368,6 +425,29 @@ export default function HistoryReportPage() {
       setLoading(false);
     }
   }, [dateFrom, dateTo, medicationIds]);
+
+  const saveEditedNote = useCallback(
+    async (payload: { occurredAtIso: string; eventDate: string; notes: string | null }) => {
+      if (!editingNote) return;
+      try {
+        const { error: updateError } = await supabase
+          .from('timeline_events')
+          .update({
+            occurred_at: payload.occurredAtIso,
+            event_date: payload.eventDate,
+            notes: payload.notes,
+          })
+          .eq('id', editingNote.id);
+        if (updateError) throw updateError;
+        await loadReport();
+      } catch (e) {
+        console.error(e);
+        alert('Failed to update note. Please try again.');
+        throw e;
+      }
+    },
+    [editingNote, loadReport]
+  );
 
   useEffect(() => {
     loadReport();
@@ -496,6 +576,12 @@ export default function HistoryReportPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
+        <EditTimelineEventModal
+          isOpen={Boolean(editingNote)}
+          initial={editingNote}
+          onClose={() => setEditingNote(null)}
+          onConfirm={saveEditedNote}
+        />
         <header className="mb-4 sm:mb-6">
           <Link
             to="/"
@@ -874,6 +960,24 @@ export default function HistoryReportPage() {
                           >
                             {badge.label}
                           </span>
+                          {row.variant === 'timeline_event' && row.timeline && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditingNote({
+                                  id: row.timeline!.id,
+                                  occurredAtIso: row.timeline!.occurredAt,
+                                  title: row.timeline!.title,
+                                  notes: row.timeline!.notes,
+                                })
+                              }
+                              className="ml-auto inline-flex items-center justify-center p-1.5 rounded-lg border border-amber-200 bg-white/70 text-amber-900 hover:bg-white"
+                              title="Edit note"
+                              aria-label="Edit note"
+                            >
+                              <Pencil className="w-4 h-4" aria-hidden />
+                            </button>
+                          )}
                         </div>
                         <p className="font-semibold text-gray-900 break-words">{row.medicationName}</p>
                         <p className="text-gray-600 mt-1">{formatWhen(row.at)}</p>
@@ -930,7 +1034,29 @@ export default function HistoryReportPage() {
                           <td className="p-3 align-top text-gray-700">
                             {row.kind === 'flexible' ? 'Flexible dose' : 'Time slot'}
                           </td>
-                          <td className="p-3 align-top text-gray-700 break-words">{row.detail}</td>
+                          <td className="p-3 align-top text-gray-700 break-words">
+                            <div className="flex items-start gap-2">
+                              <div className="min-w-0 flex-1 break-words">{row.detail}</div>
+                              {row.variant === 'timeline_event' && row.timeline && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setEditingNote({
+                                      id: row.timeline!.id,
+                                      occurredAtIso: row.timeline!.occurredAt,
+                                      title: row.timeline!.title,
+                                      notes: row.timeline!.notes,
+                                    })
+                                  }
+                                  className="shrink-0 inline-flex items-center justify-center p-1.5 rounded-lg border border-amber-200 bg-white text-amber-900 hover:bg-amber-50"
+                                  title="Edit note"
+                                  aria-label="Edit note"
+                                >
+                                  <Pencil className="w-4 h-4" aria-hidden />
+                                </button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
