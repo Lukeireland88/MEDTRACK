@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Pencil, History, CircleOff, X } from 'lucide-react';
+import { Pencil, History, X } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -54,6 +54,40 @@ function SlotTakenControl({
       className={`w-6 h-6 accent-brand-600 cursor-pointer ${className}`}
       title="Mark as taken"
     />
+  );
+}
+
+function MarkNotTakenButton({
+  notTakenRecorded,
+  onClick,
+  className = '',
+}: {
+  notTakenRecorded: boolean;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`
+        shrink-0 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors
+        ${
+          notTakenRecorded
+            ? 'bg-slate-700 text-white hover:bg-slate-800'
+            : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+        }
+        ${className}
+      `}
+      title={
+        notTakenRecorded ? 'Update not-taken reason' : 'Record as not taken (with reason)'
+      }
+      aria-label={
+        notTakenRecorded ? 'Update not-taken reason' : 'Record as not taken with reason'
+      }
+    >
+      Not taken
+    </button>
   );
 }
 
@@ -303,26 +337,10 @@ export default function MedTable({
                 <td className="p-3 border-b border-slate-200">
                   <div className="flex items-center gap-0.5">
                     {due && !isFlexible && (
-                      <button
-                        type="button"
+                      <MarkNotTakenButton
+                        notTakenRecorded={notTakenRecorded}
                         onClick={() => onOpenMarkNotTaken(med.id)}
-                        className={`
-                          p-2 rounded-lg transition-colors
-                          ${notTakenRecorded ? 'text-gray-800 bg-gray-200 hover:bg-gray-300' : 'text-gray-600 hover:bg-gray-100'}
-                        `}
-                        title={
-                          notTakenRecorded
-                            ? 'Update not-taken reason'
-                            : 'Record as not taken (with reason)'
-                        }
-                        aria-label={
-                          notTakenRecorded
-                            ? 'Update not-taken reason'
-                            : 'Record as not taken with reason'
-                        }
-                      >
-                        <CircleOff className="w-4 h-4" strokeWidth={2} />
-                      </button>
+                      />
                     )}
                     <button
                       onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
@@ -487,26 +505,11 @@ export default function MedTable({
           const actions = (
             <div className="flex items-center gap-0.5 flex-shrink-0">
               {due && !isFlexible && (
-                <button
-                  type="button"
+                <MarkNotTakenButton
+                  notTakenRecorded={notTakenRecorded}
                   onClick={() => onOpenMarkNotTaken(med.id)}
-                  className={`
-                    p-2 rounded-lg transition-colors touch-manipulation
-                    ${notTakenRecorded ? 'text-gray-800 bg-gray-200 active:bg-gray-300' : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'}
-                  `}
-                  title={
-                    notTakenRecorded
-                      ? 'Update not-taken reason'
-                      : 'Record as not taken (with reason)'
-                  }
-                  aria-label={
-                    notTakenRecorded
-                      ? 'Update not-taken reason'
-                      : 'Record as not taken with reason'
-                  }
-                >
-                  <CircleOff className="w-5 h-5" strokeWidth={2} />
-                </button>
+                  className="touch-manipulation"
+                />
               )}
               <button
                 onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
@@ -552,7 +555,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). Circle-off: reason.
+          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). “Not taken” button: add a reason.
         </div>
       </div>
 
