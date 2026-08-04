@@ -20,7 +20,7 @@ export default function AddLogPickerModal({
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
         <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Add log</h2>
+            <h2 className="text-lg font-bold text-gray-900">Observations</h2>
             <p className="text-sm text-gray-600 mt-1">Choose what you want to record.</p>
           </div>
           <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Close">

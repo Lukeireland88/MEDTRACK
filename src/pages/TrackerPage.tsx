@@ -966,11 +966,11 @@ export default function TrackerPage() {
               <button
                 onClick={() => setAddLogPickerOpen(true)}
                 className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-950 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
-                title="Add a log"
+                title="Add an observation"
               >
                 <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">Add log</span>
-                <span className="sm:hidden">Log</span>
+                <span className="hidden sm:inline">Observations</span>
+                <span className="sm:hidden">Observe</span>
               </button>
               <button
                 onClick={signOut}
