@@ -71,12 +71,9 @@ function MarkNotTakenButton({
       type="button"
       onClick={onClick}
       className={`
-        shrink-0 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors
-        ${
-          notTakenRecorded
-            ? 'bg-slate-700 text-white hover:bg-slate-800'
-            : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-        }
+        shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium underline-offset-2
+        text-slate-600 hover:text-slate-900 hover:underline
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1
         ${className}
       `}
       title={
@@ -86,7 +83,7 @@ function MarkNotTakenButton({
         notTakenRecorded ? 'Update not-taken reason' : 'Record as not taken with reason'
       }
     >
-      Not taken
+      {notTakenRecorded ? 'Edit reason' : 'Mark missed'}
     </button>
   );
 }
@@ -555,7 +552,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). “Not taken” button: add a reason.
+          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). “Mark missed”: add a reason.
         </div>
       </div>
 
