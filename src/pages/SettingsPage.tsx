@@ -1,18 +1,24 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, ArrowLeft, ListOrdered, Pill, Settings } from 'lucide-react';
+import { Archive, ArrowLeft, Hand, ListOrdered, Pill, Settings } from 'lucide-react';
 import ManageTimeSlotsModal from '../components/ManageTimeSlotsModal';
 import EndedCoursesModal from '../components/EndedCoursesModal';
 import AllMedicationsModal from '../components/AllMedicationsModal';
 import AuthModal from '../components/AuthModal';
 import { useAuth } from '../contexts/AuthContext';
+import { usePreferences, type Handedness } from '../contexts/PreferencesContext';
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { handedness, setHandedness } = usePreferences();
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [endedCoursesOpen, setEndedCoursesOpen] = useState(false);
   const [allMedsOpen, setAllMedsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const selectHandedness = (value: Handedness) => {
+    setHandedness(value);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
@@ -40,6 +46,59 @@ export default function SettingsPage() {
         </header>
 
         <ul className="space-y-3">
+          <li>
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-brand-sm ring-1 ring-slate-200/80">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                  <Hand className="h-5 w-5" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-slate-900">Handedness</div>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    Put checkboxes and Log dose on your preferred side. Actions move to the other side.
+                  </p>
+                  <div
+                    className="mt-3 grid grid-cols-2 gap-2"
+                    role="radiogroup"
+                    aria-label="Handedness"
+                  >
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={handedness === 'left'}
+                      onClick={() => selectHandedness('left')}
+                      className={`rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
+                        handedness === 'left'
+                          ? 'border-brand-600 bg-brand-50 text-brand-900 ring-1 ring-brand-600'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      Left-handed
+                      <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                        Controls on left
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={handedness === 'right'}
+                      onClick={() => selectHandedness('right')}
+                      className={`rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
+                        handedness === 'right'
+                          ? 'border-brand-600 bg-brand-50 text-brand-900 ring-1 ring-brand-600'
+                          : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      Right-handed
+                      <span className="mt-0.5 block text-xs font-normal text-slate-500">
+                        Controls on right
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
           <li>
             <button
               type="button"

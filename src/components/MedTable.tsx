@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pencil, History, CircleOff, X } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
 import { fromDateInputValue } from '../utils/dateUtils';
+import { usePreferences } from '../contexts/PreferencesContext';
 
 interface MedTableProps {
   medications: MedicationWithSlots[];
@@ -68,6 +69,22 @@ function flexibleRemaining(
   return 0;
 }
 
+function orderSides(controlsFirst: boolean, controls: ReactNode, middle: ReactNode, actions: ReactNode) {
+  return controlsFirst ? (
+    <>
+      {controls}
+      {middle}
+      {actions}
+    </>
+  ) : (
+    <>
+      {actions}
+      {middle}
+      {controls}
+    </>
+  );
+}
+
 export default function MedTable({
   medications,
   selectedDate,
@@ -80,6 +97,8 @@ export default function MedTable({
   onEditMedication,
   onShowHistory
 }: MedTableProps) {
+  const { handedness } = usePreferences();
+  const controlsFirst = handedness === 'left';
   const [logDoseMedId, setLogDoseMedId] = useState<string | null>(null);
 
   const formatResumesOn = (med: Pick<MedicationWithSlots, 'pause_end_date'>): string | null => {
@@ -141,21 +160,26 @@ export default function MedTable({
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-slate-100/90">
-              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-14">
-                Taken
-              </th>
-              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
-                Medication
-              </th>
-              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
-                When
-              </th>
-              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
-                Notes
-              </th>
-              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-32">
-                Actions
-              </th>
+              {orderSides(
+                controlsFirst,
+                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-14">
+                  Taken
+                </th>,
+                <>
+                  <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
+                    Medication
+                  </th>
+                  <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
+                    When
+                  </th>
+                  <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3">
+                    Notes
+                  </th>
+                </>,
+                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-32">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -181,56 +205,50 @@ export default function MedTable({
                   ? 'bg-gray-50 text-gray-500 opacity-80'
                   : '';
 
-              return (
-                <tr
-                  key={med.id}
-                  className={`
-                    ${!isFlexible && taken ? 'text-gray-500 line-through' : ''}
-                    ${isFlexible && flexComplete ? 'text-gray-500' : ''}
-                    ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
-                    ${isFlexible ? 'bg-brand-50/90' : ''}
-                    ${tone}
-                  `}
-                >
-                  <td className="p-3 border-b border-slate-200 align-top">
-                    {isFlexible ? (
-                      due ? (
-                        <div className="flex flex-col gap-1.5 min-w-[7rem]">
+              const takenCell = (
+                <td className="p-3 border-b border-slate-200 align-top">
+                  {isFlexible ? (
+                    due ? (
+                      <div className="flex flex-col gap-1.5 min-w-[7rem]">
+                        <button
+                          type="button"
+                          onClick={() => setLogDoseMedId(med.id)}
+                          className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700"
+                        >
+                          Log dose
+                        </button>
+                        {flexCount > 0 && (
                           <button
                             type="button"
-                            onClick={() => setLogDoseMedId(med.id)}
-                            className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700"
+                            onClick={() => onRemoveLastFlexibleDose(med.id)}
+                            className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100"
                           >
-                            Log dose
+                            Undo last
                           </button>
-                          {flexCount > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => onRemoveLastFlexibleDose(med.id)}
-                              className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100"
-                            >
-                              Undo last
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
-                          —
-                        </div>
-                      )
-                    ) : due ? (
-                      <SlotTakenControl
-                        medId={med.id}
-                        taken={taken}
-                        notTakenRecorded={notTakenRecorded}
-                        onToggleTaken={onToggleTaken}
-                      />
+                        )}
+                      </div>
                     ) : (
                       <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
                         —
                       </div>
-                    )}
-                  </td>
+                    )
+                  ) : due ? (
+                    <SlotTakenControl
+                      medId={med.id}
+                      taken={taken}
+                      notTakenRecorded={notTakenRecorded}
+                      onToggleTaken={onToggleTaken}
+                    />
+                  ) : (
+                    <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
+                      —
+                    </div>
+                  )}
+                </td>
+              );
+
+              const middleCells = (
+                <>
                   <td className="p-3 border-b border-slate-200 font-semibold">
                     {med.name}
                     {paused && (
@@ -278,48 +296,66 @@ export default function MedTable({
                   <td className="p-3 border-b border-slate-200 text-sm text-gray-600">
                     {med.notes || '—'}
                   </td>
-                  <td className="p-3 border-b border-slate-200">
-                    <div className="flex items-center gap-0.5">
-                      {due && !isFlexible && (
-                        <button
-                          type="button"
-                          onClick={() => onOpenMarkNotTaken(med.id)}
-                          className={`
-                            p-2 rounded-lg transition-colors
-                            ${notTakenRecorded ? 'text-gray-800 bg-gray-200 hover:bg-gray-300' : 'text-gray-600 hover:bg-gray-100'}
-                          `}
-                          title={
-                            notTakenRecorded
-                              ? 'Update not-taken reason'
-                              : 'Record as not taken (with reason)'
-                          }
-                          aria-label={
-                            notTakenRecorded
-                              ? 'Update not-taken reason'
-                              : 'Record as not taken with reason'
-                          }
-                        >
-                          <CircleOff className="w-4 h-4" strokeWidth={2} />
-                        </button>
-                      )}
+                </>
+              );
+
+              const actionsCell = (
+                <td className="p-3 border-b border-slate-200">
+                  <div className="flex items-center gap-0.5">
+                    {due && !isFlexible && (
                       <button
-                        onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        title="View history"
-                        aria-label="View history"
+                        type="button"
+                        onClick={() => onOpenMarkNotTaken(med.id)}
+                        className={`
+                          p-2 rounded-lg transition-colors
+                          ${notTakenRecorded ? 'text-gray-800 bg-gray-200 hover:bg-gray-300' : 'text-gray-600 hover:bg-gray-100'}
+                        `}
+                        title={
+                          notTakenRecorded
+                            ? 'Update not-taken reason'
+                            : 'Record as not taken (with reason)'
+                        }
+                        aria-label={
+                          notTakenRecorded
+                            ? 'Update not-taken reason'
+                            : 'Record as not taken with reason'
+                        }
                       >
-                        <History className="w-4 h-4 text-gray-600" />
+                        <CircleOff className="w-4 h-4" strokeWidth={2} />
                       </button>
-                      <button
-                        onClick={() => onEditMedication(med)}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        title="Edit medication"
-                        aria-label="Edit medication"
-                      >
-                        <Pencil className="w-4 h-4 text-gray-600" />
-                      </button>
-                    </div>
-                  </td>
+                    )}
+                    <button
+                      onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
+                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                      title="View history"
+                      aria-label="View history"
+                    >
+                      <History className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => onEditMedication(med)}
+                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                      title="Edit medication"
+                      aria-label="Edit medication"
+                    >
+                      <Pencil className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+                </td>
+              );
+
+              return (
+                <tr
+                  key={med.id}
+                  className={`
+                    ${!isFlexible && taken ? 'text-gray-500 line-through' : ''}
+                    ${isFlexible && flexComplete ? 'text-gray-500' : ''}
+                    ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
+                    ${isFlexible ? 'bg-brand-50/90' : ''}
+                    ${tone}
+                  `}
+                >
+                  {orderSides(controlsFirst, takenCell, middleCells, actionsCell)}
                 </tr>
               );
             })}
@@ -348,6 +384,149 @@ export default function MedTable({
               ? 'bg-gray-50 text-gray-500 opacity-80'
               : '';
 
+          const takenControl = isFlexible ? (
+            due ? (
+              <div className="flex flex-col gap-1.5 flex-shrink-0 mt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setLogDoseMedId(med.id)}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 touch-manipulation"
+                >
+                  Log dose
+                </button>
+                {flexCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveLastFlexibleDose(med.id)}
+                    className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation"
+                  >
+                    Undo last
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
+                —
+              </div>
+            )
+          ) : due ? (
+            <SlotTakenControl
+              medId={med.id}
+              taken={taken}
+              notTakenRecorded={notTakenRecorded}
+              onToggleTaken={onToggleTaken}
+              className="mt-0.5 flex-shrink-0 touch-manipulation"
+            />
+          ) : (
+            <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
+              —
+            </div>
+          );
+
+          const middle = (
+            <div className="flex-1 min-w-0">
+              <div
+                className={`font-semibold text-sm mb-1 ${!isFlexible && taken ? 'line-through' : ''}`}
+              >
+                {med.name}
+                {paused && (
+                  <span className="ml-2 inline-flex flex-col align-middle text-[11px] px-2 py-0.5 border border-gray-400 rounded-full text-gray-700 bg-gray-100">
+                    <span>Paused</span>
+                    {resumesOn && (
+                      <span className="font-normal text-[10px] text-gray-600 leading-tight">
+                        Resumes {resumesOn}
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-gray-600 mb-1">
+                {med.when_text}
+              </div>
+              {notTakenRecorded && slotDose?.notTakenReason && (
+                <div className="text-xs text-gray-700 mb-1 font-medium">
+                  Not taken: {slotDose.notTakenReason}
+                </div>
+              )}
+              {isFlexible && (
+                <div className="text-xs text-gray-800 mb-1">
+                  {target != null ? (
+                    <>
+                      <strong>{flexCount}</strong> / {target} doses today
+                    </>
+                  ) : (
+                    <>
+                      <strong>{flexCount}</strong> dose{flexCount !== 1 ? 's' : ''} logged today
+                    </>
+                  )}
+                </div>
+              )}
+              {isFlexible && flexEvents.length > 0 && (
+                <ul className="text-xs text-gray-600 list-disc list-inside space-y-0.5 mb-1">
+                  {flexEvents.map((ev) => (
+                    <li key={ev.id}>{formatTime(ev.taken_at)}</li>
+                  ))}
+                </ul>
+              )}
+              {!isFlexible && med.is_multiple && (
+                <span className="inline-block text-xs px-2 py-0.5 border border-slate-200 rounded-full text-gray-600">
+                  Multiple: {med.time_slot_names.join(', ')}
+                </span>
+              )}
+              {med.notes && (
+                <div className="mt-2 pt-2 border-t border-slate-200">
+                  <div className="text-xs text-gray-500 mb-0.5">Notes:</div>
+                  <div className="text-xs text-gray-600">
+                    {med.notes}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+
+          const actions = (
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              {due && !isFlexible && (
+                <button
+                  type="button"
+                  onClick={() => onOpenMarkNotTaken(med.id)}
+                  className={`
+                    p-2 rounded-lg transition-colors touch-manipulation
+                    ${notTakenRecorded ? 'text-gray-800 bg-gray-200 active:bg-gray-300' : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'}
+                  `}
+                  title={
+                    notTakenRecorded
+                      ? 'Update not-taken reason'
+                      : 'Record as not taken (with reason)'
+                  }
+                  aria-label={
+                    notTakenRecorded
+                      ? 'Update not-taken reason'
+                      : 'Record as not taken with reason'
+                  }
+                >
+                  <CircleOff className="w-5 h-5" strokeWidth={2} />
+                </button>
+              )}
+              <button
+                onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
+                title="View history"
+                aria-label="View history"
+              >
+                <History className="w-4 h-4 text-gray-600" />
+              </button>
+              <button
+                onClick={() => onEditMedication(med)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
+                title="Edit medication"
+                aria-label="Edit medication"
+              >
+                <Pencil className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+          );
+
           return (
             <div
               key={med.id}
@@ -361,142 +540,7 @@ export default function MedTable({
               `}
             >
               <div className="flex items-start gap-3">
-                {isFlexible ? (
-                  due ? (
-                    <div className="flex flex-col gap-1.5 flex-shrink-0 mt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setLogDoseMedId(med.id)}
-                        className="px-3 py-2 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 touch-manipulation"
-                      >
-                        Log dose
-                      </button>
-                      {flexCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => onRemoveLastFlexibleDose(med.id)}
-                          className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation"
-                        >
-                          Undo last
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
-                      —
-                    </div>
-                  )
-                ) : due ? (
-                  <SlotTakenControl
-                    medId={med.id}
-                    taken={taken}
-                    notTakenRecorded={notTakenRecorded}
-                    onToggleTaken={onToggleTaken}
-                    className="mt-0.5 flex-shrink-0 touch-manipulation"
-                  />
-                ) : (
-                  <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
-                    —
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div
-                    className={`font-semibold text-sm mb-1 ${!isFlexible && taken ? 'line-through' : ''}`}
-                  >
-                    {med.name}
-                    {paused && (
-                      <span className="ml-2 inline-flex flex-col align-middle text-[11px] px-2 py-0.5 border border-gray-400 rounded-full text-gray-700 bg-gray-100">
-                        <span>Paused</span>
-                        {resumesOn && (
-                          <span className="font-normal text-[10px] text-gray-600 leading-tight">
-                            Resumes {resumesOn}
-                          </span>
-                        )}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-600 mb-1">
-                    {med.when_text}
-                  </div>
-                  {notTakenRecorded && slotDose?.notTakenReason && (
-                    <div className="text-xs text-gray-700 mb-1 font-medium">
-                      Not taken: {slotDose.notTakenReason}
-                    </div>
-                  )}
-                  {isFlexible && (
-                    <div className="text-xs text-gray-800 mb-1">
-                      {target != null ? (
-                        <>
-                          <strong>{flexCount}</strong> / {target} doses today
-                        </>
-                      ) : (
-                        <>
-                          <strong>{flexCount}</strong> dose{flexCount !== 1 ? 's' : ''} logged today
-                        </>
-                      )}
-                    </div>
-                  )}
-                  {isFlexible && flexEvents.length > 0 && (
-                    <ul className="text-xs text-gray-600 list-disc list-inside space-y-0.5 mb-1">
-                      {flexEvents.map((ev) => (
-                        <li key={ev.id}>{formatTime(ev.taken_at)}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {!isFlexible && med.is_multiple && (
-                    <span className="inline-block text-xs px-2 py-0.5 border border-slate-200 rounded-full text-gray-600">
-                      Multiple: {med.time_slot_names.join(', ')}
-                    </span>
-                  )}
-                  {med.notes && (
-                    <div className="mt-2 pt-2 border-t border-slate-200">
-                      <div className="text-xs text-gray-500 mb-0.5">Notes:</div>
-                      <div className="text-xs text-gray-600">
-                        {med.notes}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-0.5 flex-shrink-0">
-                  {due && !isFlexible && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenMarkNotTaken(med.id)}
-                      className={`
-                        p-2 rounded-lg transition-colors touch-manipulation
-                        ${notTakenRecorded ? 'text-gray-800 bg-gray-200 active:bg-gray-300' : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'}
-                      `}
-                      title={
-                        notTakenRecorded
-                          ? 'Update not-taken reason'
-                          : 'Record as not taken (with reason)'
-                      }
-                      aria-label={
-                        notTakenRecorded
-                          ? 'Update not-taken reason'
-                          : 'Record as not taken with reason'
-                      }
-                    >
-                      <CircleOff className="w-5 h-5" strokeWidth={2} />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
-                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
-                    title="View history"
-                    aria-label="View history"
-                  >
-                    <History className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button
-                    onClick={() => onEditMedication(med)}
-                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
-                    title="Edit medication"
-                    aria-label="Edit medication"
-                  >
-                    <Pencil className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
+                {orderSides(controlsFirst, takenControl, middle, actions)}
               </div>
             </div>
           );
