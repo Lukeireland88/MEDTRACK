@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Pencil, History, CircleX, X } from 'lucide-react';
+import { Pencil, History, XCircle, X } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -88,7 +88,7 @@ function MarkNotTakenButton({
         notTakenRecorded ? 'Update missed-dose reason' : 'Mark as missed with reason'
       }
     >
-      <CircleX className={iconClassName} strokeWidth={2} aria-hidden />
+      <XCircle className={iconClassName} strokeWidth={2} aria-hidden />
     </button>
   );
 }
