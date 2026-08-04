@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Pencil, History, X } from 'lucide-react';
+import { Pencil, History, CircleX, X } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -61,29 +61,34 @@ function MarkNotTakenButton({
   notTakenRecorded,
   onClick,
   className = '',
+  iconClassName = 'w-4 h-4',
 }: {
   notTakenRecorded: boolean;
   onClick: () => void;
   className?: string;
+  iconClassName?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`
-        shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium underline-offset-2
-        text-slate-600 hover:text-slate-900 hover:underline
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1
+        p-2 rounded-lg transition-colors
+        ${
+          notTakenRecorded
+            ? 'text-rose-800 bg-rose-100 hover:bg-rose-200'
+            : 'text-gray-600 hover:bg-gray-100'
+        }
         ${className}
       `}
       title={
-        notTakenRecorded ? 'Update not-taken reason' : 'Record as not taken (with reason)'
+        notTakenRecorded ? 'Update missed-dose reason' : 'Mark as missed (with reason)'
       }
       aria-label={
-        notTakenRecorded ? 'Update not-taken reason' : 'Record as not taken with reason'
+        notTakenRecorded ? 'Update missed-dose reason' : 'Mark as missed with reason'
       }
     >
-      {notTakenRecorded ? 'Edit reason' : 'Mark missed'}
+      <CircleX className={iconClassName} strokeWidth={2} aria-hidden />
     </button>
   );
 }
@@ -506,6 +511,7 @@ export default function MedTable({
                   notTakenRecorded={notTakenRecorded}
                   onClick={() => onOpenMarkNotTaken(med.id)}
                   className="touch-manipulation"
+                  iconClassName="w-5 h-5"
                 />
               )}
               <button
@@ -552,7 +558,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). “Mark missed”: add a reason.
+          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). ✕ in circle: mark as missed with a reason.
         </div>
       </div>
 
