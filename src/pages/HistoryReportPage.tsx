@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download, Pencil } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download, LogIn, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
 import EditTimelineEventModal, { EditTimelineEventInitial } from '../components/EditTimelineEventModal';
+import AuthModal from '../components/AuthModal';
 
 type HistoryEventVariant = 'slot_taken' | 'slot_not_taken' | 'flexible_dose' | 'seizure' | 'timeline_event';
 
@@ -175,6 +177,8 @@ function last7DaysRange(): { from: string; to: string } {
 }
 
 export default function HistoryReportPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const initial = useMemo(() => todayRange(), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
@@ -214,6 +218,10 @@ export default function HistoryReportPage() {
   };
 
   useEffect(() => {
+    if (!user) {
+      setMedications([]);
+      return;
+    }
     (async () => {
       const { data, error: e } = await supabase
         .from('medications')
@@ -222,7 +230,7 @@ export default function HistoryReportPage() {
         .order('name');
       if (!e && data) setMedications(data);
     })();
-  }, []);
+  }, [user]);
 
   useLayoutEffect(() => {
     if (!medPickerOpen) {
@@ -258,6 +266,12 @@ export default function HistoryReportPage() {
   }, [medPickerOpen]);
 
   const loadReport = useCallback(async () => {
+    if (!user) {
+      setRows([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -424,7 +438,7 @@ export default function HistoryReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [dateFrom, dateTo, medicationIds]);
+  }, [user, dateFrom, dateTo, medicationIds]);
 
   const saveEditedNote = useCallback(
     async (payload: { occurredAtIso: string; eventDate: string; notes: string | null }) => {
@@ -582,6 +596,7 @@ export default function HistoryReportPage() {
           onClose={() => setEditingNote(null)}
           onConfirm={saveEditedNote}
         />
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
         <header className="mb-4 sm:mb-6">
           <Link
             to="/"
@@ -609,6 +624,24 @@ export default function HistoryReportPage() {
           </p>
         </header>
 
+        {authLoading ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+            Loading…
+          </div>
+        ) : !user ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-brand-sm">
+            <p className="text-sm text-slate-600">Sign in to view your history report.</p>
+            <button
+              type="button"
+              onClick={() => setAuthModalOpen(true)}
+              className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-brand-sm hover:bg-brand-700"
+            >
+              <LogIn className="h-4 w-4" />
+              Sign in
+            </button>
+          </div>
+        ) : (
+          <>
         <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-brand-sm ring-1 ring-slate-200/80">
           <div className="px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
             <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
@@ -1066,6 +1099,8 @@ export default function HistoryReportPage() {
             </>
           )}
         </section>
+          </>
+        )}
       </div>
     </div>
   );

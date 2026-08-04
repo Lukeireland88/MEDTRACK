@@ -55,6 +55,10 @@ export default function TrackerPage() {
   const [addEventOpen, setAddEventOpen] = useState(false);
 
   const refreshSlotDefinitions = useCallback(async () => {
+    if (!user) {
+      setSlotDefinitions([]);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('time_slots')
@@ -73,16 +77,24 @@ export default function TrackerPage() {
     } catch (e) {
       console.error('Error loading time slots:', e);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     void refreshSlotDefinitions();
   }, [refreshSlotDefinitions]);
 
   useEffect(() => {
+    if (!user) {
+      setMedications([]);
+      setSlotDoseByMedId({});
+      setFlexibleDoseEvents({});
+      setAvailableTimeSlots([]);
+      setLoading(false);
+      return;
+    }
     loadMedications();
     loadTakenStatus();
-  }, [selectedTimeSlot, selectedDate, slotDefinitions]);
+  }, [user, selectedTimeSlot, selectedDate, slotDefinitions]);
 
   const loadTakenStatus = async () => {
     try {
@@ -327,6 +339,10 @@ export default function TrackerPage() {
   };
 
   const handleToggleTaken = async (medId: string) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     try {
       const { data: timeSlot } = await supabase
         .from('time_slots')
@@ -409,6 +425,10 @@ export default function TrackerPage() {
   };
 
   const handleMarkNotTaken = async (medId: string, reason: string) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     try {
       const { data: timeSlot } = await supabase
         .from('time_slots')
@@ -466,6 +486,10 @@ export default function TrackerPage() {
   };
 
   const handleLogSeizure = async (payload: { occurredAtIso: string; eventDate: string; durationSeconds: number; notes: string | null }) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     try {
       const { error } = await supabase.from('symptom_events').insert({
         event_type: 'seizure',
@@ -473,6 +497,7 @@ export default function TrackerPage() {
         event_date: payload.eventDate,
         duration_seconds: payload.durationSeconds,
         notes: payload.notes,
+        user_id: user.id,
       });
       if (error) throw error;
     } catch (error) {
@@ -483,6 +508,10 @@ export default function TrackerPage() {
   };
 
   const handleAddEvent = async (payload: AddEventPayload) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     try {
       const { error } = await supabase.from('timeline_events').insert({
         event_type: payload.eventType,
@@ -492,6 +521,7 @@ export default function TrackerPage() {
         title: payload.title,
         value_text: payload.valueText,
         notes: payload.notes,
+        user_id: user.id,
       });
       if (error) throw error;
     } catch (error) {
@@ -502,6 +532,10 @@ export default function TrackerPage() {
   };
 
   const handleLogFlexibleDose = async (medId: string, takenAtIso: string) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     // Use the actual taken timestamp to determine the local dose day.
     // This prevents a dose taken just after midnight from being stored under the previous selected day.
     const dateString = toLocalDateKey(new Date(takenAtIso));
@@ -536,6 +570,10 @@ export default function TrackerPage() {
   };
 
   const handleRemoveLastFlexibleDose = async (medId: string) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     const events = flexibleDoseEvents[medId];
     if (!events?.length) return;
     const last = events[events.length - 1];
@@ -556,6 +594,10 @@ export default function TrackerPage() {
   };
 
   const handleSaveMedication = async (formData: MedicationFormData) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     try {
       const whenText = generateWhenText(formData);
       const isFlexible = formData.dosingMode === 'flexible_daily';
@@ -590,6 +632,7 @@ export default function TrackerPage() {
         pause_end_date: pauseEnd || null,
         dosing_mode: formData.dosingMode,
         target_doses_per_day: isFlexible ? targetDoses : null,
+        user_id: user.id,
       };
 
       const nameNorm = formData.name.trim().toLowerCase();
@@ -794,6 +837,10 @@ export default function TrackerPage() {
   };
 
   const handleDeleteMedication = async (medicationId: string) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     try {
       await supabase
         .from('medication_slots')
@@ -845,10 +892,38 @@ export default function TrackerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot from navigation state
   }, [location.state, user, authLoading, slotDefinitions]);
 
-  if (loading || authLoading) {
+  if (authLoading || (user && loading)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95 flex items-center justify-center">
         <div className="text-slate-500 text-sm font-medium animate-pulse">Loading…</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95 flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-8 shadow-brand-sm ring-1 ring-slate-200/80 text-center">
+          <div
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm"
+            aria-hidden
+          >
+            <Pill className="h-7 w-7" strokeWidth={2} />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Medication Tracker</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Sign in to view and manage your medications. Each account keeps its own meds and logs private.
+          </p>
+          <button
+            type="button"
+            onClick={() => setAuthModalOpen(true)}
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-brand-sm hover:bg-brand-700"
+          >
+            <LogIn className="h-5 w-5" />
+            Sign in
+          </button>
+        </div>
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       </div>
     );
   }
@@ -872,60 +947,38 @@ export default function TrackerPage() {
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
-              {user ? (
-                <>
-                  <Link
-                    to="/settings"
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-slate-200 bg-white text-slate-800 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
-                    title="Settings"
-                  >
-                    <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
-                    <span className="hidden sm:inline">Settings</span>
-                  </Link>
-                  <button
-                    onClick={handleAddMedication}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap shadow-brand-sm"
-                  >
-                    <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Add medication</span>
-                    <span className="sm:hidden">Add</span>
-                  </button>
-                  <button
-                    onClick={() => setAddLogPickerOpen(true)}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-950 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
-                    title="Add a log"
-                  >
-                    <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline">Add log</span>
-                    <span className="sm:hidden">Log</span>
-                  </button>
-                  <button
-                    onClick={signOut}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 active:translate-y-px text-sm sm:text-base"
-                    title="Sign out"
-                  >
-                    <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/settings"
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-slate-200 bg-white text-slate-800 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
-                    title="Settings"
-                  >
-                    <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
-                    <span className="hidden sm:inline">Settings</span>
-                  </Link>
-                  <button
-                    onClick={() => setAuthModalOpen(true)}
-                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 text-sm sm:text-base shadow-brand-sm"
-                  >
-                    <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Sign In
-                  </button>
-                </>
-              )}
+              <Link
+                to="/settings"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-slate-200 bg-white text-slate-800 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                title="Settings"
+              >
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
+                <span className="hidden sm:inline">Settings</span>
+              </Link>
+              <button
+                onClick={handleAddMedication}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap shadow-brand-sm"
+              >
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Add medication</span>
+                <span className="sm:hidden">Add</span>
+              </button>
+              <button
+                onClick={() => setAddLogPickerOpen(true)}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-950 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                title="Add a log"
+              >
+                <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Add log</span>
+                <span className="sm:hidden">Log</span>
+              </button>
+              <button
+                onClick={signOut}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 active:translate-y-px text-sm sm:text-base"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
             </div>
           </div>
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />

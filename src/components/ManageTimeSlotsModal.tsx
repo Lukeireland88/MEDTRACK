@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { X, Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import type { TimeSlot } from '../types';
 
 interface ManageTimeSlotsModalProps {
@@ -10,6 +11,7 @@ interface ManageTimeSlotsModalProps {
 }
 
 export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: ManageTimeSlotsModalProps) {
+  const { user } = useAuth();
   const [rows, setRows] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -19,6 +21,11 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
   const [hourEdits, setHourEdits] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
+    if (!user) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -35,7 +42,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (isOpen) load();
@@ -96,6 +103,10 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
   };
 
   const handleAdd = async () => {
+    if (!user) {
+      alert('Sign in to add sessions.');
+      return;
+    }
     const name = newName.trim();
     if (!name) {
       alert('Enter a name for the new session.');
@@ -108,6 +119,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
         name,
         sort_order: maxOrder + 1,
         default_after_hour: 12,
+        user_id: user.id,
       });
       if (error) throw error;
       setNewName('');

@@ -4,6 +4,7 @@ export interface TimeSlot {
   sort_order: number;
   /** Local hour 0–23: default tab when current time is in this session’s band (see timeSlotUtils). */
   default_after_hour: number;
+  user_id?: string;
 }
 
 export type DosingMode = 'time_slots' | 'flexible_daily';
@@ -25,6 +26,7 @@ export interface Medication {
   active: boolean;
   dosing_mode: DosingMode;
   target_doses_per_day: number | null;
+  user_id?: string;
 }
 
 export interface MedicationSlot {
@@ -95,6 +97,7 @@ export interface TimelineEvent {
   value_text: string | null;
   notes: string | null;
   created_at?: string;
+  user_id?: string;
 }
 
 export type SymptomEventType = 'seizure';
@@ -106,4 +109,5 @@ export interface SymptomEvent {
   event_date: string;
   duration_seconds: number;
   notes: string | null;
+  user_id?: string;
 }
