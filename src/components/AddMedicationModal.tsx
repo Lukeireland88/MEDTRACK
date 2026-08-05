@@ -215,19 +215,19 @@ export default function AddMedicationModal({
         alert('Target doses per day must be at least 1, or leave blank to track without a daily goal.');
         return;
       }
-    }
-    if (formData.maxDoses24h !== '') {
-      const n = Number(formData.maxDoses24h);
-      if (Number.isNaN(n) || n < 1) {
-        alert('Max doses in 24 hours must be at least 1, or leave blank.');
-        return;
+      if (formData.maxDoses24h !== '') {
+        const maxN = Number(formData.maxDoses24h);
+        if (Number.isNaN(maxN) || maxN < 1) {
+          alert('Max doses in 24 hours must be at least 1, or leave blank.');
+          return;
+        }
       }
-    }
-    if (formData.minIntervalMinutes !== '') {
-      const n = Number(formData.minIntervalMinutes);
-      if (Number.isNaN(n) || n < 1) {
-        alert('Minimum interval must be at least 1 minute, or leave blank.');
-        return;
+      if (formData.minIntervalMinutes !== '') {
+        const minN = Number(formData.minIntervalMinutes);
+        if (Number.isNaN(minN) || minN < 1) {
+          alert('Minimum interval must be at least 1 minute, or leave blank.');
+          return;
+        }
       }
     }
     if ((formData.startDate && formData.endDate) && formData.startDate > formData.endDate) {
@@ -416,76 +416,78 @@ export default function AddMedicationModal({
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-900">Safety limits (optional)</h3>
-              <p className="text-xs text-slate-600 mt-1">
-                If a new flexible dose would exceed these, you&apos;ll get a warning and can cancel or log
-                anyway.
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-2" htmlFor="max-doses-24h">
-                Max doses in 24 hours
-              </label>
-              <input
-                id="max-doses-24h"
-                type="number"
-                min={1}
-                placeholder="e.g. 6 — leave empty for no maximum"
-                value={formData.maxDoses24h === '' ? '' : formData.maxDoses24h}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setFormData({
-                    ...formData,
-                    maxDoses24h: v === '' ? '' : parseInt(v, 10) || '',
-                  });
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-2" htmlFor="min-interval-hours">
-                Minimum hours between doses
-              </label>
-              <input
-                id="min-interval-hours"
-                type="number"
-                min={0.25}
-                step={0.25}
-                placeholder="e.g. 4 — leave empty for no minimum gap"
-                value={
-                  formData.minIntervalMinutes === ''
-                    ? ''
-                    : Number((Number(formData.minIntervalMinutes) / 60).toFixed(2))
-                }
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === '') {
-                    setFormData({ ...formData, minIntervalMinutes: '' });
-                    return;
+          {formData.dosingMode === 'flexible_daily' && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Safety limits (optional)</h3>
+                <p className="text-xs text-slate-600 mt-1">
+                  If a new dose would exceed these, you&apos;ll get a warning and can cancel or log
+                  anyway.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2" htmlFor="max-doses-24h">
+                  Max doses in 24 hours
+                </label>
+                <input
+                  id="max-doses-24h"
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 6 — leave empty for no maximum"
+                  value={formData.maxDoses24h === '' ? '' : formData.maxDoses24h}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFormData({
+                      ...formData,
+                      maxDoses24h: v === '' ? '' : parseInt(v, 10) || '',
+                    });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2" htmlFor="min-interval-hours">
+                  Minimum hours between doses
+                </label>
+                <input
+                  id="min-interval-hours"
+                  type="number"
+                  min={0.25}
+                  step={0.25}
+                  placeholder="e.g. 4 — leave empty for no minimum gap"
+                  value={
+                    formData.minIntervalMinutes === ''
+                      ? ''
+                      : Number((Number(formData.minIntervalMinutes) / 60).toFixed(2))
                   }
-                  const hours = parseFloat(v);
-                  if (Number.isNaN(hours) || hours <= 0) {
-                    setFormData({ ...formData, minIntervalMinutes: '' });
-                    return;
-                  }
-                  setFormData({
-                    ...formData,
-                    minIntervalMinutes: Math.max(1, Math.round(hours * 60)),
-                  });
-                }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Stored in minutes
-                {formData.minIntervalMinutes !== ''
-                  ? ` (${formData.minIntervalMinutes} min)`
-                  : ''}
-                . Use decimals for partial hours (e.g. 0.5 = 30 minutes).
-              </p>
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '') {
+                      setFormData({ ...formData, minIntervalMinutes: '' });
+                      return;
+                    }
+                    const hours = parseFloat(v);
+                    if (Number.isNaN(hours) || hours <= 0) {
+                      setFormData({ ...formData, minIntervalMinutes: '' });
+                      return;
+                    }
+                    setFormData({
+                      ...formData,
+                      minIntervalMinutes: Math.max(1, Math.round(hours * 60)),
+                    });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Stored in minutes
+                  {formData.minIntervalMinutes !== ''
+                    ? ` (${formData.minIntervalMinutes} min)`
+                    : ''}
+                  . Use decimals for partial hours (e.g. 0.5 = 30 minutes).
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           <div>
             <label className="block text-sm font-semibold mb-2">Pattern</label>

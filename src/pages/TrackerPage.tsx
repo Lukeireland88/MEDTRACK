@@ -744,9 +744,11 @@ export default function TrackerPage() {
           ? Number(formData.targetDosesPerDay)
           : null;
       const maxDoses24h =
-        formData.maxDoses24h !== '' ? Number(formData.maxDoses24h) : null;
+        isFlexible && formData.maxDoses24h !== '' ? Number(formData.maxDoses24h) : null;
       const minIntervalMinutes =
-        formData.minIntervalMinutes !== '' ? Number(formData.minIntervalMinutes) : null;
+        isFlexible && formData.minIntervalMinutes !== ''
+          ? Number(formData.minIntervalMinutes)
+          : null;
 
       const todayLocal = toLocalDateKey(new Date());
       const pauseStartRaw = formData.pauseStartDate || '';
