@@ -52,6 +52,7 @@ export default function TrackerPage() {
   const [historyMedicationId, setHistoryMedicationId] = useState<string>('');
   const [historyMedicationName, setHistoryMedicationName] = useState<string>('');
   const [historyDosingMode, setHistoryDosingMode] = useState<DosingMode>('time_slots');
+  const [reorderMode, setReorderMode] = useState(false);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [addLogPickerOpen, setAddLogPickerOpen] = useState(false);
   const [logSeizureOpen, setLogSeizureOpen] = useState(false);
@@ -1040,6 +1041,8 @@ export default function TrackerPage() {
             selectedTimeSlot={selectedTimeSlot}
             onTimeSlotChange={setSelectedTimeSlot}
             availableTimeSlots={availableTimeSlots}
+            reorderMode={reorderMode}
+            onToggleReorder={() => setReorderMode((v) => !v)}
           />
           <Notices
             medications={medications}
@@ -1059,6 +1062,8 @@ export default function TrackerPage() {
             onEditMedication={handleEditMedication}
             onShowHistory={handleShowHistory}
             onReorderMedications={handleReorderMedications}
+            reorderMode={reorderMode}
+            onReorderModeChange={setReorderMode}
           />
         </section>
       </div>

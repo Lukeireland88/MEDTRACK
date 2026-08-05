@@ -20,6 +20,8 @@ interface MedTableProps {
   onShowHistory: (medId: string, medName: string, dosingMode?: DosingMode) => void;
   /** Persist a new display order for the currently visible medication ids. */
   onReorderMedications: (orderedIds: string[]) => void | Promise<void>;
+  reorderMode: boolean;
+  onReorderModeChange: (next: boolean) => void;
 }
 
 /** Checkbox for pending/taken; X-in-box when explicitly not taken (click marks taken). */
@@ -205,11 +207,12 @@ export default function MedTable({
   onEditMedication,
   onShowHistory,
   onReorderMedications,
+  reorderMode,
+  onReorderModeChange,
 }: MedTableProps) {
   const { handedness } = usePreferences();
   const controlsFirst = handedness === 'left';
   const [logDoseMedId, setLogDoseMedId] = useState<string | null>(null);
-  const [reorderMode, setReorderMode] = useState(false);
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
@@ -340,7 +343,7 @@ export default function MedTable({
               <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-2 w-10">
                 <button
                   type="button"
-                  onClick={() => setReorderMode((v) => !v)}
+                  onClick={() => onReorderModeChange(!reorderMode)}
                   className={`inline-flex items-center justify-center rounded-lg p-1.5 transition-colors ${
                     reorderMode
                       ? 'bg-slate-900 text-white hover:bg-slate-800'
@@ -546,28 +549,12 @@ export default function MedTable({
       </div>
 
       {/* Mobile card view */}
-      <div className="md:hidden px-2 pb-3 space-y-2">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setReorderMode((v) => !v)}
-            className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors touch-manipulation ${
-              reorderMode
-                ? 'bg-slate-900 text-white hover:bg-slate-800'
-                : 'border border-slate-200 bg-white/70 text-slate-600 hover:bg-white'
-            }`}
-            aria-pressed={reorderMode}
-            title={reorderMode ? 'Done reordering' : 'Reorder medications'}
-            aria-label={reorderMode ? 'Done reordering' : 'Reorder medications'}
-          >
-            <ArrowUpDown className="w-4 h-4" />
-          </button>
-          {reorderMode && (
-            <p className="text-xs text-slate-600">
-              Use the up/down arrows to move a row{savingOrder ? ' · Saving…' : ''}.
-            </p>
-          )}
-        </div>
+      <div className="md:hidden px-2 pt-2 pb-3 space-y-2">
+        {reorderMode && (
+          <p className="text-xs text-slate-600 px-0.5">
+            Use the up/down arrows to move a row{savingOrder ? ' · Saving…' : ''}.
+          </p>
+        )}
         {sortedMedications.map((med, index) => {
           const due = isDue(med, selectedDate);
           const paused = isPaused(med, selectedDate);
