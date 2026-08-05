@@ -952,7 +952,7 @@ export default function TrackerPage() {
       <div className={`${pageBg.className} flex items-center justify-center px-4`} style={pageBg.style}>
         <div className="w-full max-w-md rounded-2xl surface-glass p-8 text-center">
           <div
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm"
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 text-white shadow-brand-sm"
             aria-hidden
           >
             <Pill className="h-7 w-7" strokeWidth={2} />
@@ -982,7 +982,7 @@ export default function TrackerPage() {
           <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex min-w-0 flex-1 items-start gap-3">
               <div
-                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm"
+                className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 text-white shadow-brand-sm"
                 aria-hidden
               >
                 <Pill className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />

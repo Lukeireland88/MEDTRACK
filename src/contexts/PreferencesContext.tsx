@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { applyBrandPaletteToDocument } from '../utils/themeColors';
 
 export type Handedness = 'left' | 'right';
 
@@ -88,9 +89,10 @@ function writePrefs(userId: string | undefined | null, prefs: AppPreferences) {
   }
 }
 
-function applyBackgroundToDocument(color: string) {
-  document.documentElement.style.setProperty('--app-bg', color);
-  document.body.style.backgroundColor = color;
+function applyThemeToDocument(backgroundColor: string) {
+  document.documentElement.style.setProperty('--app-bg', backgroundColor);
+  document.body.style.backgroundColor = backgroundColor;
+  applyBrandPaletteToDocument(backgroundColor);
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
@@ -101,11 +103,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const next = readPrefs(userId);
     setPrefs(next);
-    applyBackgroundToDocument(next.backgroundColor);
+    applyThemeToDocument(next.backgroundColor);
   }, [userId]);
 
   useEffect(() => {
-    applyBackgroundToDocument(prefs.backgroundColor);
+    applyThemeToDocument(prefs.backgroundColor);
   }, [prefs.backgroundColor]);
 
   const update = (partial: Partial<AppPreferences>) => {

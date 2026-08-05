@@ -4,27 +4,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary UI blue — aligns with the pill / UI in the logo; avoids mint/teal page-wide
+        // Driven by --brand-*-rgb (set from background preference); defaults = classic blue
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: 'rgb(var(--brand-50-rgb, 239 246 255) / <alpha-value>)',
+          100: 'rgb(var(--brand-100-rgb, 219 234 254) / <alpha-value>)',
+          200: 'rgb(var(--brand-200-rgb, 191 219 254) / <alpha-value>)',
+          300: 'rgb(var(--brand-300-rgb, 147 197 253) / <alpha-value>)',
+          400: 'rgb(var(--brand-400-rgb, 96 165 250) / <alpha-value>)',
+          500: 'rgb(var(--brand-500-rgb, 59 130 246) / <alpha-value>)',
+          600: 'rgb(var(--brand-600-rgb, 37 99 235) / <alpha-value>)',
+          700: 'rgb(var(--brand-700-rgb, 29 78 216) / <alpha-value>)',
+          800: 'rgb(var(--brand-800-rgb, 30 64 175) / <alpha-value>)',
+          900: 'rgb(var(--brand-900-rgb, 30 58 138) / <alpha-value>)',
+          950: 'rgb(var(--brand-950-rgb, 23 37 84) / <alpha-value>)',
         },
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        brand: '0 10px 40px -12px rgba(37, 99, 235, 0.28)',
-        'brand-sm': '0 4px 16px -4px rgba(37, 99, 235, 0.18)',
+        brand: '0 10px 40px -12px rgb(var(--brand-600-rgb, 37 99 235) / 0.28)',
+        'brand-sm': 'var(--brand-shadow, 0 4px 16px -4px rgba(37, 99, 235, 0.18))',
       },
     },
   },

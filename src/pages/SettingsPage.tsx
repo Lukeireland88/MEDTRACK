@@ -49,7 +49,7 @@ export default function SettingsPage() {
           </Link>
           <div className="flex items-start gap-3">
             <div
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm sm:h-12 sm:w-12"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 text-white shadow-brand-sm sm:h-12 sm:w-12"
               aria-hidden
             >
               <Settings className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
@@ -124,7 +124,8 @@ export default function SettingsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-slate-900">Background colour</div>
                   <p className="mt-0.5 text-sm text-slate-600">
-                    Choose a page background. Saved for your account on this device.
+                    Choose a page background. Primary buttons (Add, Save, Log dose) follow this colour. Saved for your
+                    account on this device.
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
                     <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
