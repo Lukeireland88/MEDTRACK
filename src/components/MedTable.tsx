@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from 'react';
-import { Pencil, History, XCircle, X, GripVertical, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { Pencil, History, XCircle, X, GripVertical, ChevronUp, ChevronDown, ArrowUpDown, MoreHorizontal } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -95,6 +95,78 @@ function MarkNotTakenButton({
   );
 }
 
+/** Mark-missed stays visible; Edit / History expand behind a More control. */
+function RowActions({
+  med,
+  due,
+  notTakenRecorded,
+  expanded,
+  onToggleExpanded,
+  onOpenMarkNotTaken,
+  onShowHistory,
+  onEditMedication,
+  touch = false,
+}: {
+  med: MedicationWithSlots;
+  due: boolean;
+  notTakenRecorded: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  onOpenMarkNotTaken: (medId: string) => void;
+  onShowHistory: (medId: string, medName: string, dosingMode?: DosingMode) => void;
+  onEditMedication: (med: MedicationWithSlots) => void;
+  touch?: boolean;
+}) {
+  const isFlexible = med.dosing_mode === 'flexible_daily';
+  const touchClass = touch ? 'touch-manipulation' : '';
+  const iconSize = touch ? 'w-5 h-5' : 'w-4 h-4';
+
+  return (
+    <div className="flex items-center gap-0.5 flex-shrink-0">
+      {due && !isFlexible && (
+        <MarkNotTakenButton
+          notTakenRecorded={notTakenRecorded}
+          onClick={() => onOpenMarkNotTaken(med.id)}
+          className={touchClass}
+          iconClassName={iconSize}
+        />
+      )}
+      {expanded && (
+        <>
+          <button
+            type="button"
+            onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
+            className={`p-2 hover:bg-gray-200 rounded-lg transition-colors ${touchClass}`}
+            title="View history"
+            aria-label="View history"
+          >
+            <History className={`${iconSize} text-gray-600`} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onEditMedication(med)}
+            className={`p-2 hover:bg-gray-200 rounded-lg transition-colors ${touchClass}`}
+            title="Edit medication"
+            aria-label="Edit medication"
+          >
+            <Pencil className={`${iconSize} text-gray-600`} />
+          </button>
+        </>
+      )}
+      <button
+        type="button"
+        onClick={onToggleExpanded}
+        className={`p-2 hover:bg-gray-200 rounded-lg transition-colors text-gray-600 ${touchClass}`}
+        title={expanded ? 'Hide edit & history' : 'More actions'}
+        aria-label={expanded ? 'Hide edit and history' : 'Show edit and history'}
+        aria-expanded={expanded}
+      >
+        {expanded ? <X className={iconSize} /> : <MoreHorizontal className={iconSize} />}
+      </button>
+    </div>
+  );
+}
+
 function flexibleRemaining(
   med: MedicationWithSlots,
   selectedDate: Date,
@@ -171,6 +243,7 @@ export default function MedTable({
   const controlsFirst = handedness === 'left';
   const [logDoseMedId, setLogDoseMedId] = useState<string | null>(null);
   const [reorderMode, setReorderMode] = useState(false);
+  const [actionsOpenId, setActionsOpenId] = useState<string | null>(null);
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
@@ -237,45 +310,40 @@ export default function MedTable({
     <div className="flex items-center gap-0.5 shrink-0">
       <button
         type="button"
-        draggable={reorderMode && !savingOrder}
+        draggable={!savingOrder}
         onDragStart={(e) => {
-          if (!reorderMode) return;
           setDraggingId(medId);
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', medId);
         }}
         onDragEnd={() => setDraggingId(null)}
-        className={`p-1.5 rounded-lg text-slate-500 ${
-          reorderMode ? 'cursor-grab active:cursor-grabbing hover:bg-slate-200' : 'opacity-40 cursor-default'
-        }`}
-        title={reorderMode ? 'Drag to reorder' : 'Turn on Reorder to move medications'}
-        aria-label={reorderMode ? `Drag to reorder ${medById.get(medId)?.name ?? 'medication'}` : 'Reorder disabled'}
-        disabled={!reorderMode || savingOrder}
+        className="p-1.5 rounded-lg text-slate-500 cursor-grab active:cursor-grabbing hover:bg-slate-200"
+        title="Drag to reorder"
+        aria-label={`Drag to reorder ${medById.get(medId)?.name ?? 'medication'}`}
+        disabled={savingOrder}
       >
         <GripVertical className="w-4 h-4" />
       </button>
-      {reorderMode && (
-        <div className="flex flex-col md:hidden">
-          <button
-            type="button"
-            className="p-0.5 rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"
-            disabled={index === 0 || savingOrder}
-            onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, -1))}
-            aria-label="Move up"
-          >
-            <ChevronUp className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="p-0.5 rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"
-            disabled={index === sortedMedications.length - 1 || savingOrder}
-            onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, 1))}
-            aria-label="Move down"
-          >
-            <ChevronDown className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      <div className="flex flex-col md:hidden">
+        <button
+          type="button"
+          className="p-0.5 rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"
+          disabled={index === 0 || savingOrder}
+          onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, -1))}
+          aria-label="Move up"
+        >
+          <ChevronUp className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          className="p-0.5 rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"
+          disabled={index === sortedMedications.length - 1 || savingOrder}
+          onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, 1))}
+          aria-label="Move down"
+        >
+          <ChevronDown className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 
@@ -301,7 +369,12 @@ export default function MedTable({
       <div className="flex flex-wrap items-center justify-between gap-2 px-2 sm:px-3 pb-2">
         <button
           type="button"
-          onClick={() => setReorderMode((v) => !v)}
+          onClick={() => {
+            setReorderMode((v) => {
+              if (!v) setActionsOpenId(null);
+              return !v;
+            });
+          }}
               className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold transition-colors ${
             reorderMode
               ? 'bg-slate-900 text-white hover:bg-slate-800'
@@ -324,9 +397,11 @@ export default function MedTable({
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-slate-100/50">
-              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-10">
-                <span className="sr-only">Order</span>
-              </th>
+              {reorderMode && (
+                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-10">
+                  <span className="sr-only">Order</span>
+                </th>
+              )}
               {orderSides(
                 controlsFirst,
                 <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-14">
@@ -343,7 +418,7 @@ export default function MedTable({
                     Notes
                   </th>
                 </>,
-                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-32">
+                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-24">
                   Actions
                 </th>
               )}
@@ -470,30 +545,18 @@ export default function MedTable({
 
               const actionsCell = (
                 <td className="p-3 border-b border-slate-200">
-                  <div className="flex items-center gap-0.5">
-                    {due && !isFlexible && (
-                      <MarkNotTakenButton
-                        notTakenRecorded={notTakenRecorded}
-                        onClick={() => onOpenMarkNotTaken(med.id)}
-                      />
-                    )}
-                    <button
-                      onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
-                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                      title="View history"
-                      aria-label="View history"
-                    >
-                      <History className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <button
-                      onClick={() => onEditMedication(med)}
-                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                      title="Edit medication"
-                      aria-label="Edit medication"
-                    >
-                      <Pencil className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
+                  <RowActions
+                    med={med}
+                    due={due}
+                    notTakenRecorded={notTakenRecorded}
+                    expanded={actionsOpenId === med.id}
+                    onToggleExpanded={() =>
+                      setActionsOpenId((id) => (id === med.id ? null : med.id))
+                    }
+                    onOpenMarkNotTaken={onOpenMarkNotTaken}
+                    onShowHistory={onShowHistory}
+                    onEditMedication={onEditMedication}
+                  />
                 </td>
               );
 
@@ -511,9 +574,11 @@ export default function MedTable({
                     ${reorderMode ? 'cursor-default' : ''}
                   `}
                 >
-                  <td className="p-2 border-b border-slate-200 align-middle w-10">
-                    {reorderHandle(med.id, index)}
-                  </td>
+                  {reorderMode && (
+                    <td className="p-2 border-b border-slate-200 align-middle w-10">
+                      {reorderHandle(med.id, index)}
+                    </td>
+                  )}
                   {orderSides(controlsFirst, takenCell, middleCells, actionsCell)}
                 </tr>
               );
@@ -646,32 +711,19 @@ export default function MedTable({
           );
 
           const actions = (
-            <div className="flex items-center gap-0.5 flex-shrink-0">
-              {due && !isFlexible && (
-                <MarkNotTakenButton
-                  notTakenRecorded={notTakenRecorded}
-                  onClick={() => onOpenMarkNotTaken(med.id)}
-                  className="touch-manipulation"
-                  iconClassName="w-5 h-5"
-                />
-              )}
-              <button
-                onClick={() => onShowHistory(med.id, med.name, med.dosing_mode)}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
-                title="View history"
-                aria-label="View history"
-              >
-                <History className="w-4 h-4 text-gray-600" />
-              </button>
-              <button
-                onClick={() => onEditMedication(med)}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors touch-manipulation"
-                title="Edit medication"
-                aria-label="Edit medication"
-              >
-                <Pencil className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
+            <RowActions
+              med={med}
+              due={due}
+              notTakenRecorded={notTakenRecorded}
+              expanded={actionsOpenId === med.id}
+              onToggleExpanded={() =>
+                setActionsOpenId((id) => (id === med.id ? null : med.id))
+              }
+              onOpenMarkNotTaken={onOpenMarkNotTaken}
+              onShowHistory={onShowHistory}
+              onEditMedication={onEditMedication}
+              touch
+            />
           );
 
           return (
@@ -689,7 +741,7 @@ export default function MedTable({
               `}
             >
               <div className="flex items-start gap-2">
-                {reorderHandle(med.id, index)}
+                {reorderMode && reorderHandle(med.id, index)}
                 <div className="flex min-w-0 flex-1 items-start gap-3">
                   {orderSides(controlsFirst, takenControl, middle, actions)}
                 </div>
