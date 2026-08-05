@@ -27,6 +27,7 @@ import AuthModal from '../components/AuthModal';
 import MarkNotTakenModal from '../components/MarkNotTakenModal';
 import LogSeizureModal from '../components/LogSeizureModal';
 import AddEventModal, { AddEventPayload } from '../components/AddEventModal';
+import AddLogPickerModal from '../components/AddLogPickerModal';
 import DoseLimitWarningModal from '../components/DoseLimitWarningModal';
 import {
   describeDoseLimitViolations,
