@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download, LogIn, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageBackgroundProps } from '../contexts/PreferencesContext';
 import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
 import EditTimelineEventModal, { EditTimelineEventInitial } from '../components/EditTimelineEventModal';
 import AuthModal from '../components/AuthModal';
@@ -178,6 +179,7 @@ function last7DaysRange(): { from: string; to: string } {
 
 export default function HistoryReportPage() {
   const { user, loading: authLoading } = useAuth();
+  const pageBg = usePageBackgroundProps();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const initial = useMemo(() => todayRange(), []);
   const [dateFrom, setDateFrom] = useState(initial.from);
@@ -588,7 +590,7 @@ export default function HistoryReportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
+    <div className={pageBg.className} style={pageBg.style}>
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <EditTimelineEventModal
           isOpen={Boolean(editingNote)}

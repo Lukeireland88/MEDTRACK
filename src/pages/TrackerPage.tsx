@@ -15,6 +15,7 @@ import {
   sortMedicationSlotNames,
 } from '../utils/timeSlotUtils';
 import { useAuth } from '../contexts/AuthContext';
+import { usePageBackgroundProps } from '../contexts/PreferencesContext';
 import DateNav from '../components/DateNav';
 import TimeSlotPicker from '../components/TimeSlotPicker';
 import MedTable from '../components/MedTable';
@@ -31,6 +32,7 @@ export default function TrackerPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
+  const pageBg = usePageBackgroundProps();
   const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
   const [slotDefinitions, setSlotDefinitions] = useState<TimeSlot[]>([]);
@@ -939,7 +941,7 @@ export default function TrackerPage() {
 
   if (authLoading || (user && loading)) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95 flex items-center justify-center">
+      <div className={`${pageBg.className} flex items-center justify-center`} style={pageBg.style}>
         <div className="text-slate-500 text-sm font-medium animate-pulse">Loading…</div>
       </div>
     );
@@ -947,7 +949,7 @@ export default function TrackerPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95 flex items-center justify-center px-4">
+      <div className={`${pageBg.className} flex items-center justify-center px-4`} style={pageBg.style}>
         <div className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-8 shadow-brand-sm ring-1 ring-slate-200/80 text-center">
           <div
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm"
@@ -974,7 +976,7 @@ export default function TrackerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
+    <div className={pageBg.className} style={pageBg.style}>
       <div className="max-w-4xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
         <header className="mb-3 sm:mb-4">
           <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">

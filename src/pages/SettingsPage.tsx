@@ -1,16 +1,32 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, ArrowLeft, Hand, ListOrdered, Pill, Settings } from 'lucide-react';
+import { Archive, ArrowLeft, Hand, ListOrdered, Paintbrush, Pill, Settings } from 'lucide-react';
 import ManageTimeSlotsModal from '../components/ManageTimeSlotsModal';
 import EndedCoursesModal from '../components/EndedCoursesModal';
 import AllMedicationsModal from '../components/AllMedicationsModal';
 import AuthModal from '../components/AuthModal';
 import { useAuth } from '../contexts/AuthContext';
-import { usePreferences, type Handedness } from '../contexts/PreferencesContext';
+import {
+  DEFAULT_BACKGROUND_COLOR,
+  usePageBackgroundProps,
+  usePreferences,
+  type Handedness,
+} from '../contexts/PreferencesContext';
+
+const BACKGROUND_PRESETS = [
+  { label: 'Default', value: DEFAULT_BACKGROUND_COLOR },
+  { label: 'Sky', value: '#e0f2fe' },
+  { label: 'Mint', value: '#dcfce7' },
+  { label: 'Lavender', value: '#ede9fe' },
+  { label: 'Blush', value: '#ffe4e6' },
+  { label: 'Sand', value: '#fef3c7' },
+] as const;
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const { handedness, setHandedness } = usePreferences();
+  const { handedness, setHandedness, backgroundColor, setBackgroundColor, resetBackgroundColor } =
+    usePreferences();
+  const pageBg = usePageBackgroundProps();
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [endedCoursesOpen, setEndedCoursesOpen] = useState(false);
   const [allMedsOpen, setAllMedsOpen] = useState(false);
@@ -21,7 +37,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100/95">
+    <div className={pageBg.className} style={pageBg.style}>
       <div className="mx-auto max-w-2xl px-2 py-3 sm:px-4 sm:py-6">
         <header className="mb-6">
           <Link
@@ -94,6 +110,68 @@ export default function SettingsPage() {
                         Controls on right
                       </span>
                     </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li>
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-brand-sm ring-1 ring-slate-200/80">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                  <Paintbrush className="h-5 w-5" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-slate-900">Background colour</div>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    Choose a page background. Saved for your account on this device.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                      <span
+                        className="relative h-9 w-9 overflow-hidden rounded-lg border border-slate-200 shadow-sm"
+                        style={{ backgroundColor }}
+                        aria-hidden
+                      >
+                        <input
+                          type="color"
+                          value={backgroundColor}
+                          onChange={(e) => setBackgroundColor(e.target.value)}
+                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          aria-label="Pick background colour"
+                        />
+                      </span>
+                      Custom
+                    </label>
+                    <span className="font-mono text-xs text-slate-500">{backgroundColor}</span>
+                    {backgroundColor !== DEFAULT_BACKGROUND_COLOR && (
+                      <button
+                        type="button"
+                        onClick={resetBackgroundColor}
+                        className="text-sm font-semibold text-brand-700 hover:text-brand-900"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2" role="list" aria-label="Colour presets">
+                    {BACKGROUND_PRESETS.map((preset) => {
+                      const selected = backgroundColor === preset.value;
+                      return (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          title={preset.label}
+                          aria-label={preset.label}
+                          aria-pressed={selected}
+                          onClick={() => setBackgroundColor(preset.value)}
+                          className={`h-8 w-8 rounded-full border-2 shadow-sm transition-transform hover:scale-105 ${
+                            selected ? 'border-slate-900 ring-2 ring-brand-500 ring-offset-1' : 'border-white'
+                          }`}
+                          style={{ backgroundColor: preset.value }}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               </div>
