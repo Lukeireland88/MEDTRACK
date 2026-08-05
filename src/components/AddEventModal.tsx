@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
+import { Angry, Annoyed, Frown, Laugh, Meh, Smile, SmilePlus, X, type LucideProps } from 'lucide-react';
 import { toDateInputValue } from '../utils/dateUtils';
 
 function toDateTimeLocalValue(d: Date): string {
@@ -62,7 +62,23 @@ const TEMPLATES: Template[] = [
   { id: 'temp', label: 'Temp', eventType: 'measurement', measurementType: 'temp', title: 'Temperature', valuePrefill: '' },
 ];
 
-const PAIN_SCORE_OPTIONS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+const PAIN_SCORE_OPTIONS: {
+  score: string;
+  Face: ComponentType<LucideProps>;
+  faceClass: string;
+}[] = [
+  { score: '0', Face: Laugh, faceClass: 'text-emerald-600' },
+  { score: '1', Face: SmilePlus, faceClass: 'text-emerald-600' },
+  { score: '2', Face: Smile, faceClass: 'text-lime-600' },
+  { score: '3', Face: Smile, faceClass: 'text-lime-600' },
+  { score: '4', Face: Meh, faceClass: 'text-amber-500' },
+  { score: '5', Face: Meh, faceClass: 'text-amber-600' },
+  { score: '6', Face: Frown, faceClass: 'text-orange-500' },
+  { score: '7', Face: Frown, faceClass: 'text-orange-600' },
+  { score: '8', Face: Annoyed, faceClass: 'text-rose-500' },
+  { score: '9', Face: Angry, faceClass: 'text-rose-600' },
+  { score: '10', Face: Angry, faceClass: 'text-rose-700' },
+];
 
 const ALERTNESS_OPTIONS = [
   { value: 'Alert', label: 'Alert' },
@@ -238,20 +254,27 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
               </label>
               {measurementType === 'pain_score' && (
                 <div className="mb-2 flex flex-wrap gap-1.5" role="group" aria-label="Pain score 0 to 10">
-                  {PAIN_SCORE_OPTIONS.map((score) => {
+                  {PAIN_SCORE_OPTIONS.map(({ score, Face, faceClass }) => {
                     const selected = valueText === `${score}/10` || valueText === score;
                     return (
                       <button
                         key={score}
                         type="button"
                         onClick={() => setValueText(`${score}/10`)}
-                        className={`min-w-[2.25rem] px-2 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
+                        className={`inline-flex min-w-[2.5rem] flex-col items-center gap-0.5 px-1.5 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
                           selected
                             ? 'border-brand-600 bg-brand-50 text-brand-900'
                             : 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
                         }`}
+                        aria-label={`Pain score ${score} out of 10`}
+                        title={`${score} / 10`}
                       >
-                        {score}
+                        <Face
+                          className={`w-5 h-5 ${selected ? 'text-brand-700' : faceClass}`}
+                          strokeWidth={2}
+                          aria-hidden
+                        />
+                        <span className="leading-none tabular-nums">{score}</span>
                       </button>
                     );
                   })}
