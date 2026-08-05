@@ -332,39 +332,33 @@ export default function MedTable({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-2 sm:px-3 pb-2">
-        <button
-          type="button"
-          onClick={() => setReorderMode((v) => !v)}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold transition-colors ${
-            reorderMode
-              ? 'bg-slate-900 text-white hover:bg-slate-800'
-              : 'border border-white/60 bg-white/60 backdrop-blur-sm text-slate-700 hover:bg-white/80'
-          }`}
-          aria-pressed={reorderMode}
-        >
-          <ArrowUpDown className="w-4 h-4" />
-          {reorderMode ? 'Done reordering' : 'Reorder'}
-        </button>
-        {reorderMode && (
-          <p className="text-xs text-slate-600">
-            Use the up/down arrows to move a row
-            <span className="hidden pointer-fine:inline">, or drag the handle on a mouse</span>
-            {savingOrder ? ' · Saving…' : ''}.
-          </p>
-        )}
-      </div>
-
       {/* Desktop table view */}
       <div className="hidden md:block px-3 pb-3">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-slate-100/50">
-              {reorderMode && (
-                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-10">
-                  <span className="sr-only">Order</span>
-                </th>
-              )}
+              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-2 w-10">
+                <button
+                  type="button"
+                  onClick={() => setReorderMode((v) => !v)}
+                  className={`inline-flex items-center justify-center rounded-lg p-1.5 transition-colors ${
+                    reorderMode
+                      ? 'bg-slate-900 text-white hover:bg-slate-800'
+                      : 'text-slate-600 hover:bg-slate-200/80'
+                  }`}
+                  aria-pressed={reorderMode}
+                  title={
+                    reorderMode
+                      ? savingOrder
+                        ? 'Saving order…'
+                        : 'Done reordering'
+                      : 'Reorder medications'
+                  }
+                  aria-label={reorderMode ? 'Done reordering' : 'Reorder medications'}
+                >
+                  <ArrowUpDown className="w-4 h-4" />
+                </button>
+              </th>
               {orderSides(
                 controlsFirst,
                 <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-20">
@@ -540,11 +534,9 @@ export default function MedTable({
                     ${reorderMode ? 'cursor-default' : ''}
                   `}
                 >
-                  {reorderMode && (
-                    <td className="p-2 border-b border-slate-200 align-middle w-10">
-                      {reorderHandle(med.id, index)}
-                    </td>
-                  )}
+                  <td className="p-2 border-b border-slate-200 align-middle w-10">
+                    {reorderMode ? reorderHandle(med.id, index) : null}
+                  </td>
                   {orderSides(controlsFirst, takenCell, middleCells, actionsCell)}
                 </tr>
               );
@@ -555,6 +547,27 @@ export default function MedTable({
 
       {/* Mobile card view */}
       <div className="md:hidden px-2 pb-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setReorderMode((v) => !v)}
+            className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors touch-manipulation ${
+              reorderMode
+                ? 'bg-slate-900 text-white hover:bg-slate-800'
+                : 'border border-slate-200 bg-white/70 text-slate-600 hover:bg-white'
+            }`}
+            aria-pressed={reorderMode}
+            title={reorderMode ? 'Done reordering' : 'Reorder medications'}
+            aria-label={reorderMode ? 'Done reordering' : 'Reorder medications'}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+          </button>
+          {reorderMode && (
+            <p className="text-xs text-slate-600">
+              Use the up/down arrows to move a row{savingOrder ? ' · Saving…' : ''}.
+            </p>
+          )}
+        </div>
         {sortedMedications.map((med, index) => {
           const due = isDue(med, selectedDate);
           const paused = isPaused(med, selectedDate);
