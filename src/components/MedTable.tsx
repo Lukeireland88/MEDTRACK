@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from 'react';
-import { Pencil, History, XCircle, X, GripVertical, ChevronUp, ChevronDown, ArrowUpDown, MoreHorizontal } from 'lucide-react';
+import { Pencil, History, XCircle, X, GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -161,7 +161,7 @@ function RowActions({
         aria-label={expanded ? 'Hide edit and history' : 'Show edit and history'}
         aria-expanded={expanded}
       >
-        {expanded ? <X className={iconSize} /> : <MoreHorizontal className={iconSize} />}
+        {expanded ? <ChevronLeft className={iconSize} /> : <ChevronRight className={iconSize} />}
       </button>
     </div>
   );
