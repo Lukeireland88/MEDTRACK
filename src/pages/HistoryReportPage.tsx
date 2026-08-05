@@ -87,6 +87,10 @@ function measurementTypeLabel(t: string | null): string | null {
       return 'Blood pressure';
     case 'temp':
       return 'Temperature';
+    case 'pain_score':
+      return 'Pain score';
+    case 'alertness':
+      return 'Alertness';
     default:
       return t;
   }

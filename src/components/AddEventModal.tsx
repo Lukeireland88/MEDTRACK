@@ -39,6 +39,8 @@ const MEASUREMENT_TYPES: { id: string; label: string; placeholder?: string }[] =
   { id: 'pulse', label: 'Pulse', placeholder: 'e.g. 84 bpm' },
   { id: 'bp', label: 'Blood pressure', placeholder: 'e.g. 120/80' },
   { id: 'temp', label: 'Temperature', placeholder: 'e.g. 37.8°C' },
+  { id: 'pain_score', label: 'Pain score', placeholder: 'e.g. 4 / 10' },
+  { id: 'alertness', label: 'Alertness', placeholder: 'e.g. Alert / drowsy' },
 ];
 
 type Template = {
@@ -53,9 +55,22 @@ type Template = {
 const TEMPLATES: Template[] = [
   { id: 'call-for-help', label: 'Call for help', eventType: 'note', measurementType: null, title: 'Call for help' },
   { id: 'out-of-hours-gp', label: 'Out-of-hours GP', eventType: 'visit', measurementType: null, title: 'Out-of-hours GP' },
+  { id: 'pain-score', label: 'Pain score', eventType: 'measurement', measurementType: 'pain_score', title: 'Pain score', valuePrefill: '' },
+  { id: 'alertness', label: 'Alertness', eventType: 'measurement', measurementType: 'alertness', title: 'Alertness', valuePrefill: '' },
   { id: 'spo2', label: 'SpO₂', eventType: 'measurement', measurementType: 'spo2', title: 'SpO₂', valuePrefill: '' },
   { id: 'bp', label: 'BP', eventType: 'measurement', measurementType: 'bp', title: 'Blood pressure', valuePrefill: '' },
   { id: 'temp', label: 'Temp', eventType: 'measurement', measurementType: 'temp', title: 'Temperature', valuePrefill: '' },
+];
+
+const PAIN_SCORE_OPTIONS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+
+const ALERTNESS_OPTIONS = [
+  { value: 'Alert', label: 'Alert' },
+  { value: 'Drowsy', label: 'Drowsy' },
+  { value: 'Confused', label: 'Confused' },
+  { value: 'Responds to voice', label: 'Voice' },
+  { value: 'Responds to pain', label: 'Pain' },
+  { value: 'Unresponsive', label: 'Unresponsive' },
 ];
 
 export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm }: AddEventModalProps) {
@@ -221,6 +236,48 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
               <label htmlFor="event-value-measure" className="block text-xs font-semibold text-gray-600 mb-1">
                 Value (optional)
               </label>
+              {measurementType === 'pain_score' && (
+                <div className="mb-2 flex flex-wrap gap-1.5" role="group" aria-label="Pain score 0 to 10">
+                  {PAIN_SCORE_OPTIONS.map((score) => {
+                    const selected = valueText === `${score}/10` || valueText === score;
+                    return (
+                      <button
+                        key={score}
+                        type="button"
+                        onClick={() => setValueText(`${score}/10`)}
+                        className={`min-w-[2.25rem] px-2 py-1.5 text-sm font-semibold rounded-lg border transition-colors ${
+                          selected
+                            ? 'border-brand-600 bg-brand-50 text-brand-900'
+                            : 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
+                        }`}
+                      >
+                        {score}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {measurementType === 'alertness' && (
+                <div className="mb-2 flex flex-wrap gap-1.5" role="group" aria-label="Alertness">
+                  {ALERTNESS_OPTIONS.map((opt) => {
+                    const selected = valueText === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setValueText(opt.value)}
+                        className={`px-2.5 py-1.5 text-xs sm:text-sm font-semibold rounded-lg border transition-colors ${
+                          selected
+                            ? 'border-brand-600 bg-brand-50 text-brand-900'
+                            : 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <input
                 id="event-value-measure"
                 value={valueText}
