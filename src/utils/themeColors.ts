@@ -95,6 +95,33 @@ function relativeLuminance(r: number, g: number, b: number): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
+/** Contrast ratio of a solid colour against white or black (WCAG). */
+function contrastAgainst(rgb: { r: number; g: number; b: number }, against: 'white' | 'black'): number {
+  const L = relativeLuminance(rgb.r, rgb.g, rgb.b);
+  if (against === 'white') return 1.05 / (L + 0.05);
+  return (L + 0.05) / 0.05;
+}
+
+/**
+ * Pick readable title / muted text colours for a page background.
+ * Dark washes get light type; light washes keep slate.
+ */
+export function foregroundForBackground(backgroundHex: string): {
+  fg: string;
+  muted: string;
+  isDark: boolean;
+} {
+  const rgb = hexToRgb(backgroundHex);
+  if (!rgb) {
+    return { fg: '#0f172a', muted: '#64748b', isDark: false };
+  }
+  const preferLight = contrastAgainst(rgb, 'white') >= contrastAgainst(rgb, 'black');
+  if (preferLight) {
+    return { fg: '#f8fafc', muted: '#cbd5e1', isDark: true };
+  }
+  return { fg: '#0f172a', muted: '#64748b', isDark: false };
+}
+
 /** Ensure brand-600 has enough contrast for white button text. */
 function ensureButtonContrast(hex: string): string {
   const rgb = hexToRgb(hex);
@@ -160,4 +187,9 @@ export function applyBrandPaletteToDocument(backgroundHex: string) {
   });
   // Soft button glow tinted to the accent
   root.style.setProperty('--brand-shadow', `0 4px 16px -4px rgb(${hexToRgbChannels(palette[600])} / 0.22)`);
+
+  const { fg, muted, isDark } = foregroundForBackground(backgroundHex);
+  root.style.setProperty('--app-fg', fg);
+  root.style.setProperty('--app-fg-muted', muted);
+  root.dataset.appBgTone = isDark ? 'dark' : 'light';
 }

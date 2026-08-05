@@ -1099,7 +1099,7 @@ export default function TrackerPage() {
           >
             <Pill className="h-7 w-7" strokeWidth={2} />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Medication Tracker</h1>
+          <h1 className="app-page-title text-2xl font-bold tracking-tight">Medication Tracker</h1>
           <p className="mt-2 text-sm text-slate-600">
             Sign in to view and manage your medications. Each account keeps its own meds and logs private.
           </p>
@@ -1130,7 +1130,7 @@ export default function TrackerPage() {
                 <Pill className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-slate-900 tracking-tight">
+                <h1 className="app-page-title text-2xl sm:text-3xl font-bold leading-tight tracking-tight">
                   Today&apos;s medications
                 </h1>
               </div>

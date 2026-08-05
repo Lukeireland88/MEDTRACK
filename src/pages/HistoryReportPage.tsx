@@ -756,7 +756,7 @@ export default function HistoryReportPage() {
         <header className="mb-4 sm:mb-6">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-brand-800 hover:text-brand-950 mb-3 transition-colors"
+            className="app-page-link inline-flex items-center gap-2 text-sm font-semibold mb-3 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to tracker
@@ -770,11 +770,11 @@ export default function HistoryReportPage() {
                 <ClipboardList className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
               </div>
               <div className="min-w-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">History report</h1>
+                <h1 className="app-page-title text-2xl sm:text-3xl font-bold tracking-tight">History report</h1>
               </div>
             </div>
           </div>
-          <p className="text-sm text-slate-600 mt-2 max-w-2xl">
+          <p className="app-page-muted text-sm mt-2 max-w-2xl">
             Time-slot taken / not-taken events, flexible dose logs, and timestamped events in one place. Filter by date,
             medication, and event type.
           </p>

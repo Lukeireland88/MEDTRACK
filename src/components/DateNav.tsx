@@ -74,7 +74,7 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
           <span className="hidden sm:inline">History</span>
         </Link>
       </div>
-      <div className="text-slate-500 text-xs sm:text-sm font-medium tabular-nums">
+      <div className="app-page-muted text-xs sm:text-sm font-medium tabular-nums">
         {weekday} · {fullDate}
       </div>
     </div>

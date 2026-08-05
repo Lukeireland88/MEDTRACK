@@ -42,7 +42,7 @@ export default function SettingsPage() {
         <header className="mb-6">
           <Link
             to="/"
-            className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-brand-800 transition-colors hover:text-brand-950"
+            className="app-page-link mb-3 inline-flex items-center gap-2 text-sm font-semibold transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to tracker
@@ -55,8 +55,8 @@ export default function SettingsPage() {
               <Settings className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Settings</h1>
-              <p className="mt-1 text-sm text-slate-600">Configure how Medication Tracker works for you.</p>
+              <h1 className="app-page-title text-2xl font-bold tracking-tight sm:text-3xl">Settings</h1>
+              <p className="app-page-muted mt-1 text-sm">Configure how Medication Tracker works for you.</p>
             </div>
           </div>
         </header>
