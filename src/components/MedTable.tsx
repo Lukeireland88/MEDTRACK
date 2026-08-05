@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { Pencil, History, XCircle, X } from 'lucide-react';
+import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from 'react';
+import { Pencil, History, XCircle, X, GripVertical, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import LogDoseTimeModal from './LogDoseTimeModal';
@@ -17,6 +17,8 @@ interface MedTableProps {
   onRemoveLastFlexibleDose: (medId: string) => void;
   onEditMedication: (med: MedicationWithSlots) => void;
   onShowHistory: (medId: string, medName: string, dosingMode?: DosingMode) => void;
+  /** Persist a new display order for the currently visible medication ids. */
+  onReorderMedications: (orderedIds: string[]) => void | Promise<void>;
 }
 
 /** Checkbox for pending/taken; X-in-box when explicitly not taken (click marks taken). */
@@ -121,6 +123,37 @@ function orderSides(controlsFirst: boolean, controls: ReactNode, middle: ReactNo
   );
 }
 
+function sortByDisplayOrder(meds: MedicationWithSlots[]): MedicationWithSlots[] {
+  return [...meds].sort((a, b) => {
+    const ao = a.sort_order ?? 0;
+    const bo = b.sort_order ?? 0;
+    if (ao !== bo) return ao - bo;
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function moveId(ids: string[], fromId: string, toId: string): string[] {
+  if (fromId === toId) return ids;
+  const next = [...ids];
+  const from = next.indexOf(fromId);
+  const to = next.indexOf(toId);
+  if (from < 0 || to < 0) return ids;
+  next.splice(from, 1);
+  next.splice(to, 0, fromId);
+  return next;
+}
+
+function moveIdByDelta(ids: string[], id: string, delta: -1 | 1): string[] {
+  const from = ids.indexOf(id);
+  if (from < 0) return ids;
+  const to = from + delta;
+  if (to < 0 || to >= ids.length) return ids;
+  const next = [...ids];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
 export default function MedTable({
   medications,
   selectedDate,
@@ -131,11 +164,52 @@ export default function MedTable({
   onLogFlexibleDose,
   onRemoveLastFlexibleDose,
   onEditMedication,
-  onShowHistory
+  onShowHistory,
+  onReorderMedications,
 }: MedTableProps) {
   const { handedness } = usePreferences();
   const controlsFirst = handedness === 'left';
   const [logDoseMedId, setLogDoseMedId] = useState<string | null>(null);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [orderedIds, setOrderedIds] = useState<string[]>([]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const medicationsKey = medications.map((m) => m.id).join('|');
+
+  useEffect(() => {
+    setOrderedIds(sortByDisplayOrder(medications).map((m) => m.id));
+  }, [medicationsKey]);
+
+  const medById = useMemo(() => {
+    const map = new Map<string, MedicationWithSlots>();
+    medications.forEach((m) => map.set(m.id, m));
+    return map;
+  }, [medications]);
+
+  const sortedMedications = useMemo(() => {
+    const list = orderedIds.map((id) => medById.get(id)).filter(Boolean) as MedicationWithSlots[];
+    // Include any newly arrived meds not yet in orderedIds
+    const seen = new Set(orderedIds);
+    medications.forEach((m) => {
+      if (!seen.has(m.id)) list.push(m);
+    });
+    return list;
+  }, [orderedIds, medById, medications]);
+
+  const commitOrder = async (nextIds: string[]) => {
+    setOrderedIds(nextIds);
+    setSavingOrder(true);
+    try {
+      await onReorderMedications(nextIds);
+    } catch (e) {
+      console.error(e);
+      setOrderedIds(sortByDisplayOrder(medications).map((m) => m.id));
+      alert('Could not save order. Please try again.');
+    } finally {
+      setSavingOrder(false);
+    }
+  };
 
   const formatResumesOn = (med: Pick<MedicationWithSlots, 'pause_end_date'>): string | null => {
     if (!med.pause_end_date) return null;
@@ -152,36 +226,6 @@ export default function MedTable({
     return acc;
   }, 0);
 
-  const sortedMedications = [...medications].sort((a, b) => {
-    const aDue = isDue(a, selectedDate);
-    const bDue = isDue(b, selectedDate);
-
-    // Not due meds go to the bottom
-    if (aDue && !bDue) return -1;
-    if (!aDue && bDue) return 1;
-
-    const aFlex = a.dosing_mode === 'flexible_daily';
-    const bFlex = b.dosing_mode === 'flexible_daily';
-
-    // Within due: time-slot meds first, flexible daily last
-    if (aDue && bDue) {
-      if (aFlex && !bFlex) return 1;
-      if (!aFlex && bFlex) return -1;
-      if (!aFlex && !bFlex) {
-        if (!a.is_multiple && b.is_multiple) return -1;
-        if (a.is_multiple && !b.is_multiple) return 1;
-      }
-    }
-
-    // Within not-due: same — flexible rows at the bottom of that group
-    if (!aDue && !bDue) {
-      if (aFlex && !bFlex) return 1;
-      if (!aFlex && bFlex) return -1;
-    }
-
-    return a.name.localeCompare(b.name);
-  });
-
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString(undefined, {
       hour: 'numeric',
@@ -189,13 +233,100 @@ export default function MedTable({
       hour12: true,
     });
 
+  const reorderHandle = (medId: string, index: number) => (
+    <div className="flex items-center gap-0.5 shrink-0">
+      <button
+        type="button"
+        draggable={reorderMode && !savingOrder}
+        onDragStart={(e) => {
+          if (!reorderMode) return;
+          setDraggingId(medId);
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', medId);
+        }}
+        onDragEnd={() => setDraggingId(null)}
+        className={`p-1.5 rounded-lg text-slate-500 ${
+          reorderMode ? 'cursor-grab active:cursor-grabbing hover:bg-slate-200' : 'opacity-40 cursor-default'
+        }`}
+        title={reorderMode ? 'Drag to reorder' : 'Turn on Reorder to move medications'}
+        aria-label={reorderMode ? `Drag to reorder ${medById.get(medId)?.name ?? 'medication'}` : 'Reorder disabled'}
+        disabled={!reorderMode || savingOrder}
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      {reorderMode && (
+        <div className="flex flex-col md:hidden">
+          <button
+            type="button"
+            className="p-0.5 rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"
+            disabled={index === 0 || savingOrder}
+            onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, -1))}
+            aria-label="Move up"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            className="p-0.5 rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"
+            disabled={index === sortedMedications.length - 1 || savingOrder}
+            onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, 1))}
+            aria-label="Move down"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const rowDragProps = (medId: string) =>
+    reorderMode
+      ? {
+          onDragOver: (e: DragEvent) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+          },
+          onDrop: (e: DragEvent) => {
+            e.preventDefault();
+            const fromId = e.dataTransfer.getData('text/plain') || draggingId;
+            if (!fromId) return;
+            void commitOrder(moveId(orderedIds, fromId, medId));
+            setDraggingId(null);
+          },
+        }
+      : {};
+
   return (
     <>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-2 sm:px-3 pb-2">
+        <button
+          type="button"
+          onClick={() => setReorderMode((v) => !v)}
+          className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold transition-colors ${
+            reorderMode
+              ? 'bg-slate-900 text-white hover:bg-slate-800'
+              : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+          aria-pressed={reorderMode}
+        >
+          <ArrowUpDown className="w-4 h-4" />
+          {reorderMode ? 'Done reordering' : 'Reorder'}
+        </button>
+        {reorderMode && (
+          <p className="text-xs text-slate-600">
+            Drag the handle to move a row{savingOrder ? ' · Saving…' : ''}. On phones, use the up/down arrows.
+          </p>
+        )}
+      </div>
+
       {/* Desktop table view */}
       <div className="hidden md:block px-3 pb-3">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-slate-100/90">
+              <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-10">
+                <span className="sr-only">Order</span>
+              </th>
               {orderSides(
                 controlsFirst,
                 <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-14">
@@ -219,7 +350,7 @@ export default function MedTable({
             </tr>
           </thead>
           <tbody>
-            {sortedMedications.map((med) => {
+            {sortedMedications.map((med, index) => {
               const due = isDue(med, selectedDate);
               const paused = isPaused(med, selectedDate);
               const resumesOn = paused ? formatResumesOn(med) : null;
@@ -249,7 +380,8 @@ export default function MedTable({
                         <button
                           type="button"
                           onClick={() => setLogDoseMedId(med.id)}
-                          className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700"
+                          disabled={reorderMode}
+                          className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
                         >
                           Log dose
                         </button>
@@ -257,7 +389,8 @@ export default function MedTable({
                           <button
                             type="button"
                             onClick={() => onRemoveLastFlexibleDose(med.id)}
-                            className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100"
+                            disabled={reorderMode}
+                            className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                           >
                             Undo last
                           </button>
@@ -273,7 +406,7 @@ export default function MedTable({
                       medId={med.id}
                       taken={taken}
                       notTakenRecorded={notTakenRecorded}
-                      onToggleTaken={onToggleTaken}
+                      onToggleTaken={reorderMode ? () => undefined : onToggleTaken}
                     />
                   ) : (
                     <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
@@ -367,14 +500,20 @@ export default function MedTable({
               return (
                 <tr
                   key={med.id}
+                  {...rowDragProps(med.id)}
                   className={`
                     ${!isFlexible && taken ? 'text-gray-500 line-through' : ''}
                     ${isFlexible && flexComplete ? 'text-gray-500' : ''}
                     ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
                     ${isFlexible ? 'bg-brand-50/90' : ''}
                     ${tone}
+                    ${draggingId === med.id ? 'opacity-60 ring-2 ring-brand-400' : ''}
+                    ${reorderMode ? 'cursor-default' : ''}
                   `}
                 >
+                  <td className="p-2 border-b border-slate-200 align-middle w-10">
+                    {reorderHandle(med.id, index)}
+                  </td>
                   {orderSides(controlsFirst, takenCell, middleCells, actionsCell)}
                 </tr>
               );
@@ -385,7 +524,7 @@ export default function MedTable({
 
       {/* Mobile card view */}
       <div className="md:hidden px-2 pb-3 space-y-2">
-        {sortedMedications.map((med) => {
+        {sortedMedications.map((med, index) => {
           const due = isDue(med, selectedDate);
           const paused = isPaused(med, selectedDate);
           const resumesOn = paused ? formatResumesOn(med) : null;
@@ -410,7 +549,8 @@ export default function MedTable({
                 <button
                   type="button"
                   onClick={() => setLogDoseMedId(med.id)}
-                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 touch-manipulation"
+                  disabled={reorderMode}
+                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 touch-manipulation disabled:opacity-50"
                 >
                   Log dose
                 </button>
@@ -418,7 +558,8 @@ export default function MedTable({
                   <button
                     type="button"
                     onClick={() => onRemoveLastFlexibleDose(med.id)}
-                    className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation"
+                    disabled={reorderMode}
+                    className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation disabled:opacity-50"
                   >
                     Undo last
                   </button>
@@ -434,7 +575,7 @@ export default function MedTable({
               medId={med.id}
               taken={taken}
               notTakenRecorded={notTakenRecorded}
-              onToggleTaken={onToggleTaken}
+              onToggleTaken={reorderMode ? () => undefined : onToggleTaken}
               className="mt-0.5 flex-shrink-0 touch-manipulation"
             />
           ) : (
@@ -536,6 +677,7 @@ export default function MedTable({
           return (
             <div
               key={med.id}
+              {...rowDragProps(med.id)}
               className={`
                 border border-slate-200 rounded-lg p-3
                 ${!isFlexible && taken ? 'text-gray-500' : ''}
@@ -543,10 +685,14 @@ export default function MedTable({
                 ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
                 ${isFlexible ? 'bg-brand-50/90' : !med.is_multiple ? 'bg-white' : ''}
                 ${tone}
+                ${draggingId === med.id ? 'opacity-60 ring-2 ring-brand-400' : ''}
               `}
             >
-              <div className="flex items-start gap-3">
-                {orderSides(controlsFirst, takenControl, middle, actions)}
+              <div className="flex items-start gap-2">
+                {reorderHandle(med.id, index)}
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                  {orderSides(controlsFirst, takenControl, middle, actions)}
+                </div>
               </div>
             </div>
           );

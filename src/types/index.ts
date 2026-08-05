@@ -26,6 +26,8 @@ export interface Medication {
   active: boolean;
   dosing_mode: DosingMode;
   target_doses_per_day: number | null;
+  /** Display order on the tracker (lower = higher in the list). */
+  sort_order: number;
   user_id?: string;
 }
 

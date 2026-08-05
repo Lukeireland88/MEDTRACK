@@ -260,7 +260,14 @@ export default function TrackerPage() {
           if (med.end_date && med.end_date < viewingDate) return false;
           return true;
         })
-        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        .map((med) => ({
+          ...med,
+          sort_order: typeof med.sort_order === 'number' ? med.sort_order : 0,
+        }))
+        .sort((a, b) => {
+          if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+          return a.name.localeCompare(b.name);
+        });
 
       // Tabs: only sessions that have at least one medication (hide empty sessions).
       // If only flexible-daily meds exist, show all configured sessions so tabs stay usable.
@@ -726,9 +733,18 @@ export default function TrackerPage() {
         }
         savedMedId = formData.id;
       } else {
+        const { data: maxRow } = await supabase
+          .from('medications')
+          .select('sort_order')
+          .eq('active', true)
+          .order('sort_order', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const nextSort = (maxRow?.sort_order ?? 0) + 1;
+
         const { data: newMed, error: medError } = await supabase
           .from('medications')
-          .insert(medPayload)
+          .insert({ ...medPayload, sort_order: nextSort })
           .select()
           .single();
 
@@ -871,6 +887,35 @@ export default function TrackerPage() {
     setHistoryModalOpen(true);
   };
 
+  const handleReorderMedications = async (visibleOrderedIds: string[]) => {
+    if (!user || visibleOrderedIds.length === 0) return;
+
+    const { data: allRows, error: loadError } = await supabase
+      .from('medications')
+      .select('id, sort_order')
+      .eq('active', true)
+      .order('sort_order', { ascending: true });
+
+    if (loadError) throw loadError;
+
+    const allIds = (allRows ?? []).map((r) => r.id as string);
+    const visibleSet = new Set(visibleOrderedIds);
+    const queue = [...visibleOrderedIds];
+    const nextIds = allIds.map((id) => (visibleSet.has(id) ? queue.shift()! : id));
+
+    // Any ids only in the visible list (shouldn't happen) append at end
+    while (queue.length) nextIds.push(queue.shift()!);
+
+    const updates = nextIds.map((id, index) =>
+      supabase.from('medications').update({ sort_order: index + 1 }).eq('id', id)
+    );
+    const results = await Promise.all(updates);
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw failed.error;
+
+    await loadMedications({ silent: true });
+  };
+
   /** Open edit modal when navigating from Settings → Ended courses → Edit */
   useEffect(() => {
     const editId = (location.state as { editMedicationId?: string } | null)?.editMedicationId;
@@ -1007,6 +1052,7 @@ export default function TrackerPage() {
             onRemoveLastFlexibleDose={handleRemoveLastFlexibleDose}
             onEditMedication={handleEditMedication}
             onShowHistory={handleShowHistory}
+            onReorderMedications={handleReorderMedications}
           />
         </section>
       </div>
