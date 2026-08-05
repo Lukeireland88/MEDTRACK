@@ -2,6 +2,30 @@ import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { Angry, Annoyed, Frown, Laugh, Meh, Smile, SmilePlus, X, type LucideProps } from 'lucide-react';
 import { toDateInputValue } from '../utils/dateUtils';
 
+/** Simple crying face — Lucide has no Cry icon in our version. */
+function CryingFace({ className, strokeWidth = 2, ...props }: LucideProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...props}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M8 15c1.2-1.2 2.5-1.8 4-1.8s2.8.6 4 1.8" />
+      <path d="M9 9.2h.01" />
+      <path d="M15 9.2h.01" />
+      <path d="M8.2 12.5c0 1.2-.6 2.3-1.4 2.8" />
+      <path d="M15.8 12.5c0 1.2.6 2.3 1.4 2.8" />
+    </svg>
+  );
+}
+
 function toDateTimeLocalValue(d: Date): string {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -77,7 +101,7 @@ const PAIN_SCORE_OPTIONS: {
   { score: '7', Face: Frown, faceClass: 'text-orange-600' },
   { score: '8', Face: Annoyed, faceClass: 'text-rose-500' },
   { score: '9', Face: Angry, faceClass: 'text-rose-600' },
-  { score: '10', Face: Angry, faceClass: 'text-rose-700' },
+  { score: '10', Face: CryingFace, faceClass: 'text-rose-700' },
 ];
 
 const ALERTNESS_OPTIONS = [
