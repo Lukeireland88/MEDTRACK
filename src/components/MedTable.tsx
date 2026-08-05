@@ -302,10 +302,10 @@ export default function MedTable({
         <button
           type="button"
           onClick={() => setReorderMode((v) => !v)}
-          className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-semibold transition-colors ${
             reorderMode
               ? 'bg-slate-900 text-white hover:bg-slate-800'
-              : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              : 'border border-white/60 bg-white/60 backdrop-blur-sm text-slate-700 hover:bg-white/80'
           }`}
           aria-pressed={reorderMode}
         >
@@ -323,7 +323,7 @@ export default function MedTable({
       <div className="hidden md:block px-3 pb-3">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-slate-100/90">
+            <tr className="bg-slate-100/50">
               <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-10">
                 <span className="sr-only">Order</span>
               </th>
@@ -504,8 +504,8 @@ export default function MedTable({
                   className={`
                     ${!isFlexible && taken ? 'text-gray-500 line-through' : ''}
                     ${isFlexible && flexComplete ? 'text-gray-500' : ''}
-                    ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
-                    ${isFlexible ? 'bg-brand-50/90' : ''}
+                    ${!isFlexible && med.is_multiple ? 'bg-yellow-50/70' : ''}
+                    ${isFlexible ? 'bg-brand-50/70' : ''}
                     ${tone}
                     ${draggingId === med.id ? 'opacity-60 ring-2 ring-brand-400' : ''}
                     ${reorderMode ? 'cursor-default' : ''}
@@ -682,8 +682,8 @@ export default function MedTable({
                 border border-slate-200 rounded-lg p-3
                 ${!isFlexible && taken ? 'text-gray-500' : ''}
                 ${isFlexible && flexComplete ? 'text-gray-500' : ''}
-                ${!isFlexible && med.is_multiple ? 'bg-yellow-50' : ''}
-                ${isFlexible ? 'bg-brand-50/90' : !med.is_multiple ? 'bg-white' : ''}
+                ${!isFlexible && med.is_multiple ? 'bg-yellow-50/70' : ''}
+                ${isFlexible ? 'bg-brand-50/70' : !med.is_multiple ? 'bg-white/55' : ''}
                 ${tone}
                 ${draggingId === med.id ? 'opacity-60 ring-2 ring-brand-400' : ''}
               `}

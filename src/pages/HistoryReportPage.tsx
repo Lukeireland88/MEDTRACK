@@ -627,11 +627,11 @@ export default function HistoryReportPage() {
         </header>
 
         {authLoading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+          <div className="rounded-2xl surface-glass p-8 text-center text-sm text-slate-500">
             Loading…
           </div>
         ) : !user ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-brand-sm">
+          <div className="rounded-2xl surface-glass p-8 text-center">
             <p className="text-sm text-slate-600">Sign in to view your history report.</p>
             <button
               type="button"
@@ -644,7 +644,7 @@ export default function HistoryReportPage() {
           </div>
         ) : (
           <>
-        <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-brand-sm ring-1 ring-slate-200/80">
+        <div className="mb-4 overflow-hidden rounded-2xl surface-glass">
           <div className="px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
             <p className="text-xs font-semibold text-gray-600 mb-2">Date range</p>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -867,7 +867,7 @@ export default function HistoryReportPage() {
           )}
         </div>
 
-        <section className="bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-slate-200/80 overflow-hidden">
+        <section className="overflow-hidden rounded-2xl surface-glass">
           {loading ? (
             <div className="p-8 text-center text-slate-500 text-sm animate-pulse">Loading…</div>
           ) : error ? (

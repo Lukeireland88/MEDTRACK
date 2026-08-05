@@ -19,6 +19,17 @@
   }
 }
 
+@layer components {
+  /* Soft frost so custom page backgrounds show through — not for modals. */
+  .surface-glass {
+    @apply border border-white/60 bg-white/70 shadow-brand-sm ring-1 ring-slate-200/50 backdrop-blur-md;
+  }
+
+  .surface-glass-interactive {
+    @apply surface-glass transition-colors hover:border-white/80 hover:bg-white/80;
+  }
+}
+
 @media (max-width: 480px) {
   input[type="checkbox"] {
     width: 28px;

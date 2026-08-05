@@ -950,7 +950,7 @@ export default function TrackerPage() {
   if (!user) {
     return (
       <div className={`${pageBg.className} flex items-center justify-center px-4`} style={pageBg.style}>
-        <div className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-8 shadow-brand-sm ring-1 ring-slate-200/80 text-center">
+        <div className="w-full max-w-md rounded-2xl surface-glass p-8 text-center">
           <div
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-800 text-white shadow-brand-sm"
             aria-hidden
@@ -1031,7 +1031,7 @@ export default function TrackerPage() {
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
 
-        <section className="overflow-hidden bg-white border border-slate-200/90 rounded-2xl shadow-brand-sm ring-1 ring-slate-200/80">
+        <section className="overflow-hidden rounded-2xl surface-glass">
           <TimeSlotPicker
             selectedTimeSlot={selectedTimeSlot}
             onTimeSlotChange={setSelectedTimeSlot}

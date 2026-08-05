@@ -63,9 +63,9 @@ export default function SettingsPage() {
 
         <ul className="space-y-3">
           <li>
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-brand-sm ring-1 ring-slate-200/80">
+            <div className="rounded-2xl surface-glass p-4">
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 text-slate-700">
                   <Hand className="h-5 w-5" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -116,9 +116,9 @@ export default function SettingsPage() {
             </div>
           </li>
           <li>
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-4 shadow-brand-sm ring-1 ring-slate-200/80">
+            <div className="rounded-2xl surface-glass p-4">
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 text-slate-700">
                   <Paintbrush className="h-5 w-5" aria-hidden />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -181,7 +181,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => (user ? setSessionsOpen(true) : setAuthModalOpen(true))}
-              className="flex w-full items-start gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-brand-sm ring-1 ring-slate-200/80 transition-colors hover:border-slate-300 hover:bg-slate-50/80"
+              className="flex w-full items-start gap-4 rounded-2xl surface-glass-interactive p-4 text-left"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                 <ListOrdered className="h-5 w-5" aria-hidden />
@@ -202,7 +202,7 @@ export default function SettingsPage() {
             <button
               type="button"
               onClick={() => (user ? setAllMedsOpen(true) : setAuthModalOpen(true))}
-              className="flex w-full items-start gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-brand-sm ring-1 ring-slate-200/80 transition-colors hover:border-slate-300 hover:bg-slate-50/80"
+              className="flex w-full items-start gap-4 rounded-2xl surface-glass-interactive p-4 text-left"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                 <Pill className="h-5 w-5" aria-hidden />
@@ -223,7 +223,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setEndedCoursesOpen(true)}
-                className="flex w-full items-start gap-4 rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-brand-sm ring-1 ring-slate-200/80 transition-colors hover:border-slate-300 hover:bg-slate-50/80"
+                className="flex w-full items-start gap-4 rounded-2xl surface-glass-interactive p-4 text-left"
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                   <Archive className="h-5 w-5" aria-hidden />

@@ -45,7 +45,7 @@ export default function TimeSlotPicker({ selectedTimeSlot, onTimeSlotChange, ava
         <span className="text-lg">{isOpen ? '▲' : '▼'}</span>
       </div>
       {isOpen && (
-        <div className="grid grid-cols-2 gap-2 p-2 sm:p-3 border-b border-slate-200 bg-white">
+        <div className="grid grid-cols-2 gap-2 p-2 sm:p-3 border-b border-slate-200/60 bg-white/40">
           {availableTimeSlots.map((slot) => (
             <button
               key={slot}
