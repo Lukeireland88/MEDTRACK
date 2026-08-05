@@ -11,8 +11,7 @@
   }
 
   body {
-    @apply antialiased font-sans;
-    color: var(--app-fg, #0f172a);
+    @apply antialiased text-slate-900 font-sans;
   }
 
   ::selection {
