@@ -66,7 +66,7 @@ export default function DateNav({ selectedDate, onDateChange }: DateNavProps) {
           Today
         </button>
         <Link
-          to="/history"
+          to={`/history?date=${toDateInputValue(selectedDate)}`}
           className="inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 border border-slate-200 bg-white text-slate-900 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base touch-manipulation"
           title="View history across all medications"
         >

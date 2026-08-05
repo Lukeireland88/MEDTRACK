@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download, LogIn, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -192,14 +192,30 @@ function last7DaysRange(): { from: string; to: string } {
   return { from: toDateInputValue(start), to: toDateInputValue(end) };
 }
 
+function isValidDateKey(v: string | null): v is string {
+  return !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
 export default function HistoryReportPage() {
   const { user, loading: authLoading } = useAuth();
   const pageBg = usePageBackgroundProps();
+  const [searchParams] = useSearchParams();
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const initial = useMemo(() => todayRange(), []);
+  const trackerDate = searchParams.get('date');
+  const initial = useMemo(() => {
+    if (isValidDateKey(trackerDate)) return { from: trackerDate, to: trackerDate };
+    return todayRange();
+  }, [trackerDate]);
   const [dateFrom, setDateFrom] = useState(initial.from);
   const [dateTo, setDateTo] = useState(initial.to);
   const [medicationIds, setMedicationIds] = useState<string[]>([]);
+
+  // When opened from the tracker History button, adopt that day's date picker value.
+  useEffect(() => {
+    if (!isValidDateKey(trackerDate)) return;
+    setDateFrom(trackerDate);
+    setDateTo(trackerDate);
+  }, [trackerDate]);
   const [medications, setMedications] = useState<{ id: string; name: string }[]>([]);
   const [rows, setRows] = useState<UnifiedRow[]>([]);
   const [loading, setLoading] = useState(true);
