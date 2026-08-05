@@ -561,7 +561,13 @@ export default function HistoryReportPage() {
         });
       }
 
-      unified.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+      // Logged events first (newest → oldest); Not recorded always at the bottom.
+      unified.sort((a, b) => {
+        const aUnrec = a.variant === 'slot_unrecorded' ? 1 : 0;
+        const bUnrec = b.variant === 'slot_unrecorded' ? 1 : 0;
+        if (aUnrec !== bUnrec) return aUnrec - bUnrec;
+        return new Date(b.at).getTime() - new Date(a.at).getTime();
+      });
       setRows(unified);
     } catch (e: unknown) {
       console.error(e);
