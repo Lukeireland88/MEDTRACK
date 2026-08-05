@@ -317,31 +317,31 @@ export default function MedTable({
           e.dataTransfer.setData('text/plain', medId);
         }}
         onDragEnd={() => setDraggingId(null)}
-        className="p-1.5 rounded-lg text-slate-500 cursor-grab active:cursor-grabbing hover:bg-slate-200"
+        className="hidden pointer-fine:inline-flex p-1.5 rounded-lg text-slate-500 cursor-grab active:cursor-grabbing hover:bg-slate-200"
         title="Drag to reorder"
         aria-label={`Drag to reorder ${medById.get(medId)?.name ?? 'medication'}`}
         disabled={savingOrder}
       >
         <GripVertical className="w-4 h-4" />
       </button>
-      <div className="flex flex-col md:hidden">
+      <div className="flex flex-col">
         <button
           type="button"
-          className="p-0.5 rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"
+          className="p-1.5 sm:p-1 rounded-lg text-slate-600 hover:bg-slate-200 disabled:opacity-30 touch-manipulation"
           disabled={index === 0 || savingOrder}
           onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, -1))}
           aria-label="Move up"
         >
-          <ChevronUp className="w-4 h-4" />
+          <ChevronUp className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
         <button
           type="button"
-          className="p-0.5 rounded text-slate-600 hover:bg-slate-200 disabled:opacity-30"
+          className="p-1.5 sm:p-1 rounded-lg text-slate-600 hover:bg-slate-200 disabled:opacity-30 touch-manipulation"
           disabled={index === sortedMedications.length - 1 || savingOrder}
           onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, 1))}
           aria-label="Move down"
         >
-          <ChevronDown className="w-4 h-4" />
+          <ChevronDown className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </div>
     </div>
@@ -387,7 +387,9 @@ export default function MedTable({
         </button>
         {reorderMode && (
           <p className="text-xs text-slate-600">
-            Drag the handle to move a row{savingOrder ? ' · Saving…' : ''}. On phones, use the up/down arrows.
+            Use the up/down arrows to move a row
+            <span className="hidden pointer-fine:inline">, or drag the handle on a mouse</span>
+            {savingOrder ? ' · Saving…' : ''}.
           </p>
         )}
       </div>
