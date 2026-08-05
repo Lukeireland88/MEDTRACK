@@ -5,11 +5,18 @@ import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download, LogIn, P
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageBackgroundProps } from '../contexts/PreferencesContext';
-import { toDateInputValue, toLocalDateOnly } from '../utils/dateUtils';
+import { toDateInputValue, toLocalDateKey, toLocalDateOnly } from '../utils/dateUtils';
+import { inferUnrecordedDoseRows } from '../utils/inferUnrecordedDoses';
 import EditTimelineEventModal, { EditTimelineEventInitial } from '../components/EditTimelineEventModal';
 import AuthModal from '../components/AuthModal';
 
-type HistoryEventVariant = 'slot_taken' | 'slot_not_taken' | 'flexible_dose' | 'seizure' | 'timeline_event';
+type HistoryEventVariant =
+  | 'slot_taken'
+  | 'slot_not_taken'
+  | 'slot_unrecorded'
+  | 'flexible_dose'
+  | 'seizure'
+  | 'timeline_event';
 
 type EventFilter = 'all' | HistoryEventVariant;
 
@@ -91,6 +98,8 @@ function rowVariantBgClass(v: HistoryEventVariant): string {
       return 'bg-emerald-50/90';
     case 'slot_not_taken':
       return 'bg-rose-50/90';
+    case 'slot_unrecorded':
+      return 'bg-slate-100/90';
     case 'flexible_dose':
       return 'bg-brand-50/90';
     case 'seizure':
@@ -107,6 +116,8 @@ function rowVariantTableClass(v: HistoryEventVariant): string {
       return `${rowVariantBgClass(v)} border-l-4 border-l-emerald-500`;
     case 'slot_not_taken':
       return `${rowVariantBgClass(v)} border-l-4 border-l-rose-500`;
+    case 'slot_unrecorded':
+      return `${rowVariantBgClass(v)} border-l-4 border-l-slate-400`;
     case 'flexible_dose':
       return `${rowVariantBgClass(v)} border-l-4 border-l-brand-500`;
     case 'seizure':
@@ -123,6 +134,8 @@ function variantAccentBarClass(v: HistoryEventVariant): string {
       return 'bg-emerald-500';
     case 'slot_not_taken':
       return 'bg-rose-500';
+    case 'slot_unrecorded':
+      return 'bg-slate-400';
     case 'flexible_dose':
       return 'bg-brand-500';
     case 'seizure':
@@ -138,6 +151,8 @@ function variantBadge(v: HistoryEventVariant): { label: string; className: strin
       return { label: 'Taken', className: 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200/80' };
     case 'slot_not_taken':
       return { label: 'Not taken', className: 'bg-rose-100 text-rose-900 ring-1 ring-rose-200/80' };
+    case 'slot_unrecorded':
+      return { label: 'Not recorded', className: 'bg-slate-200 text-slate-800 ring-1 ring-slate-300/80' };
     case 'flexible_dose':
       return { label: 'Dose logged', className: 'bg-brand-100 text-brand-900 ring-1 ring-brand-200/80' };
     case 'seizure':
@@ -279,6 +294,8 @@ export default function HistoryReportPage() {
     try {
       const from = dateFrom <= dateTo ? dateFrom : dateTo;
       const to = dateFrom <= dateTo ? dateTo : dateFrom;
+      const todayLocal = toLocalDateKey(new Date());
+      const toEffective = to > todayLocal ? todayLocal : to;
 
       let logsQuery = supabase
         .from('medication_logs')
@@ -341,9 +358,9 @@ export default function HistoryReportPage() {
         .order('occurred_at', { ascending: false });
       if (eventsError) throw eventsError;
 
-        const unified: UnifiedRow[] = [];
+      const unified: UnifiedRow[] = [];
 
-      const logRows = (logs ?? []) as MedicationLogRow[];
+      const logRows = (logs ?? []) as unknown as MedicationLogRow[];
       logRows.forEach((log) => {
         const med = log.medications;
         const slot = log.time_slots;
@@ -365,7 +382,7 @@ export default function HistoryReportPage() {
         });
       });
 
-      const doseRows = (doses ?? []) as DoseEventRow[];
+      const doseRows = (doses ?? []) as unknown as DoseEventRow[];
       doseRows.forEach((d) => {
         const med = d.medications;
         unified.push({
@@ -430,6 +447,124 @@ export default function HistoryReportPage() {
           },
         });
       });
+
+      // Infer due doses that were never marked taken / not taken (and flexible with zero logs).
+      if (from <= toEffective) {
+        const { data: allMeds, error: medsErr } = await supabase
+          .from('medications')
+          .select(
+            'id, name, schedule_type, days_of_week, start_date, interval_days, pause_start_date, pause_end_date, end_date, dosing_mode, active'
+          )
+          .eq('active', true);
+        if (medsErr) throw medsErr;
+
+        const medList = allMeds ?? [];
+        const medIds = medList.map((m) => m.id as string);
+
+        type SlotJoin = {
+          medication_id: string;
+          time_slot_id: string;
+          time_slots:
+            | { id: string; name: string; default_after_hour: number | null }
+            | { id: string; name: string; default_after_hour: number | null }[]
+            | null;
+        };
+
+        let slotLinks: SlotJoin[] = [];
+        if (medIds.length > 0) {
+          const { data: links, error: linksErr } = await supabase
+            .from('medication_slots')
+            .select('medication_id, time_slot_id, time_slots (id, name, default_after_hour)')
+            .in('medication_id', medIds);
+          if (linksErr) throw linksErr;
+          slotLinks = (links ?? []) as unknown as SlotJoin[];
+        }
+
+        const slotsByMed = new Map<
+          string,
+          { id: string; name: string; default_after_hour: number }[]
+        >();
+        slotLinks.forEach((row) => {
+          const ts = Array.isArray(row.time_slots) ? row.time_slots[0] : row.time_slots;
+          if (!ts?.id) return;
+          const list = slotsByMed.get(row.medication_id) ?? [];
+          list.push({
+            id: ts.id,
+            name: ts.name,
+            default_after_hour: Number(ts.default_after_hour ?? 12),
+          });
+          slotsByMed.set(row.medication_id, list);
+        });
+
+        let takenQuery = supabase
+          .from('doses_taken')
+          .select('medication_id, time_slot_id, dose_date')
+          .gte('dose_date', from)
+          .lte('dose_date', toEffective);
+        if (medicationIds.length > 0) {
+          takenQuery = takenQuery.in('medication_id', medicationIds);
+        }
+        const { data: takenRows, error: takenErr } = await takenQuery;
+        if (takenErr) throw takenErr;
+
+        const recordedSlotKeys = new Set(
+          (takenRows ?? []).map(
+            (r) => `${r.medication_id}|${r.time_slot_id}|${r.dose_date}`
+          )
+        );
+
+        const flexibleDoseCounts = new Map<string, number>();
+        doseRows.forEach((d) => {
+          const key = `${d.medication_id}|${d.dose_date}`;
+          flexibleDoseCounts.set(key, (flexibleDoseCounts.get(key) ?? 0) + 1);
+        });
+
+        const medsForInference = medList.map((m) => ({
+          id: m.id as string,
+          name: m.name as string,
+          when_text: '',
+          schedule_type: m.schedule_type as
+            | 'daily'
+            | 'days_of_week'
+            | 'every_n_days_from_start',
+          days_of_week: (m.days_of_week as number[] | null) ?? null,
+          start_date: (m.start_date as string | null) ?? null,
+          interval_days: (m.interval_days as number | null) ?? null,
+          pause_start_date: (m.pause_start_date as string | null) ?? null,
+          pause_end_date: (m.pause_end_date as string | null) ?? null,
+          end_date: (m.end_date as string | null) ?? null,
+          active: true,
+          dosing_mode:
+            ((m.dosing_mode as string) ?? 'time_slots') === 'flexible_daily'
+              ? ('flexible_daily' as const)
+              : ('time_slots' as const),
+          slots: slotsByMed.get(m.id as string) ?? [],
+        }));
+
+        const unrecorded = inferUnrecordedDoseRows({
+          from,
+          toEffective,
+          todayLocal,
+          nowHour: new Date().getHours(),
+          medications: medsForInference,
+          recordedSlotKeys,
+          flexibleDoseCounts,
+          medicationFilterIds: medicationIds,
+        });
+
+        unrecorded.forEach((u) => {
+          unified.push({
+            id: u.id,
+            at: u.at,
+            doseDate: u.doseDate,
+            medicationId: u.medicationId,
+            medicationName: u.medicationName,
+            kind: u.kind,
+            detail: u.detail,
+            variant: 'slot_unrecorded',
+          });
+        });
+      }
 
       unified.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
       setRows(unified);
@@ -506,6 +641,8 @@ export default function HistoryReportPage() {
         return 'Taken';
       case 'slot_not_taken':
         return 'Not taken';
+      case 'slot_unrecorded':
+        return 'Not recorded';
       case 'flexible_dose':
         return 'Flexible';
       case 'seizure':
@@ -854,12 +991,13 @@ export default function HistoryReportPage() {
                     <option value="all">All events</option>
                     <option value="slot_taken">Taken (time slot)</option>
                     <option value="slot_not_taken">Not taken (time slot)</option>
+                    <option value="slot_unrecorded">Not recorded</option>
                     <option value="flexible_dose">Flexible dose</option>
                     <option value="seizure">Seizure</option>
                     <option value="timeline_event">Notes (visits/measurements)</option>
                   </select>
                   <p className="mt-1.5 min-h-[2.5rem] text-xs leading-snug text-gray-500">
-                    Slot doses, flexible doses, seizures, and notes.
+                    Slot doses, unrecorded doses, flexible doses, seizures, and notes.
                   </p>
                 </div>
               </div>
@@ -925,6 +1063,18 @@ export default function HistoryReportPage() {
                     >
                       <span className="inline-block w-2 h-2 rounded-full bg-rose-500" aria-hidden />
                       Not taken
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleLegendFilter('slot_unrecorded')}
+                      aria-pressed={eventFilter === 'slot_unrecorded'}
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md hover:bg-gray-200/70 ${
+                        eventFilter === 'slot_unrecorded' ? 'bg-gray-200/80 text-gray-900' : ''
+                      }`}
+                      title="Filter: Not recorded"
+                    >
+                      <span className="inline-block w-2 h-2 rounded-full bg-slate-400" aria-hidden />
+                      Not recorded
                     </button>
                     <button
                       type="button"
