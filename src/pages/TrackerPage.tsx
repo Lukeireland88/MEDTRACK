@@ -27,7 +27,12 @@ import AuthModal from '../components/AuthModal';
 import MarkNotTakenModal from '../components/MarkNotTakenModal';
 import LogSeizureModal from '../components/LogSeizureModal';
 import AddEventModal, { AddEventPayload } from '../components/AddEventModal';
-import AddLogPickerModal from '../components/AddLogPickerModal';
+import DoseLimitWarningModal from '../components/DoseLimitWarningModal';
+import {
+  describeDoseLimitViolations,
+  evaluateDoseLimits,
+  type DoseLimitViolation,
+} from '../utils/doseLimitUtils';
 
 export default function TrackerPage() {
   const location = useLocation();
@@ -57,6 +62,13 @@ export default function TrackerPage() {
   const [addLogPickerOpen, setAddLogPickerOpen] = useState(false);
   const [logSeizureOpen, setLogSeizureOpen] = useState(false);
   const [addEventOpen, setAddEventOpen] = useState(false);
+  const [doseLimitPrompt, setDoseLimitPrompt] = useState<{
+    medId: string;
+    medicationName: string;
+    takenAtIso: string;
+    messages: string[];
+  } | null>(null);
+  const [doseLimitContinuing, setDoseLimitContinuing] = useState(false);
 
   const refreshSlotDefinitions = useCallback(async () => {
     if (!user) {
@@ -253,6 +265,10 @@ export default function TrackerPage() {
           ...med,
           dosing_mode: dosingMode,
           target_doses_per_day: targetDoses,
+          max_doses_24h:
+            med.max_doses_24h != null ? Number(med.max_doses_24h) : null,
+          min_interval_minutes:
+            med.min_interval_minutes != null ? Number(med.min_interval_minutes) : null,
           icon: normalizeMedicationIcon(med.icon),
           time_slot_names: timeSlotNames,
           is_multiple: dosingMode === 'time_slots' && timeSlotNames.length > 1,
@@ -543,41 +559,118 @@ export default function TrackerPage() {
     }
   };
 
+  const insertFlexibleDose = async (medId: string, takenAtIso: string) => {
+    const dateString = toLocalDateKey(new Date(takenAtIso));
+    const { data: row, error } = await supabase
+      .from('medication_dose_events')
+      .insert({
+        medication_id: medId,
+        dose_date: dateString,
+        taken_at: takenAtIso,
+      })
+      .select('id, taken_at')
+      .single();
+
+    if (error) throw error;
+
+    setFlexibleDoseEvents((prev) => {
+      const next = { ...prev };
+      const list = [...(next[medId] || [])];
+      if (row) list.push({ id: row.id, taken_at: row.taken_at });
+      list.sort(
+        (a, b) => new Date(a.taken_at).getTime() - new Date(b.taken_at).getTime()
+      );
+      next[medId] = list;
+      return next;
+    });
+  };
+
   const handleLogFlexibleDose = async (medId: string, takenAtIso: string) => {
     if (!user) {
       setAuthModalOpen(true);
       return;
     }
-    // Use the actual taken timestamp to determine the local dose day.
-    // This prevents a dose taken just after midnight from being stored under the previous selected day.
-    const dateString = toLocalDateKey(new Date(takenAtIso));
+
+    const med = medications.find((m) => m.id === medId);
+    const maxDoses24h = med?.max_doses_24h ?? null;
+    const minIntervalMinutes = med?.min_interval_minutes ?? null;
+
     try {
-      const { data: row, error } = await supabase
-        .from('medication_dose_events')
-        .insert({
-          medication_id: medId,
-          dose_date: dateString,
-          taken_at: takenAtIso,
-        })
-        .select('id, taken_at')
-        .single();
+      if (maxDoses24h != null || minIntervalMinutes != null) {
+        const proposedMs = new Date(takenAtIso).getTime();
+        const windowStartIso = new Date(proposedMs - 24 * 60 * 60 * 1000).toISOString();
 
-      if (error) throw error;
+        const { data: priorRows, error: priorErr } = await supabase
+          .from('medication_dose_events')
+          .select('taken_at')
+          .eq('medication_id', medId)
+          .lt('taken_at', takenAtIso)
+          .gte('taken_at', windowStartIso)
+          .order('taken_at', { ascending: false });
 
-      setFlexibleDoseEvents((prev) => {
-        const next = { ...prev };
-        const list = [...(next[medId] || [])];
-        if (row) list.push({ id: row.id, taken_at: row.taken_at });
-        list.sort(
-          (a, b) => new Date(a.taken_at).getTime() - new Date(b.taken_at).getTime()
-        );
-        next[medId] = list;
-        return next;
-      });
+        if (priorErr) throw priorErr;
+
+        // Also fetch the single most recent dose before this time (for interval),
+        // in case the last dose was more than 24h ago.
+        let priorTakenAtMs = (priorRows ?? []).map((r) => new Date(r.taken_at).getTime());
+        if (minIntervalMinutes != null && priorTakenAtMs.length === 0) {
+          const { data: lastRow, error: lastErr } = await supabase
+            .from('medication_dose_events')
+            .select('taken_at')
+            .eq('medication_id', medId)
+            .lt('taken_at', takenAtIso)
+            .order('taken_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (lastErr) throw lastErr;
+          if (lastRow?.taken_at) {
+            priorTakenAtMs = [new Date(lastRow.taken_at).getTime()];
+          }
+        }
+
+        const violations: DoseLimitViolation[] = evaluateDoseLimits({
+          proposedTakenAtMs: proposedMs,
+          priorTakenAtMs,
+          maxDoses24h,
+          minIntervalMinutes,
+        });
+
+        if (violations.length > 0) {
+          setDoseLimitPrompt({
+            medId,
+            medicationName: med?.name ?? 'Medication',
+            takenAtIso,
+            messages: describeDoseLimitViolations(violations),
+          });
+          // Resolve successfully so the time picker closes; warning modal takes over.
+          return;
+        }
+      }
+
+      await insertFlexibleDose(medId, takenAtIso);
     } catch (error) {
       console.error('Error logging dose:', error);
       alert('Failed to log dose. Please try again.');
       throw error;
+    }
+  };
+
+  const handleDoseLimitCancel = () => {
+    if (doseLimitContinuing) return;
+    setDoseLimitPrompt(null);
+  };
+
+  const handleDoseLimitContinue = async () => {
+    if (!doseLimitPrompt) return;
+    setDoseLimitContinuing(true);
+    try {
+      await insertFlexibleDose(doseLimitPrompt.medId, doseLimitPrompt.takenAtIso);
+      setDoseLimitPrompt(null);
+    } catch (error) {
+      console.error('Error logging dose:', error);
+      alert('Failed to log dose. Please try again.');
+    } finally {
+      setDoseLimitContinuing(false);
     }
   };
 
@@ -617,6 +710,10 @@ export default function TrackerPage() {
         isFlexible && formData.targetDosesPerDay !== ''
           ? Number(formData.targetDosesPerDay)
           : null;
+      const maxDoses24h =
+        formData.maxDoses24h !== '' ? Number(formData.maxDoses24h) : null;
+      const minIntervalMinutes =
+        formData.minIntervalMinutes !== '' ? Number(formData.minIntervalMinutes) : null;
 
       const todayLocal = toLocalDateKey(new Date());
       const pauseStartRaw = formData.pauseStartDate || '';
@@ -644,6 +741,8 @@ export default function TrackerPage() {
         pause_end_date: pauseEnd || null,
         dosing_mode: formData.dosingMode,
         target_doses_per_day: isFlexible ? targetDoses : null,
+        max_doses_24h: maxDoses24h,
+        min_interval_minutes: minIntervalMinutes,
         icon: normalizeMedicationIcon(formData.icon),
         user_id: user.id,
       };
@@ -838,6 +937,9 @@ export default function TrackerPage() {
       timeSlots: med.time_slot_names,
       targetDosesPerDay:
         med.target_doses_per_day != null ? med.target_doses_per_day : '',
+      maxDoses24h: med.max_doses_24h != null ? med.max_doses_24h : '',
+      minIntervalMinutes:
+        med.min_interval_minutes != null ? med.min_interval_minutes : '',
       pattern: med.schedule_type,
       daysOfWeek: med.days_of_week || [],
       startDate: med.start_date || '',
@@ -1121,6 +1223,15 @@ export default function TrackerPage() {
           if (!markNotTakenMedId) return;
           await handleMarkNotTaken(markNotTakenMedId, reason);
         }}
+      />
+
+      <DoseLimitWarningModal
+        isOpen={doseLimitPrompt !== null}
+        medicationName={doseLimitPrompt?.medicationName ?? ''}
+        messages={doseLimitPrompt?.messages ?? []}
+        onCancel={handleDoseLimitCancel}
+        onContinue={() => void handleDoseLimitContinue()}
+        continuing={doseLimitContinuing}
       />
 
       <LogSeizureModal

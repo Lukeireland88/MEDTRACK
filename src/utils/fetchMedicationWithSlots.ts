@@ -49,6 +49,9 @@ export async function fetchMedicationWithSlotsById(
     ...med,
     dosing_mode: dosingMode,
     target_doses_per_day: targetDoses,
+    max_doses_24h: med.max_doses_24h != null ? Number(med.max_doses_24h) : null,
+    min_interval_minutes:
+      med.min_interval_minutes != null ? Number(med.min_interval_minutes) : null,
     icon: normalizeMedicationIcon(med.icon),
     time_slot_names: timeSlotNames,
     is_multiple: dosingMode === 'time_slots' && timeSlotNames.length > 1,

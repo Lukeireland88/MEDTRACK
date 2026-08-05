@@ -26,6 +26,10 @@ export interface Medication {
   active: boolean;
   dosing_mode: DosingMode;
   target_doses_per_day: number | null;
+  /** Optional max taken doses in a rolling 24h window (soft warning). */
+  max_doses_24h: number | null;
+  /** Optional minimum minutes between doses (soft warning). */
+  min_interval_minutes: number | null;
   /** Display order on the tracker (lower = higher in the list). */
   sort_order: number;
   /** Medical-style icon key shown next to the name (see medicationIcons). */
