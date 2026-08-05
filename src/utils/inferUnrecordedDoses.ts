@@ -15,7 +15,6 @@ export type UnrecordedDoseRow = {
 type SlotInfo = {
   id: string;
   name: string;
-  default_after_hour: number;
 };
 
 type MedForInference = ScheduleMedication & {
@@ -49,7 +48,6 @@ export function inferUnrecordedDoseRows(args: {
   from: string;
   toEffective: string;
   todayLocal: string;
-  nowHour: number;
   medications: MedForInference[];
   /** Keys: `${medication_id}|${time_slot_id}|${dose_date}` */
   recordedSlotKeys: Set<string>;
@@ -61,7 +59,6 @@ export function inferUnrecordedDoseRows(args: {
     from,
     toEffective,
     todayLocal,
-    nowHour,
     medications,
     recordedSlotKeys,
     flexibleDoseCounts,
@@ -76,7 +73,6 @@ export function inferUnrecordedDoseRows(args: {
 
   for (const dateKey of eachLocalDateKey(from, toEffective)) {
     const dateObj = fromDateInputValue(dateKey);
-    const isToday = dateKey === todayLocal;
     const isPast = dateKey < todayLocal;
 
     for (const med of medications) {
@@ -102,8 +98,9 @@ export function inferUnrecordedDoseRows(args: {
         continue;
       }
 
+      // Today included: all due sessions show as Not recorded until logged
+      // (no wait for session default_after_hour).
       for (const slot of med.slots) {
-        if (isToday && nowHour < (slot.default_after_hour ?? 0)) continue;
         const key = `${med.id}|${slot.id}|${dateKey}`;
         if (recordedSlotKeys.has(key)) continue;
         rows.push({

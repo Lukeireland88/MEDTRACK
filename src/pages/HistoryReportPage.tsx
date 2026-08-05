@@ -465,8 +465,8 @@ export default function HistoryReportPage() {
           medication_id: string;
           time_slot_id: string;
           time_slots:
-            | { id: string; name: string; default_after_hour: number | null }
-            | { id: string; name: string; default_after_hour: number | null }[]
+            | { id: string; name: string }
+            | { id: string; name: string }[]
             | null;
         };
 
@@ -474,16 +474,13 @@ export default function HistoryReportPage() {
         if (medIds.length > 0) {
           const { data: links, error: linksErr } = await supabase
             .from('medication_slots')
-            .select('medication_id, time_slot_id, time_slots (id, name, default_after_hour)')
+            .select('medication_id, time_slot_id, time_slots (id, name)')
             .in('medication_id', medIds);
           if (linksErr) throw linksErr;
           slotLinks = (links ?? []) as unknown as SlotJoin[];
         }
 
-        const slotsByMed = new Map<
-          string,
-          { id: string; name: string; default_after_hour: number }[]
-        >();
+        const slotsByMed = new Map<string, { id: string; name: string }[]>();
         slotLinks.forEach((row) => {
           const ts = Array.isArray(row.time_slots) ? row.time_slots[0] : row.time_slots;
           if (!ts?.id) return;
@@ -491,7 +488,6 @@ export default function HistoryReportPage() {
           list.push({
             id: ts.id,
             name: ts.name,
-            default_after_hour: Number(ts.default_after_hour ?? 12),
           });
           slotsByMed.set(row.medication_id, list);
         });
@@ -545,7 +541,6 @@ export default function HistoryReportPage() {
           from,
           toEffective,
           todayLocal,
-          nowHour: new Date().getHours(),
           medications: medsForInference,
           recordedSlotKeys,
           flexibleDoseCounts,
