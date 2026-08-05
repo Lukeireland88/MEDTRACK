@@ -29,7 +29,7 @@ export function evaluateDoseLimits(args: {
   const windowStart = proposedTakenAtMs - 24 * 60 * 60 * 1000;
 
   const inWindow = priorTakenAtMs.filter(
-    (t) => t > windowStart && t <= proposedTakenAtMs
+    (t) => t >= windowStart && t <= proposedTakenAtMs
   );
 
   if (maxDoses24h != null && maxDoses24h > 0) {

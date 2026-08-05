@@ -592,40 +592,73 @@ export default function TrackerPage() {
       return;
     }
 
-    const med = medications.find((m) => m.id === medId);
-    const maxDoses24h = med?.max_doses_24h ?? null;
-    const minIntervalMinutes = med?.min_interval_minutes ?? null;
-
     try {
+      // Prefer live limits from DB so we don't miss a just-saved setting.
+      let maxDoses24h: number | null =
+        medications.find((m) => m.id === medId)?.max_doses_24h ?? null;
+      let minIntervalMinutes: number | null =
+        medications.find((m) => m.id === medId)?.min_interval_minutes ?? null;
+      const medName =
+        medications.find((m) => m.id === medId)?.name ?? 'Medication';
+
+      const { data: limitRow, error: limitErr } = await supabase
+        .from('medications')
+        .select('name, max_doses_24h, min_interval_minutes')
+        .eq('id', medId)
+        .maybeSingle();
+      if (limitErr) throw limitErr;
+      if (limitRow) {
+        maxDoses24h =
+          limitRow.max_doses_24h != null ? Number(limitRow.max_doses_24h) : null;
+        minIntervalMinutes =
+          limitRow.min_interval_minutes != null
+            ? Number(limitRow.min_interval_minutes)
+            : null;
+      }
+
       if (maxDoses24h != null || minIntervalMinutes != null) {
         const proposedMs = new Date(takenAtIso).getTime();
         const windowStartIso = new Date(proposedMs - 24 * 60 * 60 * 1000).toISOString();
 
+        // Include equal timestamps: logging several doses at the same HH:mm
+        // (seconds truncated to :00) must still count toward the max.
         const { data: priorRows, error: priorErr } = await supabase
           .from('medication_dose_events')
           .select('taken_at')
           .eq('medication_id', medId)
-          .lt('taken_at', takenAtIso)
+          .lte('taken_at', takenAtIso)
           .gte('taken_at', windowStartIso)
           .order('taken_at', { ascending: false });
 
         if (priorErr) throw priorErr;
 
-        // Also fetch the single most recent dose before this time (for interval),
-        // in case the last dose was more than 24h ago.
         let priorTakenAtMs = (priorRows ?? []).map((r) => new Date(r.taken_at).getTime());
-        if (minIntervalMinutes != null && priorTakenAtMs.length === 0) {
-          const { data: lastRow, error: lastErr } = await supabase
-            .from('medication_dose_events')
-            .select('taken_at')
-            .eq('medication_id', medId)
-            .lt('taken_at', takenAtIso)
-            .order('taken_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (lastErr) throw lastErr;
-          if (lastRow?.taken_at) {
-            priorTakenAtMs = [new Date(lastRow.taken_at).getTime()];
+
+        // Merge in-memory events for this day (covers race before refetch).
+        for (const ev of flexibleDoseEvents[medId] ?? []) {
+          const t = new Date(ev.taken_at).getTime();
+          if (t >= proposedMs - 24 * 60 * 60 * 1000 && t <= proposedMs) {
+            priorTakenAtMs.push(t);
+          }
+        }
+        priorTakenAtMs = [...new Set(priorTakenAtMs)];
+
+        if (minIntervalMinutes != null) {
+          const latestInList =
+            priorTakenAtMs.length > 0 ? Math.max(...priorTakenAtMs) : null;
+          if (latestInList == null) {
+            const { data: lastRow, error: lastErr } = await supabase
+              .from('medication_dose_events')
+              .select('taken_at')
+              .eq('medication_id', medId)
+              .lte('taken_at', takenAtIso)
+              .order('taken_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (lastErr) throw lastErr;
+            if (lastRow?.taken_at) {
+              priorTakenAtMs = [new Date(lastRow.taken_at).getTime()];
+            }
           }
         }
 
@@ -639,11 +672,10 @@ export default function TrackerPage() {
         if (violations.length > 0) {
           setDoseLimitPrompt({
             medId,
-            medicationName: med?.name ?? 'Medication',
+            medicationName: (limitRow?.name as string) || medName,
             takenAtIso,
             messages: describeDoseLimitViolations(violations),
           });
-          // Resolve successfully so the time picker closes; warning modal takes over.
           return;
         }
       }

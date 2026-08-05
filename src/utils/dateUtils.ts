@@ -63,5 +63,14 @@ export function combineLocalDateWithTime(date: Date, timeHHMM: string): string {
     return base.toISOString();
   }
   base.setHours(h, m, 0, 0);
+  // If logging "now" on today, keep real seconds so rapid logs aren't identical timestamps.
+  const now = new Date();
+  if (
+    toLocalDateKey(base) === toLocalDateKey(now) &&
+    now.getHours() === h &&
+    now.getMinutes() === m
+  ) {
+    base.setSeconds(now.getSeconds(), now.getMilliseconds());
+  }
   return base.toISOString();
 }
