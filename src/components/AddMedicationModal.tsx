@@ -280,9 +280,9 @@ export default function AddMedicationModal({
           <div>
             <label className="block text-sm font-semibold mb-2">Icon</label>
             <p className="text-xs text-gray-500 mb-2">
-              Shown next to the name on the tracker (pill, syringe, drops, and so on).
+              Shown next to the name on the tracker (pill, capsule, inhaler, cream, and so on).
             </p>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-56 overflow-y-auto pr-0.5">
               {MEDICATION_ICON_OPTIONS.map(({ key, label, Icon }) => {
                 const selected = formData.icon === key;
                 return (

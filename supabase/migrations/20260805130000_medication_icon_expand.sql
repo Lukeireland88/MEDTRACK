@@ -1,15 +1,9 @@
 /*
-  # Medication display icon
+  # Expand medication icon allow-list
 
-  Optional medical-style icon key shown next to the medication name on the tracker.
-  Allowed values match the app’s curated Lucide icon set (see medicationIcons.ts).
+  Adds form icons matching common medication types (capsule, dropper, bottle,
+  inhaler art, cream tube, nasal spray, liquid+spoon).
 */
-
-ALTER TABLE medications
-  ADD COLUMN IF NOT EXISTS icon text NOT NULL DEFAULT 'pill';
-
-COMMENT ON COLUMN medications.icon IS
-  'Display icon key (see src/utils/medicationIcons.ts)';
 
 ALTER TABLE medications
   DROP CONSTRAINT IF EXISTS medications_icon_check;
@@ -35,3 +29,6 @@ ALTER TABLE medications
       'thermometer'
     )
   );
+
+COMMENT ON COLUMN medications.icon IS
+  'Display icon key (see src/utils/medicationIcons.ts)';
