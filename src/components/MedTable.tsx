@@ -95,42 +95,27 @@ function MarkNotTakenButton({
   );
 }
 
-/** Mark-missed stays visible; Edit / History expand behind a More control. */
+/** Edit / History expand behind a chevron; mark-missed lives next to the taken checkbox. */
 function RowActions({
   med,
-  due,
-  notTakenRecorded,
   expanded,
   onToggleExpanded,
-  onOpenMarkNotTaken,
   onShowHistory,
   onEditMedication,
   touch = false,
 }: {
   med: MedicationWithSlots;
-  due: boolean;
-  notTakenRecorded: boolean;
   expanded: boolean;
   onToggleExpanded: () => void;
-  onOpenMarkNotTaken: (medId: string) => void;
   onShowHistory: (medId: string, medName: string, dosingMode?: DosingMode) => void;
   onEditMedication: (med: MedicationWithSlots) => void;
   touch?: boolean;
 }) {
-  const isFlexible = med.dosing_mode === 'flexible_daily';
   const touchClass = touch ? 'touch-manipulation' : '';
   const iconSize = touch ? 'w-5 h-5' : 'w-4 h-4';
 
   return (
     <div className="flex items-center gap-0.5 flex-shrink-0">
-      {due && !isFlexible && (
-        <MarkNotTakenButton
-          notTakenRecorded={notTakenRecorded}
-          onClick={() => onOpenMarkNotTaken(med.id)}
-          className={touchClass}
-          iconClassName={iconSize}
-        />
-      )}
       {expanded && (
         <>
           <button
@@ -406,7 +391,7 @@ export default function MedTable({
               )}
               {orderSides(
                 controlsFirst,
-                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-14">
+                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-20">
                   Taken
                 </th>,
                 <>
@@ -479,12 +464,18 @@ export default function MedTable({
                       </div>
                     )
                   ) : due ? (
-                    <SlotTakenControl
-                      medId={med.id}
-                      taken={taken}
-                      notTakenRecorded={notTakenRecorded}
-                      onToggleTaken={reorderMode ? () => undefined : onToggleTaken}
-                    />
+                    <div className="flex items-center gap-0.5">
+                      <SlotTakenControl
+                        medId={med.id}
+                        taken={taken}
+                        notTakenRecorded={notTakenRecorded}
+                        onToggleTaken={reorderMode ? () => undefined : onToggleTaken}
+                      />
+                      <MarkNotTakenButton
+                        notTakenRecorded={notTakenRecorded}
+                        onClick={() => onOpenMarkNotTaken(med.id)}
+                      />
+                    </div>
                   ) : (
                     <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
                       —
@@ -549,13 +540,10 @@ export default function MedTable({
                 <td className="p-3 border-b border-slate-200">
                   <RowActions
                     med={med}
-                    due={due}
-                    notTakenRecorded={notTakenRecorded}
                     expanded={actionsOpenId === med.id}
                     onToggleExpanded={() =>
                       setActionsOpenId((id) => (id === med.id ? null : med.id))
                     }
-                    onOpenMarkNotTaken={onOpenMarkNotTaken}
                     onShowHistory={onShowHistory}
                     onEditMedication={onEditMedication}
                   />
@@ -638,13 +626,21 @@ export default function MedTable({
               </div>
             )
           ) : due ? (
-            <SlotTakenControl
-              medId={med.id}
-              taken={taken}
-              notTakenRecorded={notTakenRecorded}
-              onToggleTaken={reorderMode ? () => undefined : onToggleTaken}
-              className="mt-0.5 flex-shrink-0 touch-manipulation"
-            />
+            <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
+              <SlotTakenControl
+                medId={med.id}
+                taken={taken}
+                notTakenRecorded={notTakenRecorded}
+                onToggleTaken={reorderMode ? () => undefined : onToggleTaken}
+                className="touch-manipulation"
+              />
+              <MarkNotTakenButton
+                notTakenRecorded={notTakenRecorded}
+                onClick={() => onOpenMarkNotTaken(med.id)}
+                className="touch-manipulation"
+                iconClassName="w-5 h-5"
+              />
+            </div>
           ) : (
             <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
               —
@@ -715,13 +711,10 @@ export default function MedTable({
           const actions = (
             <RowActions
               med={med}
-              due={due}
-              notTakenRecorded={notTakenRecorded}
               expanded={actionsOpenId === med.id}
               onToggleExpanded={() =>
                 setActionsOpenId((id) => (id === med.id ? null : med.id))
               }
-              onOpenMarkNotTaken={onOpenMarkNotTaken}
               onShowHistory={onShowHistory}
               onEditMedication={onEditMedication}
               touch
