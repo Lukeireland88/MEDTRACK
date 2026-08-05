@@ -28,6 +28,8 @@ export interface Medication {
   target_doses_per_day: number | null;
   /** Display order on the tracker (lower = higher in the list). */
   sort_order: number;
+  /** Medical-style icon key shown next to the name (see medicationIcons). */
+  icon: string;
   user_id?: string;
 }
 

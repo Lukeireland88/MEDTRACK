@@ -9,6 +9,7 @@ import {
   toLocalDateOnly,
 } from '../utils/dateUtils';
 import { fetchMedicationWithSlotsById } from '../utils/fetchMedicationWithSlots';
+import { normalizeMedicationIcon } from '../utils/medicationIcons';
 import {
   getDefaultTimeSlotFromOrder,
   pickDefaultSessionForHour,
@@ -251,6 +252,7 @@ export default function TrackerPage() {
           ...med,
           dosing_mode: dosingMode,
           target_doses_per_day: targetDoses,
+          icon: normalizeMedicationIcon(med.icon),
           time_slot_names: timeSlotNames,
           is_multiple: dosingMode === 'time_slots' && timeSlotNames.length > 1,
         };
@@ -641,6 +643,7 @@ export default function TrackerPage() {
         pause_end_date: pauseEnd || null,
         dosing_mode: formData.dosingMode,
         target_doses_per_day: isFlexible ? targetDoses : null,
+        icon: normalizeMedicationIcon(formData.icon),
         user_id: user.id,
       };
 
@@ -829,6 +832,7 @@ export default function TrackerPage() {
     setEditingMedication({
       id: med.id,
       name: med.name,
+      icon: normalizeMedicationIcon(med.icon),
       dosingMode: med.dosing_mode ?? 'time_slots',
       timeSlots: med.time_slot_names,
       targetDosesPerDay:

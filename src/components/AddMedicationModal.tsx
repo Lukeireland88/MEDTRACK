@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, Trash2, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import {
+  DEFAULT_MEDICATION_ICON,
+  MEDICATION_ICON_OPTIONS,
+  normalizeMedicationIcon,
+  type MedicationIconKey,
+} from '../utils/medicationIcons';
 
 interface AddMedicationModalProps {
   isOpen: boolean;
@@ -29,6 +35,7 @@ export interface MedicationPausePeriodLogRow {
 export interface MedicationFormData {
   id?: string;
   name: string;
+  icon: MedicationIconKey;
   dosingMode: 'time_slots' | 'flexible_daily';
   timeSlots: string[];
   targetDosesPerDay: number | '';
@@ -65,6 +72,7 @@ export default function AddMedicationModal({
 }: AddMedicationModalProps) {
   const [formData, setFormData] = useState<MedicationFormData>({
     name: '',
+    icon: DEFAULT_MEDICATION_ICON,
     dosingMode: 'time_slots',
     timeSlots: [],
     targetDosesPerDay: '',
@@ -87,10 +95,14 @@ export default function AddMedicationModal({
   useEffect(() => {
     if (editingMedication) {
       const { coursePeriodLog: _omit, ...rest } = editingMedication;
-      setFormData(rest);
+      setFormData({
+        ...rest,
+        icon: normalizeMedicationIcon(rest.icon),
+      });
     } else {
       setFormData({
         name: '',
+        icon: DEFAULT_MEDICATION_ICON,
         dosingMode: 'time_slots',
         timeSlots: [],
         targetDosesPerDay: '',
@@ -263,6 +275,38 @@ export default function AddMedicationModal({
               placeholder="e.g. Bumetanide"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold mb-2">Icon</label>
+            <p className="text-xs text-gray-500 mb-2">
+              Shown next to the name on the tracker (pill, syringe, drops, and so on).
+            </p>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+              {MEDICATION_ICON_OPTIONS.map(({ key, label, Icon }) => {
+                const selected = formData.icon === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, icon: key })}
+                    className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-center transition-colors ${
+                      selected
+                        ? 'border-brand-600 bg-brand-50 text-brand-900 ring-2 ring-brand-500/40'
+                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                    title={label}
+                    aria-pressed={selected}
+                    aria-label={label}
+                  >
+                    <Icon className="w-5 h-5 shrink-0" aria-hidden />
+                    <span className="text-[10px] sm:text-xs leading-tight font-medium line-clamp-2">
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div>

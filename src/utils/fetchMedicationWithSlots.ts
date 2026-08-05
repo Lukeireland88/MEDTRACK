@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { MedicationWithSlots, TimeSlot } from '../types';
+import { normalizeMedicationIcon } from './medicationIcons';
 import { sortMedicationSlotNames } from './timeSlotUtils';
 
 /** Load a single active medication with time slot names for edit flows (e.g. deep link from Settings). */
@@ -48,6 +49,7 @@ export async function fetchMedicationWithSlotsById(
     ...med,
     dosing_mode: dosingMode,
     target_doses_per_day: targetDoses,
+    icon: normalizeMedicationIcon(med.icon),
     time_slot_names: timeSlotNames,
     is_multiple: dosingMode === 'time_slots' && timeSlotNames.length > 1,
   };

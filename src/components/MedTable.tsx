@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from 're
 import { Pencil, History, XCircle, X, GripVertical, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
+import { medicationIconComponent } from '../utils/medicationIcons';
 import LogDoseTimeModal from './LogDoseTimeModal';
 import { fromDateInputValue } from '../utils/dateUtils';
 import { usePreferences } from '../contexts/PreferencesContext';
@@ -433,6 +434,7 @@ export default function MedTable({
                 : !due
                   ? 'bg-gray-50 text-gray-500 opacity-80'
                   : '';
+              const MedIcon = medicationIconComponent(med.icon);
 
               const takenCell = (
                 <td className="p-3 border-b border-slate-200 align-top">
@@ -487,7 +489,10 @@ export default function MedTable({
               const middleCells = (
                 <>
                   <td className="p-3 border-b border-slate-200 font-semibold">
-                    {med.name}
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      <MedIcon className="w-4 h-4 shrink-0 text-slate-500" aria-hidden />
+                      <span className="min-w-0">{med.name}</span>
+                    </span>
                     {paused && (
                       <span className="ml-2 inline-flex flex-col align-middle text-xs px-2 py-1 border border-gray-400 rounded-full text-gray-700 bg-gray-100">
                         <span>Paused</span>
@@ -597,6 +602,7 @@ export default function MedTable({
             : !due
               ? 'bg-gray-50 text-gray-500 opacity-80'
               : '';
+          const MedIcon = medicationIconComponent(med.icon);
 
           const takenControl = isFlexible ? (
             due ? (
@@ -649,10 +655,11 @@ export default function MedTable({
 
           const middle = (
             <div className="flex-1 min-w-0">
-              <div
-                className={`font-semibold text-sm mb-1 ${!isFlexible && taken ? 'line-through' : ''}`}
-              >
-                {med.name}
+              <div className="font-semibold text-sm mb-1 inline-flex items-center gap-2 min-w-0">
+                <MedIcon className="w-4 h-4 shrink-0 text-slate-500" aria-hidden />
+                <span className={`min-w-0 ${!isFlexible && taken ? 'line-through' : ''}`}>
+                  {med.name}
+                </span>
                 {paused && (
                   <span className="ml-2 inline-flex flex-col align-middle text-[11px] px-2 py-0.5 border border-gray-400 rounded-full text-gray-700 bg-gray-100">
                     <span>Paused</span>
