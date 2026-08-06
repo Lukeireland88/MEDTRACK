@@ -4,7 +4,7 @@ import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } f
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import { medicationIconComponent } from '../utils/medicationIcons';
 import LogDoseTimeModal from './LogDoseTimeModal';
-import { fromDateInputValue } from '../utils/dateUtils';
+import { fromDateInputValue, toLocalDateKey } from '../utils/dateUtils';
 import { usePreferences } from '../contexts/PreferencesContext';
 
 interface MedTableProps {
@@ -173,6 +173,20 @@ function sortByDisplayOrder(meds: MedicationWithSlots[]): MedicationWithSlots[] 
   });
 }
 
+/** Due meds first (custom order preserved), then not-due (custom order preserved). */
+function partitionDueFirst(
+  ids: string[],
+  medById: Map<string, MedicationWithSlots>,
+  selectedDate: Date
+): string[] {
+  const meds = ids
+    .map((id) => medById.get(id))
+    .filter(Boolean) as MedicationWithSlots[];
+  const due = meds.filter((m) => isDue(m, selectedDate));
+  const notDue = meds.filter((m) => !isDue(m, selectedDate));
+  return [...due, ...notDue].map((m) => m.id);
+}
+
 function moveId(ids: string[], fromId: string, toId: string): string[] {
   if (fromId === toId) return ids;
   const next = [...ids];
@@ -184,11 +198,17 @@ function moveId(ids: string[], fromId: string, toId: string): string[] {
   return next;
 }
 
-function moveIdByDelta(ids: string[], id: string, delta: -1 | 1): string[] {
+function moveIdByDelta(
+  ids: string[],
+  id: string,
+  delta: -1 | 1,
+  canCross?: (fromId: string, toId: string) => boolean
+): string[] {
   const from = ids.indexOf(id);
   if (from < 0) return ids;
   const to = from + delta;
   if (to < 0 || to >= ids.length) return ids;
+  if (canCross && !canCross(ids[from], ids[to])) return ids;
   const next = [...ids];
   const [item] = next.splice(from, 1);
   next.splice(to, 0, item);
@@ -218,10 +238,7 @@ export default function MedTable({
   const [savingOrder, setSavingOrder] = useState(false);
 
   const medicationsKey = medications.map((m) => m.id).join('|');
-
-  useEffect(() => {
-    setOrderedIds(sortByDisplayOrder(medications).map((m) => m.id));
-  }, [medicationsKey]);
+  const selectedDateKey = toLocalDateKey(selectedDate);
 
   const medById = useMemo(() => {
     const map = new Map<string, MedicationWithSlots>();
@@ -229,24 +246,47 @@ export default function MedTable({
     return map;
   }, [medications]);
 
+  useEffect(() => {
+    const base = sortByDisplayOrder(medications).map((m) => m.id);
+    setOrderedIds(partitionDueFirst(base, medById, selectedDate));
+  }, [medicationsKey, selectedDateKey, medById, medications, selectedDate]);
+
   const sortedMedications = useMemo(() => {
     const list = orderedIds.map((id) => medById.get(id)).filter(Boolean) as MedicationWithSlots[];
-    // Include any newly arrived meds not yet in orderedIds
     const seen = new Set(orderedIds);
     medications.forEach((m) => {
       if (!seen.has(m.id)) list.push(m);
     });
-    return list;
-  }, [orderedIds, medById, medications]);
+    const ids = partitionDueFirst(
+      list.map((m) => m.id),
+      medById,
+      selectedDate
+    );
+    return ids.map((id) => medById.get(id)).filter(Boolean) as MedicationWithSlots[];
+  }, [orderedIds, medById, medications, selectedDate]);
+
+  const dueCount = useMemo(
+    () => sortedMedications.filter((m) => isDue(m, selectedDate)).length,
+    [sortedMedications, selectedDate]
+  );
+
+  const sameDueGroup = (aId: string, bId: string) => {
+    const a = medById.get(aId);
+    const b = medById.get(bId);
+    if (!a || !b) return false;
+    return isDue(a, selectedDate) === isDue(b, selectedDate);
+  };
 
   const commitOrder = async (nextIds: string[]) => {
-    setOrderedIds(nextIds);
+    const partitioned = partitionDueFirst(nextIds, medById, selectedDate);
+    setOrderedIds(partitioned);
     setSavingOrder(true);
     try {
-      await onReorderMedications(nextIds);
+      await onReorderMedications(partitioned);
     } catch (e) {
       console.error(e);
-      setOrderedIds(sortByDisplayOrder(medications).map((m) => m.id));
+      const base = sortByDisplayOrder(medications).map((m) => m.id);
+      setOrderedIds(partitionDueFirst(base, medById, selectedDate));
       alert('Could not save order. Please try again.');
     } finally {
       setSavingOrder(false);
@@ -275,7 +315,13 @@ export default function MedTable({
       hour12: true,
     });
 
-  const reorderHandle = (medId: string, index: number) => (
+  const reorderHandle = (medId: string, index: number) => {
+    const displayIds = sortedMedications.map((m) => m.id);
+    const atSectionTop = index === 0 || index === dueCount;
+    const atSectionBottom =
+      index === sortedMedications.length - 1 || index === dueCount - 1;
+
+    return (
     <div className="flex items-center gap-0.5 shrink-0">
       <button
         type="button"
@@ -297,8 +343,10 @@ export default function MedTable({
         <button
           type="button"
           className="p-1.5 sm:p-1 rounded-lg text-slate-600 hover:bg-slate-200 disabled:opacity-30 touch-manipulation"
-          disabled={index === 0 || savingOrder}
-          onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, -1))}
+          disabled={atSectionTop || savingOrder}
+          onClick={() =>
+            void commitOrder(moveIdByDelta(displayIds, medId, -1, sameDueGroup))
+          }
           aria-label="Move up"
         >
           <ChevronUp className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -306,15 +354,18 @@ export default function MedTable({
         <button
           type="button"
           className="p-1.5 sm:p-1 rounded-lg text-slate-600 hover:bg-slate-200 disabled:opacity-30 touch-manipulation"
-          disabled={index === sortedMedications.length - 1 || savingOrder}
-          onClick={() => void commitOrder(moveIdByDelta(orderedIds, medId, 1))}
+          disabled={atSectionBottom || savingOrder}
+          onClick={() =>
+            void commitOrder(moveIdByDelta(displayIds, medId, 1, sameDueGroup))
+          }
           aria-label="Move down"
         >
           <ChevronDown className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </div>
     </div>
-  );
+    );
+  };
 
   const rowDragProps = (medId: string) =>
     reorderMode
@@ -327,7 +378,12 @@ export default function MedTable({
             e.preventDefault();
             const fromId = e.dataTransfer.getData('text/plain') || draggingId;
             if (!fromId) return;
-            void commitOrder(moveId(orderedIds, fromId, medId));
+            if (!sameDueGroup(fromId, medId)) {
+              setDraggingId(null);
+              return;
+            }
+            const displayIds = sortedMedications.map((m) => m.id);
+            void commitOrder(moveId(displayIds, fromId, medId));
             setDraggingId(null);
           },
         }
