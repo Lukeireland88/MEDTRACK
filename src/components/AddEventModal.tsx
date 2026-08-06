@@ -113,6 +113,11 @@ const ALERTNESS_OPTIONS = [
   { value: 'Unresponsive', label: 'Unresponsive' },
 ];
 
+function titleForMeasurementType(measurementTypeId: string): string {
+  if (!measurementTypeId) return 'Measurement';
+  return MEASUREMENT_TYPES.find((m) => m.id === measurementTypeId)?.label ?? 'Measurement';
+}
+
 export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm }: AddEventModalProps) {
   const defaultDateTime = useMemo(() => {
     const now = new Date();
@@ -142,8 +147,11 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
   useEffect(() => {
     if (eventType !== 'measurement') {
       setMeasurementType('');
+      return;
     }
-  }, [eventType]);
+    // Keep title in sync with measurement type (field is hidden for measurements).
+    setTitle(titleForMeasurementType(measurementType));
+  }, [eventType, measurementType]);
 
   if (!isOpen) return null;
 
@@ -155,7 +163,13 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
       alert('Please enter a valid date/time.');
       return;
     }
-    if (!title.trim()) {
+
+    const resolvedTitle =
+      eventType === 'measurement'
+        ? titleForMeasurementType(measurementType)
+        : title.trim();
+
+    if (!resolvedTitle) {
       alert('Please enter a title.');
       return;
     }
@@ -169,7 +183,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
         eventDate,
         eventType,
         measurementType: eventType === 'measurement' && measurementType ? measurementType : null,
-        title: title.trim(),
+        title: resolvedTitle,
         valueText: valueText.trim() ? valueText.trim() : null,
         notes: notes.trim() ? notes.trim() : null,
       });
@@ -338,19 +352,21 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
             </div>
           )}
 
-          <div>
-            <label htmlFor="event-title" className="block text-xs font-semibold text-gray-600 mb-1">
-              Title
-            </label>
-            <input
-              id="event-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Out-of-hours GP"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
-              required
-            />
-          </div>
+          {eventType !== 'measurement' && (
+            <div>
+              <label htmlFor="event-title" className="block text-xs font-semibold text-gray-600 mb-1">
+                Title
+              </label>
+              <input
+                id="event-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Out-of-hours GP"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium"
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label htmlFor="event-notes" className="block text-xs font-semibold text-gray-600 mb-1">
