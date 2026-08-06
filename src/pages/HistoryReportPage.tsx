@@ -34,6 +34,9 @@ type UnifiedRow = {
     occurredAt: string;
     title: string;
     notes: string | null;
+    valueText: string | null;
+    eventType: string | null;
+    measurementType: string | null;
   };
 };
 
@@ -464,6 +467,9 @@ export default function HistoryReportPage() {
             occurredAt: String(ev.occurred_at),
             title: String(ev.title ?? 'Note'),
             notes,
+            valueText: value,
+            eventType: ev.event_type ?? null,
+            measurementType,
           },
         });
       });
@@ -599,7 +605,12 @@ export default function HistoryReportPage() {
   }, [user, dateFrom, dateTo, medicationIds]);
 
   const saveEditedNote = useCallback(
-    async (payload: { occurredAtIso: string; eventDate: string; notes: string | null }) => {
+    async (payload: {
+      occurredAtIso: string;
+      eventDate: string;
+      notes: string | null;
+      valueText: string | null;
+    }) => {
       if (!editingNote) return;
       try {
         const { error: updateError } = await supabase
@@ -608,6 +619,7 @@ export default function HistoryReportPage() {
             occurred_at: payload.occurredAtIso,
             event_date: payload.eventDate,
             notes: payload.notes,
+            value_text: payload.valueText,
           })
           .eq('id', editingNote.id);
         if (updateError) throw updateError;
@@ -1175,6 +1187,9 @@ export default function HistoryReportPage() {
                                   occurredAtIso: row.timeline!.occurredAt,
                                   title: row.timeline!.title,
                                   notes: row.timeline!.notes,
+                                  valueText: row.timeline!.valueText,
+                                  eventType: row.timeline!.eventType,
+                                  measurementType: row.timeline!.measurementType,
                                 })
                               }
                               className="ml-auto inline-flex items-center justify-center p-1.5 rounded-lg border border-amber-200 bg-white/70 text-amber-900 hover:bg-white"
@@ -1252,6 +1267,9 @@ export default function HistoryReportPage() {
                                       occurredAtIso: row.timeline!.occurredAt,
                                       title: row.timeline!.title,
                                       notes: row.timeline!.notes,
+                                      valueText: row.timeline!.valueText,
+                                      eventType: row.timeline!.eventType,
+                                      measurementType: row.timeline!.measurementType,
                                     })
                                   }
                                   className="shrink-0 inline-flex items-center justify-center p-1.5 rounded-lg border border-amber-200 bg-white text-amber-900 hover:bg-amber-50"
