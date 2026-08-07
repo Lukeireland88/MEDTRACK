@@ -24,7 +24,7 @@ function ReorderHeaderButton({
         e.stopPropagation();
         onToggleReorder();
       }}
-      className={`md:hidden inline-flex items-center justify-center rounded-lg p-1.5 -ml-0.5 mr-1.5 shrink-0 transition-colors touch-manipulation ${
+      className={`lg:hidden inline-flex items-center justify-center rounded-lg p-1.5 -ml-0.5 mr-1.5 shrink-0 transition-colors touch-manipulation ${
         reorderMode
           ? 'bg-slate-900 text-white'
           : 'text-slate-600 hover:bg-slate-200/80'

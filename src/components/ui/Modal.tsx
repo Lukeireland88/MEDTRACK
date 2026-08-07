@@ -23,6 +23,7 @@ interface ModalProps {
   brandAccent?: boolean;
   /** When false, body is not scroll-constrained (caller manages layout). */
   scrollBody?: boolean;
+  role?: 'dialog' | 'alertdialog';
 }
 
 export default function Modal({
@@ -36,6 +37,7 @@ export default function Modal({
   zIndexClass = 'z-50',
   brandAccent = false,
   scrollBody = true,
+  role = 'dialog',
 }: ModalProps) {
   const titleId = useId();
   const descId = useId();
@@ -69,7 +71,7 @@ export default function Modal({
     >
       <div
         ref={panelRef}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}

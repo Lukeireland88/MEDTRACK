@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
-import { Angry, Annoyed, Frown, Laugh, Meh, Smile, SmilePlus, X, type LucideProps } from 'lucide-react';
+import { Angry, Annoyed, Frown, Laugh, Meh, Smile, SmilePlus, type LucideProps } from 'lucide-react';
 import { toDateInputValue } from '../utils/dateUtils';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
+import { useToast } from '../contexts/ToastContext';
 
 /** Simple crying face — Lucide has no Cry icon in our version. */
 function CryingFace({ className, strokeWidth = 2, ...props }: LucideProps) {
@@ -119,6 +122,7 @@ function titleForMeasurementType(measurementTypeId: string): string {
 }
 
 export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm }: AddEventModalProps) {
+  const { showError } = useToast();
   const defaultDateTime = useMemo(() => {
     const now = new Date();
     const isSameDay = toDateInputValue(now) === toDateInputValue(selectedDate);
@@ -153,14 +157,12 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
     setTitle(titleForMeasurementType(measurementType));
   }, [eventType, measurementType]);
 
-  if (!isOpen) return null;
-
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const occurredAt = new Date(occurredAtLocal);
     if (Number.isNaN(occurredAt.getTime())) {
-      alert('Please enter a valid date/time.');
+      showError('Please enter a valid date/time.');
       return;
     }
 
@@ -170,7 +172,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
         : title.trim();
 
     if (!resolvedTitle) {
-      alert('Please enter a title.');
+      showError('Please enter a title.');
       return;
     }
 
@@ -194,19 +196,24 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">Add note / measurement</h2>
-            <p className="text-sm text-gray-600 mt-1">Record a timestamped note, visit, or measurement (backdating supported).</p>
-          </div>
-          <button type="button" onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg" aria-label="Close">
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="md"
+      title="Add note / measurement"
+      description="Record a timestamped note, visit, or measurement (backdating supported)."
+      footer={
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="add-event-form" disabled={saving}>
+            {saving ? 'Saving…' : 'Save note'}
+          </Button>
         </div>
-
-        <form onSubmit={submit} className="p-4 space-y-4">
+      }
+    >
+        <form id="add-event-form" onSubmit={submit} className="p-4 sm:p-5 space-y-4">
           <div>
             <div className="overflow-x-auto -mx-1 px-1">
               <div className="flex flex-nowrap gap-2 min-w-max">
@@ -220,7 +227,7 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
                     setTitle(t.title);
                     if (t.valuePrefill != null) setValueText(t.valuePrefill);
                   }}
-                  className="px-3 py-1.5 text-xs rounded-full border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 font-semibold"
+                  className="px-3 py-1.5 text-xs rounded-full border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 font-semibold"
                   title="Fill from template"
                 >
                   {t.label}
@@ -228,11 +235,11 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
               ))}
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Quick templates (optional).</p>
+            <p className="text-xs text-slate-500 mt-1">Quick templates (optional).</p>
           </div>
 
           <div>
-            <label htmlFor="event-occurred" className="block text-xs font-semibold text-gray-600 mb-1">
+            <label htmlFor="event-occurred" className="block text-xs font-semibold text-slate-600 mb-1">
               When
             </label>
             <input
@@ -382,25 +389,8 @@ export default function AddEventModal({ isOpen, selectedDate, onClose, onConfirm
             />
           </div>
 
-          <div className="flex flex-wrap gap-2 justify-end pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-800 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-2 bg-indigo-700 text-white rounded-lg font-semibold hover:bg-indigo-800 disabled:opacity-60"
-            >
-              {saving ? 'Saving…' : 'Save note'}
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

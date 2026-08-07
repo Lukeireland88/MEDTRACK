@@ -1159,7 +1159,7 @@ export default function HistoryReportPage() {
               </div>
 
               {/* Mobile: stacked cards — no horizontal scroll */}
-              <ul className="md:hidden divide-y divide-gray-100">
+              <ul className="lg:hidden divide-y divide-gray-100">
                 {filteredRows.map((row) => {
                   const badge = variantBadge(row.variant);
                   return (
@@ -1218,7 +1218,7 @@ export default function HistoryReportPage() {
               </ul>
 
               {/* md+: table; dose day only on xl+ (redundant with When on smaller widths) */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full border-collapse min-w-0 table-fixed">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs sm:text-sm text-gray-600 border-b border-gray-200">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
   DEFAULT_MEDICATION_ICON,
@@ -8,6 +8,8 @@ import {
   type MedicationIconKey,
 } from '../utils/medicationIcons';
 import { useToast } from '../contexts/ToastContext';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface AddMedicationModalProps {
   isOpen: boolean;
@@ -288,23 +290,44 @@ export default function AddMedicationModal({
   const sessionLabels = sessionOptions?.length ? sessionOptions : TIME_SLOTS;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-        <div className="shrink-0 bg-white border-b border-gray-300 p-4 flex justify-between items-center rounded-t-2xl">
-          <h2 className="text-xl font-bold">
-            {editingMedication ? 'Edit medication' : 'Add medication'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg"
-            aria-label="Close"
-          >
-            <X className="w-6 h-6" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="lg"
+      title={editingMedication ? 'Edit medication' : 'Add medication'}
+      footer={
+        <div className="flex justify-between items-center gap-3">
+          {editingMedication && onDelete ? (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={() => {
+                if (
+                  confirm(
+                    `Are you sure you want to delete ${formData.name}? This cannot be undone.`
+                  )
+                ) {
+                  onDelete(editingMedication.id!);
+                }
+              }}
+            >
+              Delete
+            </Button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2 ml-auto">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" form="add-medication-form">
+              Save
+            </Button>
+          </div>
         </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+      }
+    >
+        <form id="add-medication-form" onSubmit={handleSubmit} className="px-4 sm:px-6 py-5 space-y-6">
           <div>
             <label className="block text-sm font-semibold mb-2">Name</label>
             <input
@@ -885,44 +908,7 @@ export default function AddMedicationModal({
             </div>
             )}
           </div>
-          </div>
-
-          <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3 sm:px-6 flex justify-between items-center gap-3 rounded-b-2xl">
-            {editingMedication && onDelete && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (
-                    confirm(
-                      `Are you sure you want to delete ${formData.name}? This cannot be undone.`
-                    )
-                  ) {
-                    onDelete(editingMedication.id!);
-                  }
-                }}
-                className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700"
-              >
-                Delete
-              </button>
-            )}
-            <div className="flex gap-3 ml-auto">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 shadow-brand-sm"
-              >
-                Save
-              </button>
-            </div>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

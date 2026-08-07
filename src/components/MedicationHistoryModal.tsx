@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationLog } from '../types';
 import { fromDateInputValue } from '../utils/dateUtils';
+import { statusTone } from '../utils/statusTone';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 
@@ -132,7 +133,7 @@ export default function MedicationHistoryModal({
                 >
                   <Clock className="w-5 h-5 text-slate-500 mt-1 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <span className="font-semibold text-emerald-800">Dose logged</span>
+                    <span className={`font-semibold ${statusTone.taken.text}`}>Dose logged</span>
                     <p className="text-sm text-slate-600 mt-1">{formatDateTime(ev.taken_at)}</p>
                   </div>
                 </div>
@@ -154,7 +155,7 @@ export default function MedicationHistoryModal({
                 <div className="flex-1 min-w-0">
                   <span
                     className={`font-semibold ${
-                      log.action === 'checked' ? 'text-emerald-800' : 'text-amber-800'
+                      log.action === 'checked' ? statusTone.taken.text : statusTone.notTaken.text
                     }`}
                   >
                     {log.action === 'checked' ? 'Marked as taken' : 'Marked as not taken'}
