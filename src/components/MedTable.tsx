@@ -466,12 +466,12 @@ export default function MedTable({
           e.dataTransfer.setData('text/plain', medId);
         }}
         onDragEnd={() => setDraggingId(null)}
-        className="hidden pointer-fine:inline-flex p-1.5 rounded-lg text-slate-500 cursor-grab active:cursor-grabbing hover:bg-slate-200"
+        className="inline-flex p-1.5 rounded-lg text-slate-700 bg-slate-200/80 cursor-grab active:cursor-grabbing hover:bg-slate-300 touch-manipulation"
         title="Drag to reorder"
         aria-label={`Drag to reorder ${medById.get(medId)?.name ?? 'medication'}`}
         disabled={savingOrder}
       >
-        <GripVertical className="w-4 h-4" />
+        <GripVertical className="w-5 h-5" />
       </button>
       <div className="flex flex-col">
         <button
@@ -554,7 +554,7 @@ export default function MedTable({
         {reorderMode && (
           <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-slate-300 bg-slate-900 px-3 py-2 text-white">
             <p className="text-sm font-medium">
-              Reordering — drag or use arrows. Dose logging is paused
+              Reordering — drag the handle (⋮⋮), or use the arrows. Dose logging is paused
               {savingOrder ? ' · Saving…' : ''}
             </p>
             <button
@@ -778,7 +778,7 @@ export default function MedTable({
         {reorderMode && (
           <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-300 bg-slate-900 px-3 py-2 text-white">
             <p className="text-xs sm:text-sm font-medium min-w-0">
-              Reordering — dose logging paused
+              Reordering — use the arrows (or drag the handle). Dose logging paused
               {savingOrder ? ' · Saving…' : ''}
             </p>
             <button
