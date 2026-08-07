@@ -46,6 +46,8 @@ interface MedTableProps {
  * Primary toggles taken ↔ pending (or switches from not-taken → taken via parent toggle).
  * Not taken opens the reason modal (or edits reason if already not taken).
  */
+const DOSE_ACTION_WIDTH_CLASS = 'w-[5.75rem]';
+
 function DoseStatusControl({
   taken,
   notTakenRecorded,
@@ -96,7 +98,7 @@ function DoseStatusControl({
       aria-label="Dose status"
     >
       <div
-        className={`inline-flex min-h-8 w-[5.75rem] overflow-hidden rounded-md border ${
+        className={`inline-flex min-h-8 ${DOSE_ACTION_WIDTH_CLASS} overflow-hidden rounded-md border ${
           notTakenRecorded
             ? 'border-rose-400 bg-rose-50'
             : taken
@@ -758,12 +760,12 @@ export default function MedTable({
 
           const takenControl = isFlexible ? (
             due ? (
-              <div className="flex flex-col gap-1 flex-shrink-0 mt-0.5">
+              <div className={`flex flex-col gap-1 flex-shrink-0 mt-0.5 ${DOSE_ACTION_WIDTH_CLASS}`}>
                 <button
                   type="button"
                   onClick={() => setLogDoseMedId(med.id)}
                   disabled={reorderMode}
-                  className="px-2 py-1 text-xs font-semibold rounded-md bg-brand-600 text-white hover:bg-brand-700 touch-manipulation disabled:opacity-50 whitespace-nowrap"
+                  className="w-full min-h-8 px-1.5 text-xs font-semibold rounded-md bg-brand-600 text-white hover:bg-brand-700 touch-manipulation disabled:opacity-50 whitespace-nowrap inline-flex items-center justify-center"
                 >
                   Log dose
                 </button>
@@ -772,7 +774,7 @@ export default function MedTable({
                     type="button"
                     onClick={() => onRemoveLastFlexibleDose(med.id)}
                     disabled={reorderMode}
-                    className="px-1.5 py-1 text-[11px] rounded-md border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation disabled:opacity-50"
+                    className="w-full px-1.5 py-1 text-[11px] rounded-md border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation disabled:opacity-50"
                   >
                     Undo last
                   </button>
