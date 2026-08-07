@@ -96,7 +96,7 @@ function DoseStatusControl({
       aria-label="Dose status"
     >
       <div
-        className={`inline-flex min-h-8 overflow-hidden rounded-md border ${
+        className={`inline-flex min-h-8 w-[5.75rem] overflow-hidden rounded-md border ${
           notTakenRecorded
             ? 'border-rose-400 bg-rose-50'
             : taken
@@ -119,7 +119,7 @@ function DoseStatusControl({
                 ? 'Not taken. Click to mark as taken.'
                 : 'Log dose'
           }
-          className={`min-h-8 px-2 text-xs font-semibold inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:opacity-50 touch-manipulation ${
+          className={`min-h-8 flex-1 px-1.5 text-xs font-semibold inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:opacity-50 touch-manipulation ${
             taken
               ? 'bg-emerald-600 text-white hover:bg-emerald-700'
               : notTakenRecorded
@@ -147,7 +147,7 @@ function DoseStatusControl({
               ? 'More options. Not taken is recorded.'
               : 'More dose options'
           }
-          className={`min-h-8 w-7 border-l flex items-center justify-center transition-colors disabled:opacity-50 touch-manipulation ${
+          className={`min-h-8 w-7 shrink-0 border-l flex items-center justify-center transition-colors disabled:opacity-50 touch-manipulation ${
             notTakenRecorded
               ? 'border-rose-300 bg-rose-600 text-white hover:bg-rose-700'
               : taken
