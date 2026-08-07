@@ -6,7 +6,16 @@ import {
   type DragEvent,
   type ReactNode,
 } from 'react';
-import { Pencil, History, GripVertical, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
+import {
+  Pencil,
+  History,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown,
+  Check,
+  X,
+} from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import { medicationIconComponent } from '../utils/medicationIcons';
@@ -102,16 +111,29 @@ function DoseStatusControl({
             onMarkTaken();
           }}
           aria-pressed={taken}
-          className={`min-h-[40px] px-3 text-sm font-semibold transition-colors disabled:opacity-50 touch-manipulation ${
+          aria-label={
+            taken
+              ? 'Taken. Click to clear.'
+              : notTakenRecorded
+                ? 'Not taken. Click to mark as taken.'
+                : 'Mark as taken'
+          }
+          className={`min-h-[40px] min-w-[3.25rem] px-3 text-sm font-semibold inline-flex items-center justify-center transition-colors disabled:opacity-50 touch-manipulation ${
             taken
               ? 'bg-emerald-600 text-white hover:bg-emerald-700'
               : notTakenRecorded
-                ? 'bg-rose-50 text-rose-900 hover:bg-rose-100'
+                ? 'bg-rose-50 text-rose-800 hover:bg-rose-100'
                 : 'bg-white text-slate-700 hover:bg-slate-100'
           }`}
           title={taken ? 'Clear taken mark' : 'Mark as taken'}
         >
-          Taken
+          {taken ? (
+            <Check className="w-5 h-5" strokeWidth={2.5} aria-hidden />
+          ) : notTakenRecorded ? (
+            <X className="w-5 h-5" strokeWidth={2.5} aria-hidden />
+          ) : (
+            'Taken'
+          )}
         </button>
         <button
           type="button"
@@ -838,7 +860,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. Taken marks cupboard status; use ▾ for Not taken (asks for a reason).
+          Yellow: multiple time blocks. Blue: flexible doses. Taken (✓ / ✕ when set); use ▾ for Not taken (asks for a reason).
         </div>
       </div>
 
