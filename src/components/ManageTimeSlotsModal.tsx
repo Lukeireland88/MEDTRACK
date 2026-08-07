@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { X, Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import type { TimeSlot } from '../types';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface ManageTimeSlotsModalProps {
   isOpen: boolean;
@@ -12,12 +15,12 @@ interface ManageTimeSlotsModalProps {
 
 export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: ManageTimeSlotsModalProps) {
   const { user } = useAuth();
+  const { showError } = useToast();
   const [rows, setRows] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
   const [edits, setEdits] = useState<Record<string, string>>({});
-  /** Local string for hour inputs until blur */
   const [hourEdits, setHourEdits] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
@@ -38,11 +41,11 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
       setHourEdits({});
     } catch (e) {
       console.error(e);
-      alert('Could not load sessions.');
+      showError('Could not load sessions.');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, showError]);
 
   useEffect(() => {
     if (isOpen) load();
@@ -61,7 +64,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
     if (raw === originalName) return;
     if (!raw) {
       setEdits((e) => ({ ...e, [id]: originalName }));
-      alert('Name cannot be empty.');
+      showError('Name cannot be empty.');
       return;
     }
     setSavingId(id);
@@ -72,8 +75,8 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
       onSaved();
     } catch (e: unknown) {
       console.error(e);
-      setEdits((e) => ({ ...e, [id]: originalName }));
-      alert(
+      setEdits((ed) => ({ ...ed, [id]: originalName }));
+      showError(
         e && typeof e === 'object' && 'message' in e
           ? String((e as { message: string }).message)
           : 'Could not rename (duplicate name?).'
@@ -96,7 +99,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
       onSaved();
     } catch (e) {
       console.error(e);
-      alert('Could not reorder.');
+      showError('Could not reorder.');
     } finally {
       setSavingId(null);
     }
@@ -104,12 +107,12 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
 
   const handleAdd = async () => {
     if (!user) {
-      alert('Sign in to add sessions.');
+      showError('Sign in to add sessions.');
       return;
     }
     const name = newName.trim();
     if (!name) {
-      alert('Enter a name for the new session.');
+      showError('Enter a name for the new session.');
       return;
     }
     const maxOrder = rows.reduce((m, r) => Math.max(m, r.sort_order), 0);
@@ -127,7 +130,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
       onSaved();
     } catch (e: unknown) {
       console.error(e);
-      alert(
+      showError(
         e && typeof e === 'object' && 'message' in e
           ? String((e as { message: string }).message)
           : 'Could not add session (duplicate name?).'
@@ -140,7 +143,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
   const handleDelete = async (slot: TimeSlot) => {
     const { meds, doses } = await usageCounts(slot.id);
     if (meds > 0 || doses > 0) {
-      alert(
+      showError(
         `This session is in use (${meds} medication link(s), ${doses} dose record(s)). Remove it from medications first, or rename it instead.`
       );
       return;
@@ -154,7 +157,7 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
       onSaved();
     } catch (e) {
       console.error(e);
-      alert('Could not delete.');
+      showError('Could not delete.');
     } finally {
       setSavingId(null);
     }
@@ -188,157 +191,133 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
       onSaved();
     } catch (e) {
       console.error(e);
-      alert('Could not update default hour.');
+      showError('Could not update default hour.');
     } finally {
       setSavingId(null);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div
-        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/90"
-        role="dialog"
-        aria-labelledby="sessions-title"
-        aria-modal="true"
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3">
-          <h2 id="sessions-title" className="text-lg font-bold text-slate-900">
-            Sessions
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <p className="border-b border-slate-100 px-4 py-2 text-sm text-slate-600">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="md"
+      title="Sessions"
+      description={
+        <>
           Names appear in the day tabs and when scheduling medications. Order is left-to-right in the picker.{' '}
           <strong className="font-medium text-slate-800">Default at (hour)</strong> sets which tab opens first when
-          the app loads (local time): the last session whose hour is ≤ the current time is selected among visible
-          tabs.
-        </p>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          {loading ? (
-            <p className="text-center text-sm text-slate-500">Loading…</p>
-          ) : (
-            <ul className="space-y-2">
-              {rows.map((slot, index) => (
-                <li
-                  key={slot.id}
-                  className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-2 py-2 sm:flex-nowrap"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <button
-                      type="button"
-                      className="rounded p-0.5 text-slate-600 hover:bg-white disabled:opacity-40"
-                      disabled={index === 0 || savingId !== null}
-                      onClick={() => move(index, -1)}
-                      aria-label="Move up"
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded p-0.5 text-slate-600 hover:bg-white disabled:opacity-40"
-                      disabled={index === rows.length - 1 || savingId !== null}
-                      onClick={() => move(index, 1)}
-                      aria-label="Move down"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={edits[slot.id] ?? slot.name}
-                    onChange={(e) => setEdits((prev) => ({ ...prev, [slot.id]: e.target.value }))}
-                    onBlur={() => handleRenameBlur(slot.id, slot.name)}
-                    className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    disabled={savingId === slot.id}
-                  />
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <label className="whitespace-nowrap text-xs text-slate-600" htmlFor={`hour-${slot.id}`}>
-                      Default at
-                    </label>
-                    <input
-                      id={`hour-${slot.id}`}
-                      type="number"
-                      min={0}
-                      max={23}
-                      inputMode="numeric"
-                      value={hourEdits[slot.id] ?? String(slot.default_after_hour ?? 12)}
-                      onChange={(e) => setHourEdits((prev) => ({ ...prev, [slot.id]: e.target.value }))}
-                      onBlur={() => handleHourBlur(slot)}
-                      className="w-14 rounded-lg border border-slate-200 bg-white px-2 py-2 text-center text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                      disabled={savingId === slot.id}
-                      title="Local hour (0–23) when this session becomes the default tab"
-                    />
-                    <span className="text-xs text-slate-500">h</span>
-                  </div>
+          the app loads (local time).
+        </>
+      }
+      footer={
+        <Button type="button" variant="secondary" onClick={onClose} className="w-full">
+          Done
+        </Button>
+      }
+    >
+      <div className="px-4 sm:px-5 py-4">
+        {loading ? (
+          <p className="text-center text-sm text-slate-500">Loading…</p>
+        ) : (
+          <ul className="space-y-2">
+            {rows.map((slot, index) => (
+              <li
+                key={slot.id}
+                className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-2 py-2 sm:flex-nowrap"
+              >
+                <div className="flex flex-col gap-0.5">
                   <button
                     type="button"
-                    onClick={() => handleDelete(slot)}
-                    className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-40"
-                    disabled={savingId !== null}
-                    title="Delete session"
-                    aria-label={`Delete ${slot.name}`}
+                    className="rounded p-0.5 text-slate-600 hover:bg-white disabled:opacity-40"
+                    disabled={index === 0 || savingId !== null}
+                    onClick={() => void move(index, -1)}
+                    aria-label="Move up"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <ChevronUp className="h-4 w-4" />
                   </button>
-                </li>
-              ))}
-            </ul>
-          )}
+                  <button
+                    type="button"
+                    className="rounded p-0.5 text-slate-600 hover:bg-white disabled:opacity-40"
+                    disabled={index === rows.length - 1 || savingId !== null}
+                    onClick={() => void move(index, 1)}
+                    aria-label="Move down"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={edits[slot.id] ?? slot.name}
+                  onChange={(e) => setEdits((prev) => ({ ...prev, [slot.id]: e.target.value }))}
+                  onBlur={() => void handleRenameBlur(slot.id, slot.name)}
+                  className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  disabled={savingId === slot.id}
+                />
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <label className="whitespace-nowrap text-xs text-slate-600" htmlFor={`hour-${slot.id}`}>
+                    Default at
+                  </label>
+                  <input
+                    id={`hour-${slot.id}`}
+                    type="number"
+                    min={0}
+                    max={23}
+                    inputMode="numeric"
+                    value={hourEdits[slot.id] ?? String(slot.default_after_hour ?? 12)}
+                    onChange={(e) => setHourEdits((prev) => ({ ...prev, [slot.id]: e.target.value }))}
+                    onBlur={() => void handleHourBlur(slot)}
+                    className="w-14 rounded-lg border border-slate-200 bg-white px-2 py-2 text-center text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    disabled={savingId === slot.id}
+                    title="Local hour (0–23) when this session becomes the default tab"
+                  />
+                  <span className="text-xs text-slate-500">h</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleDelete(slot)}
+                  className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-700 disabled:opacity-40"
+                  disabled={savingId !== null}
+                  title="Delete session"
+                  aria-label={`Delete ${slot.name}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
 
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="min-w-0 flex-1">
-              <label htmlFor="new-session" className="mb-1 block text-xs font-semibold text-slate-600">
-                New session
-              </label>
-              <input
-                id="new-session"
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="e.g. Afternoon"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAdd();
-                  }
-                }}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleAdd}
-              disabled={savingId !== null || !newName.trim()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-brand-sm hover:bg-brand-700 disabled:opacity-50"
-            >
-              <Plus className="h-4 w-4" />
-              Add
-            </button>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
+            <label htmlFor="new-session" className="mb-1 block text-xs font-semibold text-slate-600">
+              New session
+            </label>
+            <input
+              id="new-session"
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="e.g. Afternoon"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void handleAdd();
+                }
+              }}
+            />
           </div>
-        </div>
-
-        <div className="shrink-0 border-t border-slate-200 px-4 py-3">
-          <button
+          <Button
             type="button"
-            onClick={onClose}
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+            onClick={() => void handleAdd()}
+            disabled={savingId !== null || !newName.trim()}
           >
-            Done
-          </button>
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

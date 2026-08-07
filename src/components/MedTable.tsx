@@ -22,6 +22,7 @@ import { medicationIconComponent } from '../utils/medicationIcons';
 import LogDoseTimeModal from './LogDoseTimeModal';
 import { fromDateInputValue, toLocalDateKey } from '../utils/dateUtils';
 import { usePreferences } from '../contexts/PreferencesContext';
+import { useToast } from '../contexts/ToastContext';
 
 interface MedTableProps {
   medications: MedicationWithSlots[];
@@ -363,6 +364,7 @@ export default function MedTable({
   sessionLabel,
 }: MedTableProps) {
   const { handedness } = usePreferences();
+  const { showError } = useToast();
   const controlsFirst = handedness === 'left';
   const [logDoseMedId, setLogDoseMedId] = useState<string | null>(null);
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
@@ -419,7 +421,7 @@ export default function MedTable({
       console.error(e);
       const base = sortByDisplayOrder(medications).map((m) => m.id);
       setOrderedIds(partitionDueFirst(base, medById, selectedDate));
-      alert('Could not save order. Please try again.');
+      showError('Could not save order. Please try again.');
     } finally {
       setSavingOrder(false);
     }

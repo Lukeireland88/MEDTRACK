@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, RotateCcw, X } from 'lucide-react';
+import { Pencil, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import type { MedicationWithSlots, TimeSlot } from '../types';
 import { toDateKeyFromDb, toLocalDateKey } from '../utils/dateUtils';
 import { sortMedicationSlotNames } from '../utils/timeSlotUtils';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface EndedCoursesModalProps {
   isOpen: boolean;
@@ -15,6 +18,7 @@ interface EndedCoursesModalProps {
 export default function EndedCoursesModal({ isOpen, onClose }: EndedCoursesModalProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { showError } = useToast();
   const [endedList, setEndedList] = useState<MedicationWithSlots[]>([]);
   const [loading, setLoading] = useState(true);
   const [restartingMedId, setRestartingMedId] = useState<string | null>(null);
@@ -155,7 +159,7 @@ export default function EndedCoursesModal({ isOpen, onClose }: EndedCoursesModal
       await load();
     } catch (error) {
       console.error('Error restarting medication:', error);
-      alert('Failed to restart medication. Please try again.');
+      showError('Failed to restart medication. Please try again.');
     } finally {
       setRestartingMedId(null);
     }
@@ -171,153 +175,114 @@ export default function EndedCoursesModal({ isOpen, onClose }: EndedCoursesModal
     navigate('/', { state: { editMedicationId: med.id } });
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div
-          className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/90"
-          role="dialog"
-          aria-labelledby="ended-courses-title"
-          aria-modal="true"
-        >
-          <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3">
-            <h2 id="ended-courses-title" className="text-lg font-bold text-slate-900">
-              Ended courses
-            </h2>
-            <button
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="md"
+        title="Ended courses"
+        description="Medications with an end date before today. Restart a course or open edit before returning to the tracker."
+      >
+        <div className="px-4 sm:px-5 py-3">
+          {!user ? (
+            <p className="text-center text-sm text-slate-500">Sign in to manage ended courses.</p>
+          ) : loading ? (
+            <p className="text-center text-sm text-slate-500">Loading…</p>
+          ) : endedList.length === 0 ? (
+            <p className="text-center text-sm text-slate-600">
+              No ended courses. When you set an end date on a medication and that date passes, it will appear
+              here.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {endedList.map((med) => (
+                <li
+                  key={med.id}
+                  className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0 text-sm text-slate-800">
+                    <span className="font-medium">{med.name}</span>
+                    {med.end_date ? (
+                      <span className="text-slate-500"> · ended {med.end_date}</span>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={restartingMedId === med.id}
+                      onClick={() => openRestartPrompt(med)}
+                      className="!bg-emerald-700 hover:!bg-emerald-800 shadow-none"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {restartingMedId === med.id ? 'Restarting…' : 'Restart'}
+                    </Button>
+                    <Button type="button" size="sm" variant="secondary" onClick={() => handleEdit(med)}>
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={!!restartPromptMed}
+        onClose={() => setRestartPromptMed(null)}
+        zIndexClass="z-[60]"
+        size="md"
+        title="Restart medication"
+        description="Choose the new start date. We’ll log the previous course to history using the old start/end dates."
+        footer={
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setRestartPromptMed(null)}>
+              Cancel
+            </Button>
+            <Button
               type="button"
-              onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
-              aria-label="Close"
+              disabled={!restartNewStartDate || !restartPromptMed || restartingMedId === restartPromptMed.id}
+              onClick={async () => {
+                const med = restartPromptMed;
+                const start = restartNewStartDate;
+                if (!med) return;
+                setRestartPromptMed(null);
+                await handleRestartMedication(med, start);
+              }}
+              className="!bg-emerald-700 hover:!bg-emerald-800 shadow-none"
             >
-              <X className="h-5 w-5" />
-            </button>
+              {restartPromptMed && restartingMedId === restartPromptMed.id ? 'Restarting…' : 'Restart'}
+            </Button>
           </div>
-
-          <p className="border-b border-slate-100 px-4 py-2 text-sm text-slate-600">
-            Medications with an end date before today. Restart a course (for example rescue meds or antibiotics) or
-            open edit to change details before returning to the tracker.
-          </p>
-
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-            {!user ? (
-              <p className="text-center text-sm text-slate-500">Sign in to manage ended courses.</p>
-            ) : loading ? (
-              <p className="text-center text-sm text-slate-500">Loading…</p>
-            ) : endedList.length === 0 ? (
-              <p className="text-center text-sm text-slate-600">
-                No ended courses. When you set an end date on a medication and that date passes, it will appear
-                here.
+        }
+      >
+        {restartPromptMed && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <div className="text-sm text-slate-900">
+              <span className="font-semibold">{restartPromptMed.name}</span>
+            </div>
+            <div>
+              <label htmlFor="restart-start-ended-modal" className="mb-1 block text-xs font-semibold text-slate-600">
+                New start date
+              </label>
+              <input
+                id="restart-start-ended-modal"
+                type="date"
+                value={restartNewStartDate}
+                onChange={(e) => setRestartNewStartDate(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium"
+                required
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                This updates the medication’s start date so repeat courses don’t keep the original start.
               </p>
-            ) : (
-              <ul className="space-y-2">
-                {endedList.map((med) => (
-                  <li
-                    key={med.id}
-                    className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/80 p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0 text-sm text-slate-800">
-                      <span className="font-medium">{med.name}</span>
-                      {med.end_date ? (
-                        <span className="text-slate-500"> · ended {med.end_date}</span>
-                      ) : null}
-                    </div>
-                    <div className="flex shrink-0 flex-wrap gap-2">
-                      <button
-                        type="button"
-                        disabled={restartingMedId === med.id}
-                        onClick={() => openRestartPrompt(med)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        {restartingMedId === med.id ? 'Restarting…' : 'Restart'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(med)}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {restartPromptMed && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/90">
-            <div className="flex items-start justify-between gap-3 border-b border-slate-200 p-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Restart medication</h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Choose the new start date. We’ll log the previous course to history using the old start/end dates.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setRestartPromptMed(null)}
-                className="rounded-lg p-2 hover:bg-slate-100"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5 text-slate-600" />
-              </button>
-            </div>
-
-            <div className="space-y-4 p-4">
-              <div className="text-sm text-slate-900">
-                <span className="font-semibold">{restartPromptMed.name}</span>
-              </div>
-              <div>
-                <label htmlFor="restart-start-ended-modal" className="mb-1 block text-xs font-semibold text-slate-600">
-                  New start date
-                </label>
-                <input
-                  id="restart-start-ended-modal"
-                  type="date"
-                  value={restartNewStartDate}
-                  onChange={(e) => setRestartNewStartDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium"
-                  required
-                />
-                <p className="mt-1 text-xs text-slate-500">
-                  This updates the medication’s start date so repeat courses don’t keep the original start.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setRestartPromptMed(null)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-800 hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={!restartNewStartDate || restartingMedId === restartPromptMed.id}
-                  onClick={async () => {
-                    const med = restartPromptMed;
-                    const start = restartNewStartDate;
-                    setRestartPromptMed(null);
-                    await handleRestartMedication(med, start);
-                  }}
-                  className="rounded-lg bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
-                >
-                  {restartingMedId === restartPromptMed.id ? 'Restarting…' : 'Restart'}
-                </button>
-              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </>
   );
 }

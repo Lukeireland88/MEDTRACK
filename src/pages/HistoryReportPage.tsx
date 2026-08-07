@@ -5,6 +5,7 @@ import { ArrowLeft, ChevronDown, ChevronRight, ClipboardList, Download, LogIn, P
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageBackgroundProps } from '../contexts/PreferencesContext';
+import { useToast } from '../contexts/ToastContext';
 import { toDateInputValue, toLocalDateKey, toLocalDateOnly } from '../utils/dateUtils';
 import { inferUnrecordedDoseRows } from '../utils/inferUnrecordedDoses';
 import EditTimelineEventModal, { EditTimelineEventInitial } from '../components/EditTimelineEventModal';
@@ -116,21 +117,21 @@ function rowVariantBgClass(v: HistoryEventVariant): string {
   }
 }
 
-/** Desktop table rows — left border works reliably on table rows. */
+/** Desktop table rows — inset accent (no layout shift from border-l). */
 function rowVariantTableClass(v: HistoryEventVariant): string {
   switch (v) {
     case 'slot_taken':
-      return `${rowVariantBgClass(v)} border-l-4 border-l-emerald-500`;
+      return `${rowVariantBgClass(v)} shadow-[inset_4px_0_0_0_theme(colors.emerald.500)]`;
     case 'slot_not_taken':
-      return `${rowVariantBgClass(v)} border-l-4 border-l-rose-500`;
+      return `${rowVariantBgClass(v)} shadow-[inset_4px_0_0_0_theme(colors.rose.500)]`;
     case 'slot_unrecorded':
-      return `${rowVariantBgClass(v)} border-l-4 border-l-slate-400`;
+      return `${rowVariantBgClass(v)} shadow-[inset_4px_0_0_0_theme(colors.slate.400)]`;
     case 'flexible_dose':
-      return `${rowVariantBgClass(v)} border-l-4 border-l-brand-500`;
+      return `${rowVariantBgClass(v)} shadow-[inset_4px_0_0_0_rgb(59,130,246)]`;
     case 'seizure':
-      return `${rowVariantBgClass(v)} border-l-4 border-l-purple-500`;
+      return `${rowVariantBgClass(v)} shadow-[inset_4px_0_0_0_theme(colors.purple.500)]`;
     case 'timeline_event':
-      return `${rowVariantBgClass(v)} border-l-4 border-l-amber-500`;
+      return `${rowVariantBgClass(v)} shadow-[inset_4px_0_0_0_theme(colors.amber.500)]`;
   }
 }
 
@@ -206,6 +207,7 @@ function isValidDateKey(v: string | null): v is string {
 export default function HistoryReportPage() {
   const { user, loading: authLoading } = useAuth();
   const pageBg = usePageBackgroundProps();
+  const { showError } = useToast();
   const [searchParams] = useSearchParams();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const trackerDate = searchParams.get('date');
@@ -626,11 +628,11 @@ export default function HistoryReportPage() {
         await loadReport();
       } catch (e) {
         console.error(e);
-        alert('Failed to update note. Please try again.');
+        showError('Failed to update note. Please try again.');
         throw e;
       }
     },
-    [editingNote, loadReport]
+    [editingNote, loadReport, showError]
   );
 
   useEffect(() => {

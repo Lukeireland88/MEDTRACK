@@ -194,7 +194,7 @@ export default function SettingsPage() {
                   add or remove sessions.
                 </p>
                 <span className="mt-2 inline-block text-sm font-semibold text-brand-700">
-                  {user ? 'Configure →' : 'Sign in to configure →'}
+                  {user ? 'Manage sessions →' : 'Sign in to manage →'}
                 </span>
               </div>
             </button>
@@ -214,7 +214,7 @@ export default function SettingsPage() {
                   Browse and edit your full medication list.
                 </p>
                 <span className="mt-2 inline-block text-sm font-semibold text-brand-700">
-                  {user ? 'Configure →' : 'Sign in to configure →'}
+                  {user ? 'Browse / edit →' : 'Sign in to browse →'}
                 </span>
               </div>
             </button>
@@ -234,7 +234,9 @@ export default function SettingsPage() {
                   <p className="mt-0.5 text-sm text-slate-600">
                     Restart rescue meds or past antibiotic courses, or edit medications that are past their end date.
                   </p>
-                  <span className="mt-2 inline-block text-sm font-semibold text-brand-700">Configure →</span>
+                  <span className="mt-2 inline-block text-sm font-semibold text-brand-700">
+                    Open ended courses →
+                  </span>
                 </div>
               </button>
             </li>
