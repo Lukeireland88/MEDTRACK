@@ -190,6 +190,37 @@ function DoseStatusControl({
   );
 }
 
+/** Background (and left accent) for a tracker row based on due/pause and dose status. */
+function medRowSurfaceClass({
+  paused,
+  due,
+  isFlexible,
+  taken,
+  notTakenRecorded,
+  isMultiple,
+  mobile = false,
+}: {
+  paused: boolean;
+  due: boolean;
+  isFlexible: boolean;
+  taken: boolean;
+  notTakenRecorded: boolean;
+  isMultiple: boolean;
+  mobile?: boolean;
+}): string {
+  if (paused) return 'bg-gray-200 text-gray-600 opacity-70';
+  if (!due) return 'bg-gray-50 text-gray-500 opacity-80';
+  if (!isFlexible && taken) {
+    return 'bg-emerald-100/90 border-l-4 border-l-emerald-500';
+  }
+  if (!isFlexible && notTakenRecorded) {
+    return 'bg-rose-100/90 border-l-4 border-l-rose-500';
+  }
+  if (isFlexible) return 'bg-brand-50/70';
+  if (isMultiple) return 'bg-yellow-50/70';
+  return mobile ? 'bg-white/55' : '';
+}
+
 function RowActions({
   med,
   onShowHistory,
@@ -549,11 +580,14 @@ export default function MedTable({
                 target != null &&
                 flexCount >= target &&
                 due;
-              const tone = paused
-                ? 'bg-gray-200 text-gray-600 opacity-70'
-                : !due
-                  ? 'bg-gray-50 text-gray-500 opacity-80'
-                  : '';
+              const rowSurface = medRowSurfaceClass({
+                paused,
+                due,
+                isFlexible,
+                taken,
+                notTakenRecorded,
+                isMultiple: med.is_multiple,
+              });
               const MedIcon = medicationIconComponent(med.icon);
 
               const takenCell = (
@@ -673,9 +707,7 @@ export default function MedTable({
                   className={`
                     ${!isFlexible && taken ? 'text-gray-500 line-through' : ''}
                     ${isFlexible && flexComplete ? 'text-gray-500' : ''}
-                    ${!isFlexible && med.is_multiple ? 'bg-yellow-50/70' : ''}
-                    ${isFlexible ? 'bg-brand-50/70' : ''}
-                    ${tone}
+                    ${rowSurface}
                     ${draggingId === med.id ? 'opacity-60 ring-2 ring-brand-400' : ''}
                     ${reorderMode ? 'cursor-default' : ''}
                   `}
@@ -711,11 +743,15 @@ export default function MedTable({
           const target = med.target_doses_per_day;
           const flexComplete =
             isFlexible && target != null && flexCount >= target && due;
-          const tone = paused
-            ? 'bg-gray-200 text-gray-600 opacity-70'
-            : !due
-              ? 'bg-gray-50 text-gray-500 opacity-80'
-              : '';
+          const rowSurface = medRowSurfaceClass({
+            paused,
+            due,
+            isFlexible,
+            taken,
+            notTakenRecorded,
+            isMultiple: med.is_multiple,
+            mobile: true,
+          });
           const MedIcon = medicationIconComponent(med.icon);
 
           const takenControl = isFlexible ? (
@@ -839,9 +875,7 @@ export default function MedTable({
                 border border-slate-200 rounded-lg p-3
                 ${!isFlexible && taken ? 'text-gray-500' : ''}
                 ${isFlexible && flexComplete ? 'text-gray-500' : ''}
-                ${!isFlexible && med.is_multiple ? 'bg-yellow-50/70' : ''}
-                ${isFlexible ? 'bg-brand-50/70' : !med.is_multiple ? 'bg-white/55' : ''}
-                ${tone}
+                ${rowSurface}
                 ${draggingId === med.id ? 'opacity-60 ring-2 ring-brand-400' : ''}
               `}
             >
