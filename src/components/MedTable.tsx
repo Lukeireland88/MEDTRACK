@@ -96,7 +96,7 @@ function DoseStatusControl({
       aria-label="Dose status"
     >
       <div
-        className={`inline-flex min-h-[40px] overflow-hidden rounded-lg border shadow-sm ${
+        className={`inline-flex min-h-8 overflow-hidden rounded-md border ${
           notTakenRecorded
             ? 'border-rose-400 bg-rose-50'
             : taken
@@ -119,7 +119,7 @@ function DoseStatusControl({
                 ? 'Not taken. Click to mark as taken.'
                 : 'Log dose'
           }
-          className={`min-h-[40px] min-w-[3.25rem] px-3 text-sm font-semibold inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:opacity-50 touch-manipulation ${
+          className={`min-h-8 px-2 text-xs font-semibold inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:opacity-50 touch-manipulation ${
             taken
               ? 'bg-emerald-600 text-white hover:bg-emerald-700'
               : notTakenRecorded
@@ -129,9 +129,9 @@ function DoseStatusControl({
           title={taken ? 'Clear taken mark' : notTakenRecorded ? 'Mark as taken' : 'Log dose'}
         >
           {taken ? (
-            <Check className="w-5 h-5" strokeWidth={2.5} aria-hidden />
+            <Check className="w-4 h-4" strokeWidth={2.5} aria-hidden />
           ) : notTakenRecorded ? (
-            <X className="w-5 h-5" strokeWidth={2.5} aria-hidden />
+            <X className="w-4 h-4" strokeWidth={2.5} aria-hidden />
           ) : (
             'Log dose'
           )}
@@ -147,7 +147,7 @@ function DoseStatusControl({
               ? 'More options. Not taken is recorded.'
               : 'More dose options'
           }
-          className={`min-h-[40px] w-9 border-l flex items-center justify-center transition-colors disabled:opacity-50 touch-manipulation ${
+          className={`min-h-8 w-7 border-l flex items-center justify-center transition-colors disabled:opacity-50 touch-manipulation ${
             notTakenRecorded
               ? 'border-rose-300 bg-rose-600 text-white hover:bg-rose-700'
               : taken
@@ -160,14 +160,14 @@ function DoseStatusControl({
               : 'More options'
           }
         >
-          <ChevronDown className="w-4 h-4" aria-hidden />
+          <ChevronDown className="w-3.5 h-3.5" aria-hidden />
         </button>
       </div>
 
       {menuOpen && !disabled && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-30 mt-1 min-w-full whitespace-nowrap rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+          className="absolute left-0 top-full z-30 mt-1 min-w-[8.5rem] whitespace-nowrap rounded-md border border-slate-200 bg-white py-0.5 shadow-lg"
         >
           <button
             type="button"
@@ -176,7 +176,7 @@ function DoseStatusControl({
               setMenuOpen(false);
               onMarkNotTaken();
             }}
-            className={`w-full px-3 py-2.5 text-left text-sm font-semibold touch-manipulation ${
+            className={`w-full px-2.5 py-2 text-left text-xs font-semibold touch-manipulation ${
               notTakenRecorded
                 ? 'bg-rose-50 text-rose-800'
                 : 'text-slate-700 hover:bg-slate-50'
@@ -543,7 +543,7 @@ export default function MedTable({
               </th>
               {orderSides(
                 controlsFirst,
-                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-28">
+                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-24">
                   Taken
                 </th>,
                 <>
@@ -594,12 +594,12 @@ export default function MedTable({
                 <td className="p-3 border-b border-slate-200 align-top">
                   {isFlexible ? (
                     due ? (
-                      <div className="flex flex-col gap-1.5 min-w-[7rem]">
+                      <div className="flex flex-col gap-1 min-w-0">
                         <button
                           type="button"
                           onClick={() => setLogDoseMedId(med.id)}
                           disabled={reorderMode}
-                          className="px-2 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
+                          className="px-2 py-1 text-xs font-semibold rounded-md bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 whitespace-nowrap"
                         >
                           Log dose
                         </button>
@@ -608,7 +608,7 @@ export default function MedTable({
                             type="button"
                             onClick={() => onRemoveLastFlexibleDose(med.id)}
                             disabled={reorderMode}
-                            className="px-2 py-1 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                            className="px-1.5 py-0.5 text-[11px] rounded-md border border-slate-200 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
                           >
                             Undo last
                           </button>
@@ -756,12 +756,12 @@ export default function MedTable({
 
           const takenControl = isFlexible ? (
             due ? (
-              <div className="flex flex-col gap-1.5 flex-shrink-0 mt-0.5">
+              <div className="flex flex-col gap-1 flex-shrink-0 mt-0.5">
                 <button
                   type="button"
                   onClick={() => setLogDoseMedId(med.id)}
                   disabled={reorderMode}
-                  className="px-3 py-2 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 touch-manipulation disabled:opacity-50"
+                  className="px-2 py-1 text-xs font-semibold rounded-md bg-brand-600 text-white hover:bg-brand-700 touch-manipulation disabled:opacity-50 whitespace-nowrap"
                 >
                   Log dose
                 </button>
@@ -770,7 +770,7 @@ export default function MedTable({
                     type="button"
                     onClick={() => onRemoveLastFlexibleDose(med.id)}
                     disabled={reorderMode}
-                    className="px-2 py-1.5 text-xs rounded-lg border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation disabled:opacity-50"
+                    className="px-1.5 py-1 text-[11px] rounded-md border border-slate-200 text-gray-700 hover:bg-gray-100 touch-manipulation disabled:opacity-50"
                   >
                     Undo last
                   </button>
