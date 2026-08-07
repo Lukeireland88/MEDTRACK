@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import { AuthProvider } from './contexts/AuthContext';
 import { PreferencesProvider } from './contexts/PreferencesContext';
+import { ToastProvider } from './contexts/ToastContext';
 import './index.css';
 
 const baseUrl = import.meta.env.BASE_URL;
@@ -15,7 +16,9 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter basename={routerBasename}>
       <AuthProvider>
         <PreferencesProvider>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </PreferencesProvider>
       </AuthProvider>
     </BrowserRouter>

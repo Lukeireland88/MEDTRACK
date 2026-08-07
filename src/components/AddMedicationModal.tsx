@@ -7,6 +7,7 @@ import {
   normalizeMedicationIcon,
   type MedicationIconKey,
 } from '../utils/medicationIcons';
+import { useToast } from '../contexts/ToastContext';
 
 interface AddMedicationModalProps {
   isOpen: boolean;
@@ -74,6 +75,7 @@ export default function AddMedicationModal({
   editingMedication,
   sessionOptions,
 }: AddMedicationModalProps) {
+  const { showError } = useToast();
   const [formData, setFormData] = useState<MedicationFormData>({
     name: '',
     icon: DEFAULT_MEDICATION_ICON,
@@ -97,6 +99,8 @@ export default function AddMedicationModal({
     endDate?: string;
     pauseEndDate?: string;
   }>({});
+  const [showSafetyLimits, setShowSafetyLimits] = useState(false);
+  const [showAdvancedSchedule, setShowAdvancedSchedule] = useState(false);
 
   useEffect(() => {
     if (editingMedication) {
@@ -107,6 +111,13 @@ export default function AddMedicationModal({
         maxDoses24h: rest.maxDoses24h ?? '',
         minIntervalMinutes: rest.minIntervalMinutes ?? '',
       });
+      setShowSafetyLimits(
+        (rest.maxDoses24h !== '' && rest.maxDoses24h != null) ||
+          (rest.minIntervalMinutes !== '' && rest.minIntervalMinutes != null)
+      );
+      setShowAdvancedSchedule(
+        Boolean(rest.endDate || rest.pauseStartDate || rest.pauseEndDate)
+      );
     } else {
       setFormData({
         name: '',
@@ -125,6 +136,8 @@ export default function AddMedicationModal({
         pauseStartDate: '',
         pauseEndDate: '',
       });
+      setShowSafetyLimits(false);
+      setShowAdvancedSchedule(false);
     }
     setDateErrors({});
   }, [editingMedication, isOpen]);
@@ -158,6 +171,7 @@ export default function AddMedicationModal({
           notes: row.notes || '',
         }))
       );
+      if ((data || []).length > 0) setShowAdvancedSchedule(true);
     })();
     return () => {
       cancelled = true;
@@ -192,6 +206,7 @@ export default function AddMedicationModal({
           notes: row.notes || '',
         }))
       );
+      if ((data || []).length > 0) setShowAdvancedSchedule(true);
     })();
     return () => {
       cancelled = true;
@@ -201,48 +216,48 @@ export default function AddMedicationModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('Please enter a medication name.');
+      showError('Please enter a medication name.');
       return;
     }
     if (formData.dosingMode === 'time_slots' && formData.timeSlots.length === 0) {
-      alert('Select at least one time of day, or switch to flexible daily dosing.');
+      showError('Select at least one time of day, or switch to flexible daily dosing.');
       return;
     }
     if (formData.dosingMode === 'flexible_daily') {
       const n =
         formData.targetDosesPerDay === '' ? null : Number(formData.targetDosesPerDay);
       if (n != null && (Number.isNaN(n) || n < 1)) {
-        alert('Target doses per day must be at least 1, or leave blank to track without a daily goal.');
+        showError('Target doses per day must be at least 1, or leave blank to track without a daily goal.');
         return;
       }
       if (formData.maxDoses24h !== '') {
         const maxN = Number(formData.maxDoses24h);
         if (Number.isNaN(maxN) || maxN < 1) {
-          alert('Max doses in 24 hours must be at least 1, or leave blank.');
+          showError('Max doses in 24 hours must be at least 1, or leave blank.');
           return;
         }
       }
       if (formData.minIntervalMinutes !== '') {
         const minN = Number(formData.minIntervalMinutes);
         if (Number.isNaN(minN) || minN < 1) {
-          alert('Minimum interval must be at least 1 minute, or leave blank.');
+          showError('Minimum interval must be at least 1 minute, or leave blank.');
           return;
         }
       }
     }
     if ((formData.startDate && formData.endDate) && formData.startDate > formData.endDate) {
-      alert('End date must be on or after the start date.');
+      showError('End date must be on or after the start date.');
       return;
     }
     if ((formData.pauseStartDate && formData.pauseEndDate) && formData.pauseStartDate > formData.pauseEndDate) {
-      alert('Pause start date must be on or before the pause end date.');
+      showError('Pause start date must be on or before the pause end date.');
       return;
     }
 
     const filledPeriods = coursePeriodLog.filter((r) => r.startDate.trim());
     for (const r of filledPeriods) {
       if (r.endDate.trim() && r.startDate > r.endDate) {
-        alert('Course history: end date must be on or after start date for each row.');
+        showError('Course history: end date must be on or after start date for each row.');
         return;
       }
     }
@@ -417,14 +432,25 @@ export default function AddMedicationModal({
           )}
 
           {formData.dosingMode === 'flexible_daily' && (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900">Safety limits (optional)</h3>
-                <p className="text-xs text-slate-600 mt-1">
-                  If a new dose would exceed these, you&apos;ll get a warning and can cancel or log
-                  anyway.
-                </p>
-              </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowSafetyLimits((v) => !v)}
+                className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left"
+                aria-expanded={showSafetyLimits}
+              >
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Safety limits (optional)</h3>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Warn when a dose would exceed a max count or minimum gap.
+                  </p>
+                </div>
+                <span className="text-slate-500 shrink-0" aria-hidden>
+                  {showSafetyLimits ? '▾' : '▸'}
+                </span>
+              </button>
+              {showSafetyLimits && (
+              <div className="px-4 pb-4 space-y-4 border-t border-slate-200 pt-3">
               <div>
                 <label className="block text-sm font-semibold mb-2" htmlFor="max-doses-24h">
                   Max doses in 24 hours
@@ -486,6 +512,8 @@ export default function AddMedicationModal({
                   . Use decimals for partial hours (e.g. 0.5 = 30 minutes).
                 </p>
               </div>
+              </div>
+              )}
             </div>
           )}
 
@@ -591,6 +619,28 @@ export default function AddMedicationModal({
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
             />
           </div>
+
+          <div className="rounded-xl border border-slate-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowAdvancedSchedule((v) => !v)}
+              className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left bg-slate-50/80"
+              aria-expanded={showAdvancedSchedule}
+            >
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  Course end, pause &amp; history
+                </h3>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Optional end date, pause range, and past course logs.
+                </p>
+              </div>
+              <span className="text-slate-500 shrink-0" aria-hidden>
+                {showAdvancedSchedule ? '▾' : '▸'}
+              </span>
+            </button>
+            {showAdvancedSchedule && (
+            <div className="space-y-6 p-4 border-t border-slate-200">
 
           <div>
             <label className="block text-sm font-semibold mb-2">
@@ -832,6 +882,9 @@ export default function AddMedicationModal({
               )}
             </div>
           )}
+            </div>
+            )}
+          </div>
           </div>
 
           <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3 sm:px-6 flex justify-between items-center gap-3 rounded-b-2xl">

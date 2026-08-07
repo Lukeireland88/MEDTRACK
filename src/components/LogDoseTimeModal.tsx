@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
 import { combineLocalDateWithTime, toTimeInputValue } from '../utils/dateUtils';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface LogDoseTimeModalProps {
   isOpen: boolean;
@@ -27,8 +28,6 @@ export default function LogDoseTimeModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -37,7 +36,7 @@ export default function LogDoseTimeModal({
       await onConfirm(takenAtIso);
       onClose();
     } catch {
-      // Parent typically shows alert; keep modal open so user can retry
+      // Parent shows toast; keep modal open so user can retry
     } finally {
       setSubmitting(false);
     }
@@ -51,65 +50,45 @@ export default function LogDoseTimeModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-      <div
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
-        role="dialog"
-        aria-labelledby="log-dose-title"
-      >
-        <div className="flex justify-between items-start gap-3 mb-4">
-          <div>
-            <h2 id="log-dose-title" className="text-lg font-bold text-gray-900">
-              Log dose
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">{medicationName}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{dateLabel}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg shrink-0"
-            aria-label="Close"
-          >
-            <X className="w-6 h-6 text-gray-600" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      zIndexClass="z-[60]"
+      title="Log dose"
+      description={
+        <>
+          <span>{medicationName}</span>
+          <span className="block text-xs text-slate-500 mt-0.5">{dateLabel}</span>
+        </>
+      }
+      footer={
+        <div className="flex gap-2 justify-end">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="log-dose-form" disabled={submitting}>
+            {submitting ? 'Saving…' : 'Log dose'}
+          </Button>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="dose-time" className="block text-sm font-semibold text-gray-800 mb-2">
-              Time taken
-            </label>
-            <input
-              id="dose-time"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
-            />
-            <p className="text-xs text-gray-500 mt-2">
-              Defaults to now — change this if you&apos;re logging a dose from earlier.
-            </p>
-          </div>
-
-          <div className="flex gap-3 justify-end pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 disabled:opacity-60 shadow-brand-sm"
-            >
-              {submitting ? 'Saving…' : 'Log dose'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      }
+    >
+      <form id="log-dose-form" onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4">
+        <div>
+          <label htmlFor="dose-time" className="block text-sm font-semibold text-slate-800 mb-2">
+            Time taken
+          </label>
+          <input
+            id="dose-time"
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="w-full px-4 py-3 text-lg border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          <p className="text-xs text-slate-500 mt-2">
+            Defaults to now — change this if you&apos;re logging a dose from earlier.
+          </p>
+        </div>
+      </form>
+    </Modal>
   );
 }

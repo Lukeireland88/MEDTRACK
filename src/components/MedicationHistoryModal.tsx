@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { X, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationLog } from '../types';
+import { fromDateInputValue } from '../utils/dateUtils';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface MedicationHistoryModalProps {
   isOpen: boolean;
@@ -22,34 +25,36 @@ export default function MedicationHistoryModal({
   dosingMode,
   timeSlotId,
   timeSlotName,
-  doseDate
+  doseDate,
 }: MedicationHistoryModalProps) {
   const [logs, setLogs] = useState<MedicationLog[]>([]);
   const [doseEvents, setDoseEvents] = useState<MedicationDoseEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      loadHistory();
+      void loadHistory();
     }
   }, [isOpen, medicationId, timeSlotId, doseDate, dosingMode]);
 
   const loadHistory = async () => {
     setLoading(true);
+    setError(null);
     try {
       if (dosingMode === 'flexible_daily') {
-        const { data, error } = await supabase
+        const { data, error: queryError } = await supabase
           .from('medication_dose_events')
           .select('*')
           .eq('medication_id', medicationId)
           .eq('dose_date', doseDate)
           .order('taken_at', { ascending: false });
 
-        if (error) throw error;
+        if (queryError) throw queryError;
         setDoseEvents(data || []);
         setLogs([]);
       } else {
-        const { data, error } = await supabase
+        const { data, error: queryError } = await supabase
           .from('medication_logs')
           .select('*')
           .eq('medication_id', medicationId)
@@ -57,12 +62,15 @@ export default function MedicationHistoryModal({
           .eq('dose_date', doseDate)
           .order('logged_at', { ascending: false });
 
-        if (error) throw error;
+        if (queryError) throw queryError;
         setLogs(data || []);
         setDoseEvents([]);
       }
-    } catch (error) {
-      console.error('Error loading history:', error);
+    } catch (err) {
+      console.error('Error loading history:', err);
+      setError('Could not load history. Please try again.');
+      setLogs([]);
+      setDoseEvents([]);
     } finally {
       setLoading(false);
     }
@@ -76,106 +84,91 @@ export default function MedicationHistoryModal({
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
   };
 
-  if (!isOpen) return null;
+  const dateLabel = fromDateInputValue(doseDate).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">History</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              {medicationName}
-              {dosingMode === 'time_slots' ? ` - ${timeSlotName}` : ' — flexible doses'}
-            </p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {new Date(doseDate).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="md"
+      title="History"
+      description={
+        <>
+          <span>
+            {medicationName}
+            {dosingMode === 'time_slots' ? ` — ${timeSlotName}` : ' — flexible doses'}
+          </span>
+          <span className="block text-xs text-slate-500 mt-0.5">{dateLabel}</span>
+        </>
+      }
+    >
+      <div className="p-4 sm:p-6">
+        {loading ? (
+          <div className="text-center text-slate-600 py-8 animate-pulse">Loading history…</div>
+        ) : error ? (
+          <div className="text-center py-6 space-y-3" role="alert">
+            <p className="text-sm text-rose-800">{error}</p>
+            <Button size="sm" variant="secondary" onClick={() => void loadHistory()}>
+              Retry
+            </Button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Close history"
-          >
-            <X className="w-6 h-6 text-gray-600" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
-            <div className="text-center text-gray-600 py-8">Loading history...</div>
-          ) : dosingMode === 'flexible_daily' ? (
-            doseEvents.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                No doses logged on this date.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {doseEvents.map((ev) => (
-                  <div
-                    key={ev.id}
-                    className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200"
-                  >
-                    <div className="mt-1">
-                      <Clock className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="font-semibold text-green-800">Dose logged</span>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {formatDateTime(ev.taken_at)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          ) : logs.length === 0 ? (
-            <div className="text-center text-gray-500 py-8">
-              No history found for this medication on this date.
-            </div>
+        ) : dosingMode === 'flexible_daily' ? (
+          doseEvents.length === 0 ? (
+            <div className="text-center text-slate-500 py-8">No doses logged on this date.</div>
           ) : (
             <div className="space-y-3">
-              {logs.map((log) => (
+              {doseEvents.map((ev) => (
                 <div
-                  key={log.id}
-                  className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  key={ev.id}
+                  className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200"
                 >
-                  <div className="mt-1">
-                    <Clock className="w-5 h-5 text-gray-500" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`font-semibold ${
-                          log.action === 'checked'
-                            ? 'text-green-700'
-                            : 'text-orange-700'
-                        }`}
-                      >
-                        {log.action === 'checked' ? 'Marked as taken' : 'Marked as not taken'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {formatDateTime(log.logged_at)}
-                    </p>
-                    {log.action === 'unchecked' && log.reason && (
-                      <p className="text-sm text-amber-900 mt-2 font-medium">Reason: {log.reason}</p>
-                    )}
+                  <Clock className="w-5 h-5 text-slate-500 mt-1 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-emerald-800">Dose logged</span>
+                    <p className="text-sm text-slate-600 mt-1">{formatDateTime(ev.taken_at)}</p>
                   </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          )
+        ) : logs.length === 0 ? (
+          <div className="text-center text-slate-500 py-8">
+            No history found for this medication on this date.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {logs.map((log) => (
+              <div
+                key={log.id}
+                className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200"
+              >
+                <Clock className="w-5 h-5 text-slate-500 mt-1 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span
+                    className={`font-semibold ${
+                      log.action === 'checked' ? 'text-emerald-800' : 'text-amber-800'
+                    }`}
+                  >
+                    {log.action === 'checked' ? 'Marked as taken' : 'Marked as not taken'}
+                  </span>
+                  <p className="text-sm text-slate-600 mt-1">{formatDateTime(log.logged_at)}</p>
+                  {log.action === 'unchecked' && log.reason && (
+                    <p className="text-sm text-amber-900 mt-2 font-medium">Reason: {log.reason}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }

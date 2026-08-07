@@ -38,6 +38,9 @@ interface MedTableProps {
   onReorderMedications: (orderedIds: string[]) => void | Promise<void>;
   reorderMode: boolean;
   onReorderModeChange: (next: boolean) => void;
+  /** Shown when this session has no medications. */
+  onAddMedication?: () => void;
+  sessionLabel?: string;
 }
 
 /**
@@ -356,6 +359,8 @@ export default function MedTable({
   onReorderMedications,
   reorderMode,
   onReorderModeChange,
+  onAddMedication,
+  sessionLabel,
 }: MedTableProps) {
   const { handedness } = usePreferences();
   const controlsFirst = handedness === 'left';
@@ -515,6 +520,30 @@ export default function MedTable({
           },
         }
       : {};
+
+  if (medications.length === 0) {
+    return (
+      <div className="px-4 py-10 text-center">
+        <p className="text-slate-800 font-semibold text-sm sm:text-base">
+          {sessionLabel
+            ? `No medications for ${sessionLabel}`
+            : 'No medications yet'}
+        </p>
+        <p className="mt-1 text-slate-600 text-xs sm:text-sm max-w-sm mx-auto">
+          Add a medication to this session, or open Settings to manage sessions and schedules.
+        </p>
+        {onAddMedication && (
+          <button
+            type="button"
+            onClick={onAddMedication}
+            className="mt-4 inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-brand-sm hover:bg-brand-700 touch-manipulation"
+          >
+            Add medication
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -899,7 +928,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. Log dose (✓ / ✕ when set); use ▾ for Not taken (asks for a reason).
+          Green / red: taken or not taken. Yellow: multiple sessions. Blue: flexible. Use ▾ for Not taken.
         </div>
       </div>
 

@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { X, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,13 +20,17 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
 
-  if (!isOpen) return null;
-
   const resetForm = () => {
     setEmail('');
     setPassword('');
     setError('');
     setInfo('');
+  };
+
+  const handleClose = () => {
+    onClose();
+    resetForm();
+    setMode('signin');
   };
 
   const switchMode = (next: AuthMode) => {
@@ -52,9 +58,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setLoading(false);
         return;
       }
-      onClose();
-      resetForm();
-      setMode('signin');
+      handleClose();
     } else {
       const { error: authError } = await signUp(email, password);
       if (authError) {
@@ -62,9 +66,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setLoading(false);
         return;
       }
-      // If email confirmation is disabled, session is created immediately.
-      // Otherwise ask them to sign in after confirming.
-      setInfo('Account created. You can sign in now (confirm email first if your project requires it).');
+      setInfo(
+        'Account created. You can sign in now (confirm email first if your project requires it).'
+      );
       setMode('signin');
       setPassword('');
     }
@@ -72,118 +76,95 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl ring-1 ring-slate-200/90 overflow-hidden">
-        <div className="h-1.5 bg-gradient-to-r from-brand-500 via-brand-600 to-brand-800" aria-hidden />
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">
-              {mode === 'signin' ? 'Sign in' : 'Create account'}
-            </h2>
-            <p className="mt-1 text-sm text-slate-600">
-              {mode === 'signin'
-                ? 'Your medications stay private to your account.'
-                : 'Each account has its own medications and logs.'}
-            </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      brandAccent
+      title={mode === 'signin' ? 'Sign in' : 'Create account'}
+      description={
+        mode === 'signin'
+          ? 'Your medications stay private to your account.'
+          : 'Each account has its own medications and logs.'
+      }
+      footer={
+        <Button type="submit" form="auth-form" disabled={loading} className="w-full py-3">
+          {loading ? 'Loading…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+        </Button>
+      }
+    >
+      <form id="auth-form" onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4">
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2">
+            <AlertCircle size={20} className="text-rose-600 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-rose-800">{error}</p>
           </div>
-          <button
-            onClick={() => {
-              onClose();
-              resetForm();
-              setMode('signin');
-            }}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X size={24} />
-          </button>
+        )}
+        {info && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+            <p className="text-sm text-emerald-800">{info}</p>
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+          <div className="relative">
+            <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              placeholder="you@example.com"
+              required
+              autoComplete="email"
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
-              <AlertCircle size={20} className="text-red-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
-          {info && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-              <p className="text-sm text-emerald-800">{info}</p>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
-            <div className="relative">
-              <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                placeholder="you@example.com"
-                required
-                autoComplete="email"
-              />
-            </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+          <div className="relative">
+            <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              placeholder="••••••••"
+              required
+              minLength={6}
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            />
           </div>
+          <p className="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                placeholder="••••••••"
-                required
-                minLength={6}
-                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-              />
-            </div>
-            <p className="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-brand-600 text-white py-3 rounded-xl font-medium hover:bg-brand-700 transition-colors disabled:bg-brand-300 disabled:cursor-not-allowed shadow-brand-sm"
-          >
-            {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Create account'}
-          </button>
-
-          <p className="text-center text-sm text-slate-600">
-            {mode === 'signin' ? (
-              <>
-                Need an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => switchMode('signup')}
-                  className="font-semibold text-brand-700 hover:text-brand-900"
-                >
-                  Sign up
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => switchMode('signin')}
-                  className="font-semibold text-brand-700 hover:text-brand-900"
-                >
-                  Sign in
-                </button>
-              </>
-            )}
-          </p>
-        </form>
-      </div>
-    </div>
+        <p className="text-center text-sm text-slate-600">
+          {mode === 'signin' ? (
+            <>
+              Need an account?{' '}
+              <button
+                type="button"
+                onClick={() => switchMode('signup')}
+                className="font-semibold text-brand-700 hover:text-brand-900"
+              >
+                Sign up
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => switchMode('signin')}
+                className="font-semibold text-brand-700 hover:text-brand-900"
+              >
+                Sign in
+              </button>
+            </>
+          )}
+        </p>
+      </form>
+    </Modal>
   );
 }

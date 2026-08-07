@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Plus, LogIn, LogOut, ClipboardList, Pill, Settings } from 'lucide-react';
+import { Plus, LogIn, LogOut, NotebookPen, Pill, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState, TimeSlot } from '../types';
 import {
+  formatDateLine,
   getDefaultTimeSlot,
   toLocalDateKey,
   toLocalDateOnly,
@@ -17,6 +18,8 @@ import {
 } from '../utils/timeSlotUtils';
 import { useAuth } from '../contexts/AuthContext';
 import { usePageBackgroundProps } from '../contexts/PreferencesContext';
+import { useToast } from '../contexts/ToastContext';
+import Button from '../components/ui/Button';
 import DateNav from '../components/DateNav';
 import TimeSlotPicker from '../components/TimeSlotPicker';
 import MedTable from '../components/MedTable';
@@ -40,6 +43,7 @@ export default function TrackerPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
   const pageBg = usePageBackgroundProps();
+  const { showError } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
   const [slotDefinitions, setSlotDefinitions] = useState<TimeSlot[]>([]);
@@ -51,6 +55,7 @@ export default function TrackerPage() {
     Record<string, Pick<MedicationDoseEvent, 'id' | 'taken_at'>[]>
   >({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [editingMedication, setEditingMedication] = useState<MedicationFormData | null>(null);
@@ -145,11 +150,13 @@ export default function TrackerPage() {
       setSlotDoseByMedId(statusMap);
     } catch (error) {
       console.error('Error loading taken status:', error);
+      showError('Could not load dose status. Pull to refresh or try again.');
     }
   };
 
   const loadMedications = async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true);
+    setLoadError(null);
     try {
       // Load ALL active medications
       const { data: allMeds, error: medsError } = await supabase
@@ -161,6 +168,7 @@ export default function TrackerPage() {
         console.error('Error loading medications:', medsError);
         setMedications([]);
         setFlexibleDoseEvents({});
+        setLoadError('Could not load medications. Please try again.');
         if (!opts?.silent) setLoading(false);
         return;
       }
@@ -362,6 +370,7 @@ export default function TrackerPage() {
       setSelectedTimeSlotId(timeSlot?.id || '');
     } catch (error) {
       console.error('Error loading medications:', error);
+      setLoadError('Could not load medications. Please try again.');
     } finally {
       if (!opts?.silent) setLoading(false);
     }
@@ -449,7 +458,7 @@ export default function TrackerPage() {
       }
     } catch (error) {
       console.error('Error toggling taken status:', error);
-      alert('Failed to update status. Please try again.');
+      showError('Failed to update status. Please try again.');
     }
   };
 
@@ -509,7 +518,7 @@ export default function TrackerPage() {
       }));
     } catch (error) {
       console.error('Error marking not taken:', error);
-      alert('Failed to save. Please try again.');
+      showError('Failed to save. Please try again.');
       throw error;
     }
   };
@@ -531,7 +540,7 @@ export default function TrackerPage() {
       if (error) throw error;
     } catch (error) {
       console.error('Error logging seizure:', error);
-      alert('Failed to save seizure log. Please try again.');
+      showError('Failed to save seizure log. Please try again.');
       throw error;
     }
   };
@@ -555,7 +564,7 @@ export default function TrackerPage() {
       if (error) throw error;
     } catch (error) {
       console.error('Error adding event:', error);
-      alert('Failed to save event. Please try again.');
+      showError('Failed to save event. Please try again.');
       throw error;
     }
   };
@@ -683,7 +692,7 @@ export default function TrackerPage() {
       await insertFlexibleDose(medId, takenAtIso);
     } catch (error) {
       console.error('Error logging dose:', error);
-      alert('Failed to log dose. Please try again.');
+      showError('Failed to log dose. Please try again.');
       throw error;
     }
   };
@@ -701,7 +710,7 @@ export default function TrackerPage() {
       setDoseLimitPrompt(null);
     } catch (error) {
       console.error('Error logging dose:', error);
-      alert('Failed to log dose. Please try again.');
+      showError('Failed to log dose. Please try again.');
     } finally {
       setDoseLimitContinuing(false);
     }
@@ -727,7 +736,7 @@ export default function TrackerPage() {
       });
     } catch (error) {
       console.error('Error removing dose:', error);
-      alert('Failed to remove dose. Please try again.');
+      showError('Failed to remove dose. Please try again.');
     }
   };
 
@@ -759,7 +768,7 @@ export default function TrackerPage() {
         pauseEndRaw || (pauseStartRaw ? pauseStartRaw : '');
 
       if (pauseStart && pauseEnd && pauseStart > pauseEnd) {
-        alert('Pause start date must be on or before the pause end date.');
+        showError('Pause start date must be on or before the pause end date.');
         return;
       }
 
@@ -807,7 +816,7 @@ export default function TrackerPage() {
       const filledPeriods = logRows.filter((r) => r.startDate.trim());
       for (const r of filledPeriods) {
         if (r.endDate.trim() && r.startDate > r.endDate) {
-          alert('Course history: end date must be on or after start date for each row.');
+          showError('Course history: end date must be on or after start date for each row.');
           return;
         }
       }
@@ -934,7 +943,7 @@ export default function TrackerPage() {
       loadMedications();
     } catch (error) {
       console.error('Error saving medication:', error);
-      alert('Failed to save medication. Please try again.');
+      showError('Failed to save medication. Please try again.');
     }
   };
 
@@ -1020,7 +1029,7 @@ export default function TrackerPage() {
       loadMedications();
     } catch (error) {
       console.error('Error deleting medication:', error);
-      alert('Failed to delete medication. Please try again.');
+      showError('Failed to delete medication. Please try again.');
     }
   };
 
@@ -1099,18 +1108,18 @@ export default function TrackerPage() {
           >
             <Pill className="h-7 w-7" strokeWidth={2} />
           </div>
-          <h1 className="app-page-title text-2xl font-bold tracking-tight">Medication Tracker</h1>
+          <h1 className="app-page-title text-2xl font-bold tracking-tight">Medtrack</h1>
           <p className="mt-2 text-sm text-slate-600">
             Sign in to view and manage your medications. Each account keeps its own meds and logs private.
           </p>
-          <button
+          <Button
             type="button"
             onClick={() => setAuthModalOpen(true)}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-brand-sm hover:bg-brand-700"
+            className="mt-6 w-full py-3"
           >
             <LogIn className="h-5 w-5" />
             Sign in
-          </button>
+          </Button>
         </div>
         <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       </div>
@@ -1131,47 +1140,59 @@ export default function TrackerPage() {
               </div>
               <div className="min-w-0">
                 <h1 className="app-page-title text-2xl sm:text-3xl font-bold leading-tight tracking-tight">
-                  Today&apos;s medications
+                  {toLocalDateKey(selectedDate) === toLocalDateKey(new Date())
+                    ? "Today's medications"
+                    : `Medications for ${formatDateLine(selectedDate).fullDate}`}
                 </h1>
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
               <Link
                 to="/settings"
-                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 border border-slate-200 bg-white text-slate-800 rounded-lg font-semibold hover:bg-slate-50 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 sm:px-4 py-2 text-sm sm:text-base font-semibold text-slate-800 hover:bg-slate-50 active:translate-y-px touch-manipulation whitespace-nowrap"
                 title="Settings"
               >
                 <Settings className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" aria-hidden />
                 <span className="hidden sm:inline">Settings</span>
               </Link>
-              <button
-                onClick={handleAddMedication}
-                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-brand-600 text-white rounded-xl font-semibold hover:bg-brand-700 active:translate-y-px flex-1 sm:flex-none text-sm sm:text-base whitespace-nowrap shadow-brand-sm"
-              >
+              <Button onClick={handleAddMedication} className="flex-1 sm:flex-none whitespace-nowrap">
                 <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="hidden sm:inline">Add medication</span>
                 <span className="sm:hidden">Add</span>
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="dark"
                 onClick={() => setAddLogPickerOpen(true)}
-                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-slate-900 text-white rounded-lg font-semibold hover:bg-slate-950 active:translate-y-px text-sm sm:text-base whitespace-nowrap"
                 title="Add an observation"
+                className="whitespace-nowrap"
               >
-                <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
+                <NotebookPen className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="hidden sm:inline">Observations</span>
                 <span className="sm:hidden">Observe</span>
-              </button>
-              <button
-                onClick={signOut}
-                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 active:translate-y-px text-sm sm:text-base"
-                title="Sign out"
-              >
+              </Button>
+              <Button variant="ghost" onClick={signOut} title="Sign out" aria-label="Sign out">
                 <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
+              </Button>
             </div>
           </div>
           <DateNav selectedDate={selectedDate} onDateChange={setSelectedDate} />
         </header>
+
+        {loadError && (
+          <div
+            className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm text-rose-900 flex flex-wrap items-center justify-between gap-2"
+            role="alert"
+          >
+            <span>{loadError}</span>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => void loadMedications()}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
 
         <section className="overflow-hidden rounded-2xl surface-glass">
           <TimeSlotPicker
@@ -1201,6 +1222,8 @@ export default function TrackerPage() {
             onReorderMedications={handleReorderMedications}
             reorderMode={reorderMode}
             onReorderModeChange={setReorderMode}
+            onAddMedication={handleAddMedication}
+            sessionLabel={selectedTimeSlot}
           />
         </section>
       </div>
