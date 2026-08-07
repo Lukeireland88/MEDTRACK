@@ -41,8 +41,9 @@ interface MedTableProps {
 }
 
 /**
- * Split button: primary Taken; chevron menu for less-used Not taken.
- * Taken toggles taken ↔ pending (or switches from not-taken → taken via parent toggle).
+ * Split button: primary Log dose (pending) / ✓ (taken) / ✕ (not taken);
+ * chevron menu for less-used Not taken.
+ * Primary toggles taken ↔ pending (or switches from not-taken → taken via parent toggle).
  * Not taken opens the reason modal (or edits reason if already not taken).
  */
 function DoseStatusControl({
@@ -116,23 +117,23 @@ function DoseStatusControl({
               ? 'Taken. Click to clear.'
               : notTakenRecorded
                 ? 'Not taken. Click to mark as taken.'
-                : 'Mark as taken'
+                : 'Log dose'
           }
-          className={`min-h-[40px] min-w-[3.25rem] px-3 text-sm font-semibold inline-flex items-center justify-center transition-colors disabled:opacity-50 touch-manipulation ${
+          className={`min-h-[40px] min-w-[3.25rem] px-3 text-sm font-semibold inline-flex items-center justify-center whitespace-nowrap transition-colors disabled:opacity-50 touch-manipulation ${
             taken
               ? 'bg-emerald-600 text-white hover:bg-emerald-700'
               : notTakenRecorded
                 ? 'bg-rose-50 text-rose-800 hover:bg-rose-100'
                 : 'bg-white text-slate-700 hover:bg-slate-100'
           }`}
-          title={taken ? 'Clear taken mark' : 'Mark as taken'}
+          title={taken ? 'Clear taken mark' : notTakenRecorded ? 'Mark as taken' : 'Log dose'}
         >
           {taken ? (
             <Check className="w-5 h-5" strokeWidth={2.5} aria-hidden />
           ) : notTakenRecorded ? (
             <X className="w-5 h-5" strokeWidth={2.5} aria-hidden />
           ) : (
-            'Taken'
+            'Log dose'
           )}
         </button>
         <button
@@ -860,7 +861,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. Taken (✓ / ✕ when set); use ▾ for Not taken (asks for a reason).
+          Yellow: multiple time blocks. Blue: flexible doses. Log dose (✓ / ✕ when set); use ▾ for Not taken (asks for a reason).
         </div>
       </div>
 
