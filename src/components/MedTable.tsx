@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type ReactNode,
+} from 'react';
 import { Pencil, History, GripVertical, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
@@ -25,7 +32,7 @@ interface MedTableProps {
 }
 
 /**
- * Labeled Taken / Not taken pair for cupboard marking.
+ * Split button: primary Taken; chevron menu for less-used Not taken.
  * Taken toggles taken ↔ pending (or switches from not-taken → taken via parent toggle).
  * Not taken opens the reason modal (or edits reason if already not taken).
  */
@@ -44,42 +51,118 @@ function DoseStatusControl({
   disabled?: boolean;
   className?: string;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (disabled) setMenuOpen(false);
+  }, [disabled]);
+
   return (
     <div
-      className={`inline-flex rounded-lg border border-slate-300 bg-white p-0.5 shadow-sm ${className}`}
+      ref={rootRef}
+      className={`relative inline-flex ${className}`}
       role="group"
       aria-label="Dose status"
     >
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onMarkTaken}
-        aria-pressed={taken}
-        className={`min-h-[40px] px-2.5 sm:px-3 text-xs sm:text-sm font-semibold rounded-md transition-colors disabled:opacity-50 touch-manipulation ${
-          taken
-            ? 'bg-emerald-600 text-white shadow-sm'
-            : 'text-slate-700 hover:bg-slate-100'
-        }`}
-        title={taken ? 'Clear taken mark' : 'Mark as taken'}
-      >
-        Taken
-      </button>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onMarkNotTaken}
-        aria-pressed={notTakenRecorded}
-        className={`min-h-[40px] px-2.5 sm:px-3 text-xs sm:text-sm font-semibold rounded-md transition-colors disabled:opacity-50 touch-manipulation ${
+      <div
+        className={`inline-flex min-h-[40px] overflow-hidden rounded-lg border shadow-sm ${
           notTakenRecorded
-            ? 'bg-rose-600 text-white shadow-sm'
-            : 'text-slate-700 hover:bg-slate-100'
+            ? 'border-rose-400 bg-rose-50'
+            : taken
+              ? 'border-emerald-600 bg-emerald-600'
+              : 'border-slate-300 bg-white'
         }`}
-        title={
-          notTakenRecorded ? 'Update missed-dose reason' : 'Mark as not taken (with reason)'
-        }
       >
-        Not taken
-      </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => {
+            setMenuOpen(false);
+            onMarkTaken();
+          }}
+          aria-pressed={taken}
+          className={`min-h-[40px] px-3 text-sm font-semibold transition-colors disabled:opacity-50 touch-manipulation ${
+            taken
+              ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+              : notTakenRecorded
+                ? 'bg-rose-50 text-rose-900 hover:bg-rose-100'
+                : 'bg-white text-slate-700 hover:bg-slate-100'
+          }`}
+          title={taken ? 'Clear taken mark' : 'Mark as taken'}
+        >
+          Taken
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          aria-label={
+            notTakenRecorded
+              ? 'More options. Not taken is recorded.'
+              : 'More dose options'
+          }
+          className={`min-h-[40px] w-9 border-l flex items-center justify-center transition-colors disabled:opacity-50 touch-manipulation ${
+            notTakenRecorded
+              ? 'border-rose-300 bg-rose-600 text-white hover:bg-rose-700'
+              : taken
+                ? 'border-emerald-500/80 bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-100'
+          }`}
+          title={
+            notTakenRecorded
+              ? 'Not taken recorded — open menu'
+              : 'More options'
+          }
+        >
+          <ChevronDown className="w-4 h-4" aria-hidden />
+        </button>
+      </div>
+
+      {menuOpen && !disabled && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-30 mt-1 min-w-full whitespace-nowrap rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
+        >
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              onMarkNotTaken();
+            }}
+            className={`w-full px-3 py-2.5 text-left text-sm font-semibold touch-manipulation ${
+              notTakenRecorded
+                ? 'bg-rose-50 text-rose-800'
+                : 'text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            {notTakenRecorded ? 'Update not taken…' : 'Not taken…'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -406,7 +489,7 @@ export default function MedTable({
               </th>
               {orderSides(
                 controlsFirst,
-                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 min-w-[9.5rem]">
+                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-28">
                   Taken
                 </th>,
                 <>
@@ -755,7 +838,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. Taken / Not taken: mark cupboard status (Not taken asks for a reason).
+          Yellow: multiple time blocks. Blue: flexible doses. Taken marks cupboard status; use ▾ for Not taken (asks for a reason).
         </div>
       </div>
 
