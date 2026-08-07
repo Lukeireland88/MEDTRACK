@@ -547,8 +547,23 @@ export default function MedTable({
 
   return (
     <>
-      {/* Desktop table view */}
-      <div className="hidden md:block px-3 pb-3">
+      {/* Desktop / large tablet table view */}
+      <div className="hidden lg:block px-3 pb-3">
+        {reorderMode && (
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-slate-300 bg-slate-900 px-3 py-2 text-white">
+            <p className="text-sm font-medium">
+              Reordering — drag or use arrows. Dose logging is paused
+              {savingOrder ? ' · Saving…' : ''}
+            </p>
+            <button
+              type="button"
+              onClick={() => onReorderModeChange(false)}
+              className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-slate-900"
+            >
+              Done
+            </button>
+          </div>
+        )}
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-slate-100/50">
@@ -756,12 +771,22 @@ export default function MedTable({
         </table>
       </div>
 
-      {/* Mobile card view */}
-      <div className="md:hidden px-2 pt-2 pb-3 space-y-2">
+      {/* Phone / small tablet card view */}
+      <div className="lg:hidden px-2 pt-2 pb-3 space-y-2">
         {reorderMode && (
-          <p className="text-xs text-slate-600 px-0.5">
-            Use the up/down arrows to move a row{savingOrder ? ' · Saving…' : ''}.
-          </p>
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-300 bg-slate-900 px-3 py-2 text-white">
+            <p className="text-xs sm:text-sm font-medium min-w-0">
+              Reordering — dose logging paused
+              {savingOrder ? ' · Saving…' : ''}
+            </p>
+            <button
+              type="button"
+              onClick={() => onReorderModeChange(false)}
+              className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-900 touch-manipulation"
+            >
+              Done
+            </button>
+          </div>
         )}
         {sortedMedications.map((med, index) => {
           const due = isDue(med, selectedDate);
