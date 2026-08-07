@@ -190,7 +190,9 @@ function DoseStatusControl({
   );
 }
 
-/** Background (and left accent) for a tracker row based on due/pause and dose status. */
+/** Background (and left accent) for a tracker row based on due/pause and dose status.
+ * Status accent uses inset shadow so it does not shift layout (unlike border-l).
+ */
 function medRowSurfaceClass({
   paused,
   due,
@@ -211,10 +213,10 @@ function medRowSurfaceClass({
   if (paused) return 'bg-gray-200 text-gray-600 opacity-70';
   if (!due) return 'bg-gray-50 text-gray-500 opacity-80';
   if (!isFlexible && taken) {
-    return 'bg-emerald-100/90 border-l-4 border-l-emerald-500';
+    return 'bg-emerald-100/90 shadow-[inset_4px_0_0_0_theme(colors.emerald.500)]';
   }
   if (!isFlexible && notTakenRecorded) {
-    return 'bg-rose-100/90 border-l-4 border-l-rose-500';
+    return 'bg-rose-100/90 shadow-[inset_4px_0_0_0_theme(colors.rose.500)]';
   }
   if (isFlexible) return 'bg-brand-50/70';
   if (isMultiple) return 'bg-yellow-50/70';
