@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type DragEvent, type ReactNode } from 'react';
-import { Pencil, History, XCircle, X, GripVertical, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { Pencil, History, GripVertical, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState } from '../types';
 import { isDue, isPaused } from '../utils/scheduleUtils';
 import { medicationIconComponent } from '../utils/medicationIcons';
@@ -24,77 +24,63 @@ interface MedTableProps {
   onReorderModeChange: (next: boolean) => void;
 }
 
-/** Checkbox for pending/taken; X-in-box when explicitly not taken (click marks taken). */
-function SlotTakenControl({
-  medId,
+/**
+ * Labeled Taken / Not taken pair for cupboard marking.
+ * Taken toggles taken ↔ pending (or switches from not-taken → taken via parent toggle).
+ * Not taken opens the reason modal (or edits reason if already not taken).
+ */
+function DoseStatusControl({
   taken,
   notTakenRecorded,
-  onToggleTaken,
+  onMarkTaken,
+  onMarkNotTaken,
+  disabled = false,
   className = '',
 }: {
-  medId: string;
   taken: boolean;
   notTakenRecorded: boolean;
-  onToggleTaken: (id: string) => void;
+  onMarkTaken: () => void;
+  onMarkNotTaken: () => void;
+  disabled?: boolean;
   className?: string;
 }) {
-  if (notTakenRecorded) {
-    return (
+  return (
+    <div
+      className={`inline-flex rounded-lg border border-slate-300 bg-white p-0.5 shadow-sm ${className}`}
+      role="group"
+      aria-label="Dose status"
+    >
       <button
         type="button"
-        onClick={() => onToggleTaken(medId)}
-        className={`w-6 h-6 shrink-0 rounded border-2 border-gray-500 bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1 ${className}`}
-        title="Not taken — click to mark as taken"
-        aria-label="Not taken. Click to mark as taken."
+        disabled={disabled}
+        onClick={onMarkTaken}
+        aria-pressed={taken}
+        className={`min-h-[40px] px-2.5 sm:px-3 text-xs sm:text-sm font-semibold rounded-md transition-colors disabled:opacity-50 touch-manipulation ${
+          taken
+            ? 'bg-emerald-600 text-white shadow-sm'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+        title={taken ? 'Clear taken mark' : 'Mark as taken'}
       >
-        <X className="w-4 h-4 text-gray-800" strokeWidth={2.5} aria-hidden />
+        Taken
       </button>
-    );
-  }
-  return (
-    <input
-      type="checkbox"
-      checked={taken}
-      onChange={() => onToggleTaken(medId)}
-      className={`w-6 h-6 accent-brand-600 cursor-pointer ${className}`}
-      title="Mark as taken"
-    />
-  );
-}
-
-function MarkNotTakenButton({
-  notTakenRecorded,
-  onClick,
-  className = '',
-  iconClassName = 'w-4 h-4',
-}: {
-  notTakenRecorded: boolean;
-  onClick: () => void;
-  className?: string;
-  iconClassName?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`
-        p-2 rounded-lg transition-colors
-        ${
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onMarkNotTaken}
+        aria-pressed={notTakenRecorded}
+        className={`min-h-[40px] px-2.5 sm:px-3 text-xs sm:text-sm font-semibold rounded-md transition-colors disabled:opacity-50 touch-manipulation ${
           notTakenRecorded
-            ? 'text-rose-800 bg-rose-100 hover:bg-rose-200'
-            : 'text-gray-600 hover:bg-gray-100'
+            ? 'bg-rose-600 text-white shadow-sm'
+            : 'text-slate-700 hover:bg-slate-100'
+        }`}
+        title={
+          notTakenRecorded ? 'Update missed-dose reason' : 'Mark as not taken (with reason)'
         }
-        ${className}
-      `}
-      title={
-        notTakenRecorded ? 'Update missed-dose reason' : 'Mark as missed (with reason)'
-      }
-      aria-label={
-        notTakenRecorded ? 'Update missed-dose reason' : 'Mark as missed with reason'
-      }
-    >
-      <XCircle className={iconClassName} strokeWidth={2} aria-hidden />
-    </button>
+      >
+        Not taken
+      </button>
+    </div>
   );
 }
 
@@ -420,7 +406,7 @@ export default function MedTable({
               </th>
               {orderSides(
                 controlsFirst,
-                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 w-20">
+                <th className="text-left text-sm text-slate-600 border-b border-slate-200 p-3 min-w-[9.5rem]">
                   Taken
                 </th>,
                 <>
@@ -494,18 +480,13 @@ export default function MedTable({
                       </div>
                     )
                   ) : due ? (
-                    <div className="flex items-center gap-0.5">
-                      <SlotTakenControl
-                        medId={med.id}
-                        taken={taken}
-                        notTakenRecorded={notTakenRecorded}
-                        onToggleTaken={reorderMode ? () => undefined : onToggleTaken}
-                      />
-                      <MarkNotTakenButton
-                        notTakenRecorded={notTakenRecorded}
-                        onClick={() => onOpenMarkNotTaken(med.id)}
-                      />
-                    </div>
+                    <DoseStatusControl
+                      taken={taken}
+                      notTakenRecorded={notTakenRecorded}
+                      onMarkTaken={() => onToggleTaken(med.id)}
+                      onMarkNotTaken={() => onOpenMarkNotTaken(med.id)}
+                      disabled={reorderMode}
+                    />
                   ) : (
                     <div className="w-6 h-6 flex items-center justify-center text-gray-400 text-xs font-semibold">
                       —
@@ -659,21 +640,14 @@ export default function MedTable({
               </div>
             )
           ) : due ? (
-            <div className="flex items-center gap-0.5 flex-shrink-0 mt-0.5">
-              <SlotTakenControl
-                medId={med.id}
-                taken={taken}
-                notTakenRecorded={notTakenRecorded}
-                onToggleTaken={reorderMode ? () => undefined : onToggleTaken}
-                className="touch-manipulation"
-              />
-              <MarkNotTakenButton
-                notTakenRecorded={notTakenRecorded}
-                onClick={() => onOpenMarkNotTaken(med.id)}
-                className="touch-manipulation"
-                iconClassName="w-5 h-5"
-              />
-            </div>
+            <DoseStatusControl
+              taken={taken}
+              notTakenRecorded={notTakenRecorded}
+              onMarkTaken={() => onToggleTaken(med.id)}
+              onMarkNotTaken={() => onOpenMarkNotTaken(med.id)}
+              disabled={reorderMode}
+              className="flex-shrink-0 mt-0.5"
+            />
           ) : (
             <div className="w-6 h-6 mt-0.5 flex-shrink-0 flex items-center justify-center text-gray-400 text-xs font-semibold">
               —
@@ -781,7 +755,7 @@ export default function MedTable({
           <strong>{remaining} item{remaining !== 1 ? 's' : ''}</strong> left for this time.
         </div>
         <div className="text-left sm:text-right text-xs">
-          Yellow: multiple time blocks. Blue: flexible doses. X in box: not taken (click to mark taken). ✕ in circle: mark as missed with a reason.
+          Yellow: multiple time blocks. Blue: flexible doses. Taken / Not taken: mark cupboard status (Not taken asks for a reason).
         </div>
       </div>
 
