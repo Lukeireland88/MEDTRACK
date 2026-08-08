@@ -957,11 +957,7 @@ export default function TrackerPage() {
 
   const generateWhenText = (formData: MedicationFormData): string => {
     if (formData.dosingMode === 'flexible_daily') {
-      if (formData.targetDosesPerDay === '' || formData.targetDosesPerDay === null) {
-        return 'Flexible daily (log each dose)';
-      }
-      const n = Number(formData.targetDosesPerDay);
-      return `${n} dose${n !== 1 ? 's' : ''} per day (flexible times)`;
+      return 'Flexible';
     }
     if (formData.pattern === 'daily') {
       return 'Daily';

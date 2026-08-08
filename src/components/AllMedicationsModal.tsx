@@ -186,7 +186,9 @@ export default function AllMedicationsModal({
                 <div className="min-w-0">
                   <div className="text-sm text-slate-900 font-semibold truncate">{med.name}</div>
                   <div className="mt-0.5 text-xs text-slate-600">
-                    {med.when_text || '—'}
+                    {med.dosing_mode === 'flexible_daily'
+                      ? 'Flexible'
+                      : med.when_text || '—'}
                     {med.dosing_mode === 'time_slots' && med.time_slot_names?.length ? (
                       <span className="text-slate-500"> · {med.time_slot_names.join(', ')}</span>
                     ) : null}

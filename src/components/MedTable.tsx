@@ -733,7 +733,9 @@ export default function MedTable({
                       </p>
                     )}
                   </td>
-                  <td className="p-3 border-b border-slate-200">{med.when_text}</td>
+                  <td className="p-3 border-b border-slate-200">
+                    {isFlexible ? 'Flexible' : med.when_text}
+                  </td>
                   <td className="p-3 border-b border-slate-200 text-sm text-gray-600">
                     {med.notes || '—'}
                   </td>
@@ -875,7 +877,7 @@ export default function MedTable({
                 )}
               </div>
               <div className="text-xs text-gray-600 mb-1">
-                {med.when_text}
+                {isFlexible ? 'Flexible' : med.when_text}
               </div>
               {notTakenRecorded && slotDose?.notTakenReason && (
                 <div className="text-xs text-gray-700 mb-1 font-medium">
