@@ -532,7 +532,9 @@ export default function MedTable({
             : 'No medications yet'}
         </p>
         <p className="mt-1 text-slate-600 text-xs sm:text-sm max-w-sm mx-auto">
-          Add a medication to this session, or open Settings to manage sessions and schedules.
+          {sessionLabel
+            ? 'Add a medication to this session, or open Settings to manage sessions and schedules.'
+            : 'Add a medication and choose which session it belongs to. Default sessions (Morning, Evening, and more) are already set up for you.'}
         </p>
         {onAddMedication && (
           <button

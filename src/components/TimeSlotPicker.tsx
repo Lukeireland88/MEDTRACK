@@ -73,8 +73,8 @@ export default function TimeSlotPicker({
   if (availableTimeSlots.length === 0) {
     return (
       <div className="px-2 py-2 sm:px-3 sm:py-2.5 border-b border-slate-200/90 bg-slate-50/95 text-center text-slate-600 text-sm sm:text-base rounded-t-2xl font-medium">
-        No sessions yet — open <strong className="font-semibold text-slate-800">Settings</strong> (tracker
-        header) and configure Sessions to add Morning, Evening, etc.
+        Session tabs appear here once a medication is assigned to Morning, Evening, or another
+        session.
       </div>
     );
   }

@@ -1255,7 +1255,7 @@ export default function TrackerPage() {
             reorderMode={reorderMode}
             onReorderModeChange={setReorderMode}
             onAddMedication={handleAddMedication}
-            sessionLabel={selectedTimeSlot}
+            sessionLabel={availableTimeSlots.length > 0 ? selectedTimeSlot : ''}
           />
         </section>
       </div>
