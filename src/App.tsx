@@ -3,6 +3,21 @@ import TrackerPage from './pages/TrackerPage';
 import HistoryReportPage from './pages/HistoryReportPage';
 import SettingsPage from './pages/SettingsPage';
 import { isSupabaseConfigured } from './lib/supabase';
+import { useAuth } from './contexts/AuthContext';
+import AuthModal from './components/AuthModal';
+
+function PasswordRecoveryGate() {
+  const { passwordRecoveryPending, clearPasswordRecovery } = useAuth();
+
+  return (
+    <AuthModal
+      isOpen={passwordRecoveryPending}
+      onClose={clearPasswordRecovery}
+      initialMode="updatePassword"
+      lockMode
+    />
+  );
+}
 
 export default function App() {
   return (
@@ -14,6 +29,7 @@ export default function App() {
           <code className="font-mono text-xs">VITE_SUPABASE_ANON_KEY</code> as GitHub Actions secrets and redeploy.
         </div>
       )}
+      <PasswordRecoveryGate />
       <Routes>
         <Route path="/" element={<TrackerPage />} />
         <Route path="/history" element={<HistoryReportPage />} />
