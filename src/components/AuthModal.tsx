@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Modal from './ui/Modal';
@@ -7,18 +7,31 @@ import Button from './ui/Button';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Open on create-account instead of sign-in. */
+  initialMode?: 'signin' | 'signup';
 }
 
 type AuthMode = 'signin' | 'signup';
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const [mode, setMode] = useState<AuthMode>('signin');
+export default function AuthModal({
+  isOpen,
+  onClose,
+  initialMode = 'signin',
+}: AuthModalProps) {
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setMode(initialMode);
+    setError('');
+    setInfo('');
+  }, [isOpen, initialMode]);
 
   const resetForm = () => {
     setEmail('');
@@ -30,7 +43,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const handleClose = () => {
     onClose();
     resetForm();
-    setMode('signin');
+    setMode(initialMode);
   };
 
   const switchMode = (next: AuthMode) => {
@@ -60,14 +73,36 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       }
       handleClose();
     } else {
-      const { error: authError } = await signUp(email, password);
+      const { error: authError, session, user } = await signUp(email, password);
       if (authError) {
         setError(authError.message);
         setLoading(false);
         return;
       }
+
+      // With "Confirm email" disabled, Supabase returns a session and the user is signed in.
+      if (session) {
+        handleClose();
+        setLoading(false);
+        return;
+      }
+
+      // With "Confirm email" enabled, account exists but must verify before signing in.
+      // Empty identities often means the email was already registered.
+      const alreadyRegistered =
+        user && Array.isArray((user as { identities?: unknown[] }).identities)
+          ? ((user as { identities: unknown[] }).identities).length === 0
+          : false;
+
+      if (alreadyRegistered) {
+        setError('An account with this email already exists. Try signing in instead.');
+        setMode('signin');
+        setLoading(false);
+        return;
+      }
+
       setInfo(
-        'Account created. You can sign in now (confirm email first if your project requires it).'
+        'Check your email for a confirmation link, then come back here to sign in. If you do not get an email, ask the project owner to turn off “Confirm email” in Supabase Auth settings.'
       );
       setMode('signin');
       setPassword('');
@@ -84,7 +119,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       description={
         mode === 'signin'
           ? 'Your medications stay private to your account.'
-          : 'Each account has its own medications and logs.'
+          : 'Create an account with your email. Each account keeps its own medications and logs private.'
       }
       footer={
         <Button type="submit" form="auth-form" disabled={loading} className="w-full py-3">
@@ -148,7 +183,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 onClick={() => switchMode('signup')}
                 className="font-semibold text-brand-700 hover:text-brand-900"
               >
-                Sign up
+                Sign up with email
               </button>
             </>
           ) : (

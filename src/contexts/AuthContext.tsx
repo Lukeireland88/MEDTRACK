@@ -7,7 +7,10 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (
+    email: string,
+    password: string
+  ) => Promise<{ error: any; session: Session | null; user: User | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -47,8 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error };
+    const redirectTo =
+      typeof window !== 'undefined' ? `${window.location.origin}${import.meta.env.BASE_URL}` : undefined;
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: redirectTo ? { emailRedirectTo: redirectTo.replace(/\/?$/, '/') } : undefined,
+    });
+    return { error, session: data.session ?? null, user: data.user ?? null };
   };
 
   const signOut = async () => {

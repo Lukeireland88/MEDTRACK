@@ -58,6 +58,7 @@ export default function TrackerPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [editingMedication, setEditingMedication] = useState<MedicationFormData | null>(null);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [historyMedicationId, setHistoryMedicationId] = useState<string>('');
@@ -378,6 +379,7 @@ export default function TrackerPage() {
 
   const handleToggleTaken = async (medId: string) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -464,6 +466,7 @@ export default function TrackerPage() {
 
   const handleMarkNotTaken = async (medId: string, reason: string) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -525,6 +528,7 @@ export default function TrackerPage() {
 
   const handleLogSeizure = async (payload: { occurredAtIso: string; eventDate: string; durationSeconds: number; notes: string | null }) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -547,6 +551,7 @@ export default function TrackerPage() {
 
   const handleAddEvent = async (payload: AddEventPayload) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -597,6 +602,7 @@ export default function TrackerPage() {
 
   const handleLogFlexibleDose = async (medId: string, takenAtIso: string) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -718,6 +724,7 @@ export default function TrackerPage() {
 
   const handleRemoveLastFlexibleDose = async (medId: string) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -742,6 +749,7 @@ export default function TrackerPage() {
 
   const handleSaveMedication = async (formData: MedicationFormData) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -970,6 +978,7 @@ export default function TrackerPage() {
 
   const handleEditMedication = (med: MedicationWithSlots) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -998,6 +1007,7 @@ export default function TrackerPage() {
 
   const handleAddMedication = () => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -1007,6 +1017,7 @@ export default function TrackerPage() {
 
   const handleDeleteMedication = async (medicationId: string) => {
     if (!user) {
+      setAuthModalMode('signin');
       setAuthModalOpen(true);
       return;
     }
@@ -1110,18 +1121,38 @@ export default function TrackerPage() {
           </div>
           <h1 className="app-page-title text-2xl font-bold tracking-tight">Medtrack</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Sign in to view and manage your medications. Each account keeps its own meds and logs private.
+            Sign in or create an account with your email. Each account keeps its own meds and logs private.
           </p>
-          <Button
-            type="button"
-            onClick={() => setAuthModalOpen(true)}
-            className="mt-6 w-full py-3"
-          >
-            <LogIn className="h-5 w-5" />
-            Sign in
-          </Button>
+          <div className="mt-6 flex flex-col gap-2">
+            <Button
+              type="button"
+              onClick={() => {
+                setAuthModalMode('signin');
+                setAuthModalOpen(true);
+              }}
+              className="w-full py-3"
+            >
+              <LogIn className="h-5 w-5" />
+              Sign in
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setAuthModalMode('signup');
+                setAuthModalOpen(true);
+              }}
+              className="w-full py-3"
+            >
+              Create account
+            </Button>
+          </div>
         </div>
-        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          initialMode={authModalMode}
+        />
       </div>
     );
   }
@@ -1254,6 +1285,7 @@ export default function TrackerPage() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
       />
 
       <AddLogPickerModal
