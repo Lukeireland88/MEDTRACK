@@ -8,6 +8,7 @@ import {
   type MedicationIconKey,
 } from '../utils/medicationIcons';
 import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../contexts/ConfirmContext';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 
@@ -78,6 +79,7 @@ export default function AddMedicationModal({
   sessionOptions,
 }: AddMedicationModalProps) {
   const { showError } = useToast();
+  const { confirm } = useConfirm();
   const [formData, setFormData] = useState<MedicationFormData>({
     name: '',
     icon: DEFAULT_MEDICATION_ICON,
@@ -301,14 +303,14 @@ export default function AddMedicationModal({
             <Button
               type="button"
               variant="danger"
-              onClick={() => {
-                if (
-                  confirm(
-                    `Are you sure you want to delete ${formData.name}? This cannot be undone.`
-                  )
-                ) {
-                  onDelete(editingMedication.id!);
-                }
+              onClick={async () => {
+                const ok = await confirm({
+                  title: 'Delete medication',
+                  message: `Are you sure you want to delete ${formData.name}? This cannot be undone.`,
+                  confirmLabel: 'Delete',
+                  tone: 'danger',
+                });
+                if (ok) onDelete(editingMedication.id!);
               }}
             >
               Delete

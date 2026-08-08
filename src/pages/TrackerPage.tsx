@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { usePageBackgroundProps } from '../contexts/PreferencesContext';
 import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../contexts/ConfirmContext';
 import Button from '../components/ui/Button';
 import DateNav from '../components/DateNav';
 import TimeSlotPicker from '../components/TimeSlotPicker';
@@ -44,6 +45,7 @@ export default function TrackerPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const pageBg = usePageBackgroundProps();
   const { showError } = useToast();
+  const { confirm } = useConfirm();
   const [selectedDate, setSelectedDate] = useState<Date>(toLocalDateOnly(new Date()));
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(getDefaultTimeSlot());
   const [slotDefinitions, setSlotDefinitions] = useState<TimeSlot[]>([]);
@@ -813,9 +815,12 @@ export default function TrackerPage() {
         );
 
         if (conflicting) {
-          const proceed = window.confirm(
-            `You already have a medication named "${conflicting.name}". Adding or saving this creates a separate entry and splits dose history.\n\nContinue anyway?`
-          );
+          const proceed = await confirm({
+            title: 'Duplicate name',
+            message: `You already have a medication named "${conflicting.name}". Adding or saving this creates a separate entry and splits dose history.\n\nContinue anyway?`,
+            confirmLabel: 'Continue',
+            tone: 'default',
+          });
           if (!proceed) return;
         }
       }

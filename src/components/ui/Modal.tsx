@@ -25,6 +25,8 @@ interface ModalProps {
   scrollBody?: boolean;
   /** When false, clicking the dimmed backdrop does not close (default true). */
   closeOnOverlayClick?: boolean;
+  /** When false, Escape does not close (default true). */
+  closeOnEscape?: boolean;
   role?: 'dialog' | 'alertdialog';
 }
 
@@ -40,6 +42,7 @@ export default function Modal({
   brandAccent = false,
   scrollBody = true,
   closeOnOverlayClick = true,
+  closeOnEscape = true,
   role = 'dialog',
 }: ModalProps) {
   const titleId = useId();
@@ -51,18 +54,22 @@ export default function Modal({
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCloseRef.current();
+      if (closeOnEscape && e.key === 'Escape') onCloseRef.current();
     };
-    document.addEventListener('keydown', onKey);
+    if (closeOnEscape) {
+      document.addEventListener('keydown', onKey);
+    }
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     // Focus the panel once on open (not on every parent re-render / onClose identity change)
     panelRef.current?.focus();
     return () => {
-      document.removeEventListener('keydown', onKey);
+      if (closeOnEscape) {
+        document.removeEventListener('keydown', onKey);
+      }
       document.body.style.overflow = prevOverflow;
     };
-  }, [isOpen]);
+  }, [isOpen, closeOnEscape]);
 
   if (!isOpen) return null;
 
@@ -96,7 +103,7 @@ export default function Modal({
               {title}
             </h2>
             {description != null && description !== false && (
-              <div id={descId} className="mt-1 text-sm text-slate-600">
+              <div id={descId} className="mt-1 text-sm text-slate-600 whitespace-pre-line">
                 {description}
               </div>
             )}
@@ -110,7 +117,9 @@ export default function Modal({
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className={`min-h-0 flex-1 ${scrollBody ? 'overflow-y-auto' : ''}`}>{children}</div>
+        {children != null && children !== false && (
+          <div className={`min-h-0 flex-1 ${scrollBody ? 'overflow-y-auto' : ''}`}>{children}</div>
+        )}
         {footer != null && (
           <div className="shrink-0 border-t border-slate-100 p-4 sm:p-5 bg-slate-50/80">
             {footer}

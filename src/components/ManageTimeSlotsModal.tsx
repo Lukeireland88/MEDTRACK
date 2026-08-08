@@ -3,6 +3,7 @@ import { Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useConfirm } from '../contexts/ConfirmContext';
 import type { TimeSlot } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
@@ -16,6 +17,7 @@ interface ManageTimeSlotsModalProps {
 export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: ManageTimeSlotsModalProps) {
   const { user } = useAuth();
   const { showError } = useToast();
+  const { confirm } = useConfirm();
   const [rows, setRows] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -148,7 +150,13 @@ export default function ManageTimeSlotsModal({ isOpen, onClose, onSaved }: Manag
       );
       return;
     }
-    if (!window.confirm(`Delete session “${slot.name}”?`)) return;
+    const ok = await confirm({
+      title: 'Delete session',
+      message: `Delete session “${slot.name}”?`,
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
     setSavingId(slot.id);
     try {
       const { error } = await supabase.from('time_slots').delete().eq('id', slot.id);
