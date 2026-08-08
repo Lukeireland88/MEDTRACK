@@ -23,6 +23,8 @@ interface ModalProps {
   brandAccent?: boolean;
   /** When false, body is not scroll-constrained (caller manages layout). */
   scrollBody?: boolean;
+  /** When false, clicking the dimmed backdrop does not close (default true). */
+  closeOnOverlayClick?: boolean;
   role?: 'dialog' | 'alertdialog';
 }
 
@@ -37,6 +39,7 @@ export default function Modal({
   zIndexClass = 'z-50',
   brandAccent = false,
   scrollBody = true,
+  closeOnOverlayClick = true,
   role = 'dialog',
 }: ModalProps) {
   const titleId = useId();
@@ -68,7 +71,7 @@ export default function Modal({
       className={`fixed inset-0 bg-black/50 flex items-center justify-center ${zIndexClass} p-4`}
       role="presentation"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (closeOnOverlayClick && e.target === e.currentTarget) onClose();
       }}
     >
       <div

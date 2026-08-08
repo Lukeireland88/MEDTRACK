@@ -229,6 +229,7 @@ export default function AuthModal({
       isOpen={isOpen}
       onClose={handleClose}
       brandAccent
+      closeOnOverlayClick={false}
       title={titleForMode()}
       description={descriptionForMode()}
     >
