@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, ArrowLeft, Hand, ListOrdered, Paintbrush, Pill, Settings } from 'lucide-react';
+import { Archive, ArrowLeft, Hand, ListOrdered, Lock, Paintbrush, Pill, Settings } from 'lucide-react';
 import ManageTimeSlotsModal from '../components/ManageTimeSlotsModal';
 import EndedCoursesModal from '../components/EndedCoursesModal';
 import AllMedicationsModal from '../components/AllMedicationsModal';
@@ -22,6 +22,8 @@ const BACKGROUND_PRESETS = [
   { label: 'Sand', value: '#fef3c7' },
 ] as const;
 
+type AuthModalMode = 'signin' | 'updatePassword';
+
 export default function SettingsPage() {
   const { user } = useAuth();
   const { handedness, setHandedness, backgroundColor, setBackgroundColor, resetBackgroundColor } =
@@ -31,6 +33,17 @@ export default function SettingsPage() {
   const [endedCoursesOpen, setEndedCoursesOpen] = useState(false);
   const [allMedsOpen, setAllMedsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthModalMode>('signin');
+
+  const openSignIn = () => {
+    setAuthModalMode('signin');
+    setAuthModalOpen(true);
+  };
+
+  const openChangePassword = () => {
+    setAuthModalMode('updatePassword');
+    setAuthModalOpen(true);
+  };
 
   const selectHandedness = (value: Handedness) => {
     setHandedness(value);
@@ -62,6 +75,47 @@ export default function SettingsPage() {
         </header>
 
         <ul className="space-y-3">
+          <li>
+            {user ? (
+              <button
+                type="button"
+                onClick={openChangePassword}
+                className="flex w-full items-start gap-4 rounded-2xl surface-glass-interactive p-4 text-left"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                  <Lock className="h-5 w-5" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-slate-900">Account</div>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    Signed in as {user.email}. Change the password for this account.
+                  </p>
+                  <span className="mt-2 inline-block text-sm font-semibold text-brand-700">
+                    Change password →
+                  </span>
+                </div>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={openSignIn}
+                className="flex w-full items-start gap-4 rounded-2xl surface-glass-interactive p-4 text-left"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                  <Lock className="h-5 w-5" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-slate-900">Account</div>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    Sign in to change your password and sync medications across devices.
+                  </p>
+                  <span className="mt-2 inline-block text-sm font-semibold text-brand-700">
+                    Sign in →
+                  </span>
+                </div>
+              </button>
+            )}
+          </li>
           <li>
             <div className="rounded-2xl surface-glass p-4">
               <div className="flex items-start gap-4">
@@ -181,7 +235,7 @@ export default function SettingsPage() {
           <li>
             <button
               type="button"
-              onClick={() => (user ? setSessionsOpen(true) : setAuthModalOpen(true))}
+              onClick={() => (user ? setSessionsOpen(true) : openSignIn())}
               className="flex w-full items-start gap-4 rounded-2xl surface-glass-interactive p-4 text-left"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
@@ -202,7 +256,7 @@ export default function SettingsPage() {
           <li>
             <button
               type="button"
-              onClick={() => (user ? setAllMedsOpen(true) : setAuthModalOpen(true))}
+              onClick={() => (user ? setAllMedsOpen(true) : openSignIn())}
               className="flex w-full items-start gap-4 rounded-2xl surface-glass-interactive p-4 text-left"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
@@ -244,7 +298,7 @@ export default function SettingsPage() {
             <li>
               <button
                 type="button"
-                onClick={() => setAuthModalOpen(true)}
+                onClick={openSignIn}
                 className="w-full rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4 text-left text-sm text-slate-600 hover:bg-slate-100/80"
               >
                 Sign in to manage ended courses.
@@ -266,9 +320,13 @@ export default function SettingsPage() {
         isOpen={allMedsOpen}
         onClose={() => setAllMedsOpen(false)}
         signedIn={Boolean(user)}
-        onRequireSignIn={() => setAuthModalOpen(true)}
+        onRequireSignIn={openSignIn}
       />
-      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+      />
     </div>
   );
 }

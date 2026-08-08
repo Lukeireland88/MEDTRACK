@@ -74,7 +74,7 @@ export default function AuthModal({
       case 'forgot':
         return 'Reset password';
       case 'updatePassword':
-        return 'Choose a new password';
+        return lockMode ? 'Choose a new password' : 'Change password';
       default:
         return 'Sign in';
     }
@@ -87,7 +87,9 @@ export default function AuthModal({
       case 'forgot':
         return 'Enter your email and we will send a link to reset your password.';
       case 'updatePassword':
-        return 'Enter a new password for your Medtrack account.';
+        return lockMode
+          ? 'Enter a new password for your Medtrack account.'
+          : 'Choose a new password. You will stay signed in after it is saved.';
       default:
         return 'Your medications stay private to your account.';
     }
@@ -151,7 +153,10 @@ export default function AuthModal({
           showError(message);
           return;
         }
-        showToast('Password updated. You are signed in.', 'success');
+        showToast(
+          lockMode ? 'Password updated. You are signed in.' : 'Password updated.',
+          'success'
+        );
         onClose();
         resetForm();
         return;
