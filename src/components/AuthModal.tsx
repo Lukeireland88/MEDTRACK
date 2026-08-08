@@ -25,12 +25,14 @@ export default function AuthModal({
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, resetPassword, updatePassword, signOut } = useAuth();
+  const { signIn, signUp, resetPassword, updatePassword, changePassword, signOut } = useAuth();
   const { showToast, showError } = useToast();
+  const requireCurrentPassword = mode === 'updatePassword' && !lockMode;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -38,12 +40,14 @@ export default function AuthModal({
     setError('');
     setInfo('');
     setPassword('');
+    setCurrentPassword('');
     setConfirmPassword('');
   }, [isOpen, initialMode]);
 
   const resetForm = () => {
     setEmail('');
     setPassword('');
+    setCurrentPassword('');
     setConfirmPassword('');
     setError('');
     setInfo('');
@@ -64,6 +68,7 @@ export default function AuthModal({
     setError('');
     setInfo('');
     setPassword('');
+    setCurrentPassword('');
     setConfirmPassword('');
   };
 
@@ -89,7 +94,7 @@ export default function AuthModal({
       case 'updatePassword':
         return lockMode
           ? 'Enter a new password for your Medtrack account.'
-          : 'Choose a new password. You will stay signed in after it is saved.';
+          : 'Confirm your current password, then choose a new one. You will stay signed in after it is saved.';
       default:
         return 'Your medications stay private to your account.';
     }
@@ -142,11 +147,21 @@ export default function AuthModal({
       }
 
       if (mode === 'updatePassword') {
+        if (requireCurrentPassword && !currentPassword) {
+          setError('Enter your current password');
+          return;
+        }
         if (password !== confirmPassword) {
           setError('Passwords do not match');
           return;
         }
-        const { error: authError } = await updatePassword(password);
+        if (requireCurrentPassword && currentPassword === password) {
+          setError('New password must be different from your current password');
+          return;
+        }
+        const { error: authError } = requireCurrentPassword
+          ? await changePassword(currentPassword, password)
+          : await updatePassword(password);
         if (authError) {
           const message = authError.message || 'Could not update password';
           setError(message);
@@ -249,6 +264,24 @@ export default function AuthModal({
             </div>
           )}
 
+          {requireCurrentPassword && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Current password</label>
+              <div className="relative">
+                <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+            </div>
+          )}
+
           {mode !== 'forgot' && (
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -273,7 +306,7 @@ export default function AuthModal({
 
           {mode === 'updatePassword' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Confirm password</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Confirm new password</label>
               <div className="relative">
                 <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input

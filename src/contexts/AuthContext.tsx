@@ -20,6 +20,8 @@ interface AuthContextType {
   ) => Promise<{ error: any; session: Session | null; user: User | null }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (password: string) => Promise<{ error: any }>;
+  /** Re-authenticates with the current password, then sets a new one. */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>;
   clearPasswordRecovery: () => void;
   signOut: () => Promise<void>;
 }
@@ -90,6 +92,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error };
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    const email = user?.email;
+    if (!email) {
+      return { error: { message: 'You must be signed in to change your password.' } };
+    }
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email,
+      password: currentPassword,
+    });
+    if (verifyError) {
+      return { error: { message: 'Current password is incorrect.' } };
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error };
+  };
+
   const clearPasswordRecovery = () => {
     setPasswordRecoveryPending(false);
   };
@@ -110,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         resetPassword,
         updatePassword,
+        changePassword,
         clearPasswordRecovery,
         signOut,
       }}
