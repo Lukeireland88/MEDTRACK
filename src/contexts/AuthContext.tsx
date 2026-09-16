@@ -1,6 +1,16 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import {
+  type AuthCallbackNotice,
+  type CapturedEmailConfirmation,
+  captureInitialAuthLocation,
+  getCapturedAuthLocation,
+  noticeForAuthCallback,
+  parseAuthCallbackParams,
+  parseCapturedEmailConfirmation,
+  stripAuthCallbackFromAddressBar,
+} from '../utils/authCallback';
 
 function authRedirectTo(): string | undefined {
   if (typeof window === 'undefined') return undefined;
@@ -24,6 +34,10 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>;
   clearPasswordRecovery: () => void;
   signOut: () => Promise<void>;
+  emailConfirmation: CapturedEmailConfirmation | null;
+  authCallbackNotice: AuthCallbackNotice | null;
+  dismissAuthCallbackNotice: () => void;
+  dismissEmailConfirmation: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,9 +47,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [passwordRecoveryPending, setPasswordRecoveryPending] = useState(false);
+  const [emailConfirmation, setEmailConfirmation] = useState<CapturedEmailConfirmation | null>(
+    () => {
+      const captured = captureInitialAuthLocation();
+      const parsed = parseCapturedEmailConfirmation(captured?.search ?? '');
+      return parsed.present ? parsed : null;
+    }
+  );
+  const [authCallbackNotice, setAuthCallbackNotice] = useState<AuthCallbackNotice | null>(null);
 
   useEffect(() => {
+    const inspectAuthCallback = () => {
+      const captured = getCapturedAuthLocation();
+      const confirmation = parseCapturedEmailConfirmation(captured?.search ?? '');
+      // Nested confirmation_url query values can leave type=signup in the address.
+      const inspection = parseAuthCallbackParams(
+        captured?.hash ?? '',
+        confirmation.present ? '' : (captured?.search ?? '')
+      );
+      if (!confirmation.present) {
+        const notice = noticeForAuthCallback(inspection);
+        if (notice) setAuthCallbackNotice(notice);
+      }
+      stripAuthCallbackFromAddressBar();
+    };
+
     if (!isSupabaseConfigured) {
+      inspectAuthCallback();
       setLoading(false);
       return;
     }
@@ -44,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      inspectAuthCallback();
     });
 
     const {
@@ -131,6 +170,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         changePassword,
         clearPasswordRecovery,
         signOut,
+        emailConfirmation,
+        authCallbackNotice,
+        dismissAuthCallbackNotice: () => setAuthCallbackNotice(null),
+        dismissEmailConfirmation: () => setEmailConfirmation(null),
       }}
     >
       {children}

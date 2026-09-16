@@ -29,9 +29,22 @@ jobs:
 
       - run: npm run build
         env:
-          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - name: Verify PWA assets
+        run: |
+          test -f dist/index.html
+          test -f dist/manifest.webmanifest
+          test -f dist/manifest.json
+          test -f dist/sw.js
+          test -f dist/registerSW.js
+          test -f dist/icon-192.png
+          test -f dist/icon-512.png
+          test -f dist/.nojekyll
+          ls dist/workbox-*.js >/dev/null
+          grep -q 'rel="manifest" href="/manifest.webmanifest"' dist/index.html
+          grep -q 'src="/registerSW.js"' dist/index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:

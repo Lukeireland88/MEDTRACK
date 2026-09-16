@@ -5,6 +5,8 @@ import SettingsPage from './pages/SettingsPage';
 import { isSupabaseConfigured } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
+import AuthCallbackBanner from './components/AuthCallbackBanner';
+import EmailConfirmationScreen from './components/EmailConfirmationScreen';
 
 function PasswordRecoveryGate() {
   const { passwordRecoveryPending, clearPasswordRecovery } = useAuth();
@@ -20,6 +22,23 @@ function PasswordRecoveryGate() {
 }
 
 export default function App() {
+  const {
+    emailConfirmation,
+    authCallbackNotice,
+    dismissAuthCallbackNotice,
+    dismissEmailConfirmation,
+  } = useAuth();
+
+  if (emailConfirmation) {
+    return (
+      <EmailConfirmationScreen
+        valid={emailConfirmation.valid}
+        confirmationUrl={emailConfirmation.url}
+        onContinue={emailConfirmation.valid ? undefined : dismissEmailConfirmation}
+      />
+    );
+  }
+
   return (
     <>
       {!isSupabaseConfigured && (
@@ -28,6 +47,9 @@ export default function App() {
           <code className="font-mono text-xs">VITE_SUPABASE_URL</code> and{' '}
           <code className="font-mono text-xs">VITE_SUPABASE_ANON_KEY</code> as GitHub Actions secrets and redeploy.
         </div>
+      )}
+      {authCallbackNotice && (
+        <AuthCallbackBanner notice={authCallbackNotice} onDismiss={dismissAuthCallbackNotice} />
       )}
       <PasswordRecoveryGate />
       <Routes>
