@@ -58,6 +58,19 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 Never commit real keys. For CI/CD (e.g. GitHub Actions), set the same variables as secrets and inject them at build time.
 
+### 2b. Production Auth (Supabase dashboard)
+
+In **Authentication → URL configuration**:
+
+- Site URL: `https://mymedsrecord.co.uk`
+- Redirect URLs: `https://mymedsrecord.co.uk/**` and `http://localhost:5173/**`
+
+In **Authentication → Providers → Email**: keep **Confirm email** enabled.
+
+In **Authentication → Attack protection**: enable **Leaked password protection**.
+
+In **Authentication → Email templates → Confirm signup**, paste `docs/email-templates/confirm-signup.html` so confirmation links go through `https://mymedsrecord.co.uk/?confirmation_url=...` (this stops Outlook from consuming the one-time link).
+
 ### 3. Run locally
 
 ```bash

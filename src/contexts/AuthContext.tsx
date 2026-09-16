@@ -34,6 +34,7 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: any }>;
   clearPasswordRecovery: () => void;
   signOut: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<{ error: { message: string } | null }>;
   emailConfirmation: CapturedEmailConfirmation | null;
   authCallbackNotice: AuthCallbackNotice | null;
   dismissAuthCallbackNotice: () => void;
@@ -156,6 +157,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const deleteAccount = async (password: string) => {
+    const email = user?.email;
+    if (!email) {
+      return { error: { message: 'You must be signed in to delete your account.' } };
+    }
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (verifyError) {
+      return { error: { message: 'Current password is incorrect.' } };
+    }
+    const { error } = await supabase.rpc('delete_own_account');
+    if (error) {
+      return { error: { message: error.message || 'Could not delete account.' } };
+    }
+    setPasswordRecoveryPending(false);
+    await supabase.auth.signOut({ scope: 'local' });
+    return { error: null };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -170,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         changePassword,
         clearPasswordRecovery,
         signOut,
+        deleteAccount,
         emailConfirmation,
         authCallbackNotice,
         dismissAuthCallbackNotice: () => setAuthCallbackNotice(null),

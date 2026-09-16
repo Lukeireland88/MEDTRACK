@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   CalendarDays,
@@ -269,10 +270,18 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
             <Pill className="h-4 w-4 text-brand-600" aria-hidden />
             My Meds Record
           </div>
-          <p className="max-w-2xl leading-6 md:text-right">
-            My Meds Record is a personal record-keeping tool, not medical advice. Always follow the
-            instructions provided by your doctor, pharmacist or medication packaging.
-          </p>
+          <div className="flex flex-col gap-3 md:items-end">
+            <p className="max-w-2xl leading-6 md:text-right">
+              My Meds Record is a personal record-keeping tool, not medical advice. Always follow the
+              instructions provided by your doctor, pharmacist or medication packaging.
+            </p>
+            <Link
+              to="/privacy"
+              className="font-semibold text-brand-700 hover:text-brand-900 md:text-right"
+            >
+              Privacy
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

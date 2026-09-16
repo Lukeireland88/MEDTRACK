@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, ArrowLeft, Hand, ListOrdered, Lock, Paintbrush, Pill, Settings } from 'lucide-react';
+import { Archive, ArrowLeft, Download, Hand, ListOrdered, Lock, Paintbrush, Pill, Settings, Shield, Trash2 } from 'lucide-react';
 import ManageTimeSlotsModal from '../components/ManageTimeSlotsModal';
 import EndedCoursesModal from '../components/EndedCoursesModal';
 import AllMedicationsModal from '../components/AllMedicationsModal';
 import AuthModal from '../components/AuthModal';
+import DeleteAccountModal from '../components/DeleteAccountModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
+import { downloadAccountDataExport } from '../utils/exportAccountData';
 import {
   DEFAULT_BACKGROUND_COLOR,
   usePageBackgroundProps,
@@ -25,7 +28,8 @@ const BACKGROUND_PRESETS = [
 type AuthModalMode = 'signin' | 'updatePassword';
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, deleteAccount } = useAuth();
+  const { showToast, showError } = useToast();
   const { handedness, setHandedness, backgroundColor, setBackgroundColor, resetBackgroundColor } =
     usePreferences();
   const pageBg = usePageBackgroundProps();
@@ -34,6 +38,10 @@ export default function SettingsPage() {
   const [allMedsOpen, setAllMedsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<AuthModalMode>('signin');
+  const [exporting, setExporting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const openSignIn = () => {
     setAuthModalMode('signin');
@@ -43,6 +51,40 @@ export default function SettingsPage() {
   const openChangePassword = () => {
     setAuthModalMode('updatePassword');
     setAuthModalOpen(true);
+  };
+
+  const handleExport = async () => {
+    if (!user) {
+      openSignIn();
+      return;
+    }
+    setExporting(true);
+    try {
+      await downloadAccountDataExport(user.email);
+      showToast('Your data download has started.', 'success');
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Could not export your data.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async (password: string) => {
+    setDeleteError('');
+    setDeleting(true);
+    try {
+      const { error } = await deleteAccount(password);
+      if (error) {
+        setDeleteError(error.message);
+        return;
+      }
+      setDeleteOpen(false);
+      showToast('Your account and records have been deleted.', 'success');
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Could not delete account.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const selectHandedness = (value: Handedness) => {
@@ -305,6 +347,52 @@ export default function SettingsPage() {
               </button>
             </li>
           )}
+          <li>
+            <div className="rounded-2xl surface-glass p-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 text-slate-700">
+                  <Shield className="h-5 w-5" aria-hidden />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-slate-900">Your data</div>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    Download a copy of your records, read how they are stored, or permanently delete
+                    your account.
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => void handleExport()}
+                      disabled={exporting}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <Download className="h-4 w-4" aria-hidden />
+                      {exporting ? 'Preparing…' : user ? 'Download all my data' : 'Sign in to download'}
+                    </button>
+                    <Link
+                      to="/privacy"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                    >
+                      Privacy
+                    </Link>
+                    {user && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteError('');
+                          setDeleteOpen(true);
+                        }}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800 hover:bg-rose-100"
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden />
+                        Delete account
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
         </ul>
       </div>
 
@@ -327,6 +415,16 @@ export default function SettingsPage() {
         onClose={() => setAuthModalOpen(false)}
         initialMode={authModalMode}
       />
+      {user?.email && (
+        <DeleteAccountModal
+          isOpen={deleteOpen}
+          email={user.email}
+          loading={deleting}
+          error={deleteError}
+          onClose={() => setDeleteOpen(false)}
+          onConfirm={handleDeleteAccount}
+        />
+      )}
     </div>
   );
 }
