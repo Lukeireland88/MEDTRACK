@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { clearLocalAccountData, requestDeleteOwnAccount } from '../utils/accountDeletion';
 import {
   type AuthCallbackNotice,
   type CapturedEmailConfirmation,
@@ -159,6 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const deleteAccount = async (password: string) => {
     const email = user?.email;
+    const userId = user?.id;
     if (!email) {
       return { error: { message: 'You must be signed in to delete your account.' } };
     }
@@ -169,11 +171,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (verifyError) {
       return { error: { message: 'Current password is incorrect.' } };
     }
-    const { error } = await supabase.rpc('delete_own_account');
+    const { error } = await requestDeleteOwnAccount({
+      rpc: (fn) => supabase.rpc(fn),
+    });
     if (error) {
       return { error: { message: error.message || 'Could not delete account.' } };
     }
+    clearLocalAccountData(userId);
     setPasswordRecoveryPending(false);
+    setUser(null);
+    setSession(null);
     await supabase.auth.signOut({ scope: 'local' });
     return { error: null };
   };

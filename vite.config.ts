@@ -27,6 +27,9 @@ function githubPagesSpaFallback(): Plugin {
 
 export default defineConfig({
   base: '/',
+  build: {
+    sourcemap: false,
+  },
   plugins: [
     react(),
     VitePWA({
@@ -69,7 +72,25 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,json,txt,xml}'],
         navigateFallback: 'index.html',
         // Do not treat static PWA files as SPA navigations (otherwise /sw.js looks like the app HTML).
-        navigateFallbackDenylist: [/^\/api\//, /\/[^/?]+\.[^/]+$/],
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /\/[^/?]+\.[^/]+$/,
+          /confirmation_url=/i,
+          /access_token=/i,
+          /refresh_token=/i,
+          /token_hash=/i,
+        ],
+        globIgnores: ['**/*.map', '**/.env*', '**/.*'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.hostname.endsWith('supabase.co') ||
+              url.searchParams.has('access_token') ||
+              url.searchParams.has('refresh_token') ||
+              url.href.includes('confirmation_url='),
+            handler: 'NetworkOnly',
+          },
+        ],
       },
     }),
     githubPagesSpaFallback(),

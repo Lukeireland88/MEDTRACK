@@ -3,6 +3,7 @@ import TrackerPage from './pages/TrackerPage';
 import HistoryReportPage from './pages/HistoryReportPage';
 import SettingsPage from './pages/SettingsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import { isSupabaseConfigured } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="/history" element={<HistoryReportPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
       </Routes>
     </>
   );

@@ -275,12 +275,20 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
               My Meds Record is a personal record-keeping tool, not medical advice. Always follow the
               instructions provided by your doctor, pharmacist or medication packaging.
             </p>
-            <Link
-              to="/privacy"
-              className="font-semibold text-brand-700 hover:text-brand-900 md:text-right"
-            >
-              Privacy
-            </Link>
+            <nav className="flex flex-wrap gap-x-4 gap-y-1 md:justify-end" aria-label="Legal">
+              <Link
+                to="/privacy"
+                className="font-semibold text-brand-700 hover:text-brand-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              >
+                Privacy
+              </Link>
+              <Link
+                to="/terms"
+                className="font-semibold text-brand-700 hover:text-brand-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              >
+                Terms
+              </Link>
+            </nav>
           </div>
         </div>
       </footer>

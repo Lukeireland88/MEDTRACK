@@ -60,7 +60,7 @@ export default function SettingsPage() {
     }
     setExporting(true);
     try {
-      await downloadAccountDataExport(user.email);
+      await downloadAccountDataExport();
       showToast('Your data download has started.', 'success');
     } catch (err) {
       showError(err instanceof Error ? err.message : 'Could not export your data.');
@@ -374,6 +374,12 @@ export default function SettingsPage() {
                       className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
                     >
                       Privacy
+                    </Link>
+                    <Link
+                      to="/terms"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                    >
+                      Terms
                     </Link>
                     {user && (
                       <button

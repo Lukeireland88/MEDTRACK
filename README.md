@@ -67,6 +67,10 @@ In **Authentication → URL configuration**:
 
 In **Authentication → Providers → Email**: keep **Confirm email** enabled.
 
+Set the **minimum password length to 8 characters** in the Supabase Dashboard (this is not stored in the repository). Frontend validation is not enough on its own.
+
+See `PRODUCTION_CHECKLIST.md` for SMTP, CAPTCHA, DNS and launch checks.
+
 In **Authentication → Attack protection**: enable **Leaked password protection**.
 
 In **Authentication → Email templates → Confirm signup**, paste `docs/email-templates/confirm-signup.html` so confirmation links go through `https://mymedsrecord.co.uk/?confirmation_url=...` (this stops Outlook from consuming the one-time link).

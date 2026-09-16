@@ -45,6 +45,11 @@ jobs:
           ls dist/workbox-*.js >/dev/null
           grep -q 'rel="manifest" href="/manifest.webmanifest"' dist/index.html
           grep -q 'src="/registerSW.js"' dist/index.html
+          test ! -e dist/.env
+          test ! -e dist/.env.local
+          if ls dist/*.map dist/assets/*.map >/dev/null 2>&1; then echo "Source maps must not be deployed"; exit 1; fi
+          if grep -R -E '"role"[[:space:]]*:[[:space:]]*"service_role"|SUPABASE_SERVICE_ROLE' dist --include='*.js' --include='*.html' --include='*.json' >/dev/null; then echo "Forbidden service-role marker in dist"; exit 1; fi
+          if grep -R '/MEDTRACK/' dist --include='*.js' --include='*.html' --include='*.webmanifest' >/dev/null; then echo "Legacy /MEDTRACK/ path found"; exit 1; fi
 
       - uses: actions/upload-pages-artifact@v3
         with:

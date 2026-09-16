@@ -21,16 +21,23 @@ export default function DeleteAccountModal({
   onConfirm,
 }: DeleteAccountModalProps) {
   const [password, setPassword] = useState('');
+  const [understood, setUnderstood] = useState(false);
 
   useEffect(() => {
-    if (isOpen) setPassword('');
+    if (isOpen) {
+      setPassword('');
+      setUnderstood(false);
+    }
   }, [isOpen]);
 
   const handleClose = () => {
     if (loading) return;
     setPassword('');
+    setUnderstood(false);
     onClose();
   };
+
+  const canSubmit = Boolean(password) && understood && !loading;
 
   return (
     <Modal
@@ -41,12 +48,14 @@ export default function DeleteAccountModal({
       size="sm"
       brandAccent
       closeOnOverlayClick={!loading}
+      closeOnEscape={!loading}
       role="alertdialog"
     >
       <form
         className="flex min-h-0 flex-1 flex-col"
         onSubmit={(event) => {
           event.preventDefault();
+          if (!canSubmit) return;
           void onConfirm(password);
         }}
       >
@@ -79,12 +88,22 @@ export default function DeleteAccountModal({
               />
             </div>
           </div>
+          <label className="flex items-start gap-3 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              className="mt-1 h-5 w-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              checked={understood}
+              onChange={(event) => setUnderstood(event.target.checked)}
+              disabled={loading}
+            />
+            <span>I understand this cannot be undone.</span>
+          </label>
         </div>
         <div className="flex shrink-0 justify-end gap-2 border-t border-slate-100 bg-slate-50/80 p-4 sm:p-5">
           <Button type="button" variant="secondary" onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
-          <Button type="submit" variant="danger" disabled={loading || !password}>
+          <Button type="submit" variant="danger" disabled={!canSubmit}>
             {loading ? 'Deleting…' : 'Delete account'}
           </Button>
         </div>

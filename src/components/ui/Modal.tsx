@@ -9,6 +9,21 @@ const sizeClass: Record<ModalSize, string> = {
   lg: 'max-w-2xl',
 };
 
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'textarea:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+function focusableIn(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (el) => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true'
+  );
+}
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -53,21 +68,38 @@ export default function Modal({
 
   useEffect(() => {
     if (!isOpen) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const panel = panelRef.current;
     const onKey = (e: KeyboardEvent) => {
-      if (closeOnEscape && e.key === 'Escape') onCloseRef.current();
+      if (closeOnEscape && e.key === 'Escape') {
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== 'Tab' || !panel) return;
+      const focusable = focusableIn(panel);
+      if (focusable.length === 0) {
+        e.preventDefault();
+        panel.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
-    if (closeOnEscape) {
-      document.addEventListener('keydown', onKey);
-    }
+    document.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    // Focus the panel once on open (not on every parent re-render / onClose identity change)
-    panelRef.current?.focus();
+    panel?.focus();
     return () => {
-      if (closeOnEscape) {
-        document.removeEventListener('keydown', onKey);
-      }
+      document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
+      previouslyFocused?.focus();
     };
   }, [isOpen, closeOnEscape]);
 
@@ -88,7 +120,7 @@ export default function Modal({
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
-        className={`bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200/90 w-full ${sizeClass[size]} max-h-[90vh] flex flex-col overflow-hidden outline-none`}
+        className={`bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200/90 w-full ${sizeClass[size]} max-h-[90vh] flex flex-col overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-brand-600`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {brandAccent && (
@@ -111,7 +143,7 @@ export default function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 -mr-1 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 touch-manipulation shrink-0"
+            className="p-2 -mr-1 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-800 touch-manipulation shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             aria-label="Close"
           >
             <X className="w-5 h-5" />

@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import {
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_LENGTH_ERROR,
+  PASSWORD_LENGTH_HINT,
+  passwordMeetsMinimumLength,
+} from '../utils/passwordPolicy';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 
@@ -141,8 +148,8 @@ export default function AuthModal({
         return;
       }
 
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters');
+      if (mode !== 'signin' && !passwordMeetsMinimumLength(password)) {
+        setError(PASSWORD_LENGTH_ERROR);
         return;
       }
 
@@ -236,23 +243,29 @@ export default function AuthModal({
       <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
         <div className="p-4 sm:p-5 space-y-4">
           {error && (
-            <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2">
-              <AlertCircle size={20} className="text-rose-600 mt-0.5 flex-shrink-0" />
+            <div
+              className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2"
+              role="alert"
+            >
+              <AlertCircle size={20} className="text-rose-600 mt-0.5 flex-shrink-0" aria-hidden />
               <p className="text-sm text-rose-800">{error}</p>
             </div>
           )}
           {info && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3" role="status">
               <p className="text-sm text-emerald-800">{info}</p>
             </div>
           )}
 
           {mode !== 'updatePassword' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+              <label htmlFor="auth-email" className="block text-sm font-medium text-slate-700 mb-2">
+                Email
+              </label>
               <div className="relative">
-                <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                 <input
+                  id="auth-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -260,6 +273,7 @@ export default function AuthModal({
                   placeholder="you@example.com"
                   required
                   autoComplete="email"
+                  aria-invalid={Boolean(error)}
                 />
               </div>
             </div>
@@ -267,10 +281,13 @@ export default function AuthModal({
 
           {requireCurrentPassword && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Current password</label>
+              <label htmlFor="auth-current-password" className="block text-sm font-medium text-slate-700 mb-2">
+                Current password
+              </label>
               <div className="relative">
-                <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                 <input
+                  id="auth-current-password"
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -285,39 +302,45 @@ export default function AuthModal({
 
           {mode !== 'forgot' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="auth-password" className="block text-sm font-medium text-slate-700 mb-2">
                 {mode === 'updatePassword' ? 'New password' : 'Password'}
               </label>
               <div className="relative">
-                <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                 <input
+                  id="auth-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                   placeholder="••••••••"
                   required
-                  minLength={6}
+                  minLength={mode === 'signin' ? undefined : MIN_PASSWORD_LENGTH}
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                 />
               </div>
-              <p className="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
+              {mode !== 'signin' && (
+                <p className="mt-1 text-xs text-slate-500">{PASSWORD_LENGTH_HINT}</p>
+              )}
             </div>
           )}
 
           {mode === 'updatePassword' && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Confirm new password</label>
+              <label htmlFor="auth-confirm-password" className="block text-sm font-medium text-slate-700 mb-2">
+                Confirm new password
+              </label>
               <div className="relative">
-                <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Lock size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
                 <input
+                  id="auth-confirm-password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                   placeholder="••••••••"
                   required
-                  minLength={6}
+                  minLength={MIN_PASSWORD_LENGTH}
                   autoComplete="new-password"
                 />
               </div>
@@ -374,6 +397,29 @@ export default function AuthModal({
                   </button>
                 </>
               )}
+            </p>
+          )}
+
+          {mode === 'signup' && (
+            <p className="text-sm leading-6 text-slate-600">
+              By creating an account, you confirm that you have read the{' '}
+              <Link
+                to="/privacy"
+                className="font-semibold text-brand-700 hover:text-brand-900"
+                onClick={handleClose}
+              >
+                Privacy Policy
+              </Link>{' '}
+              and understand that My Meds Record will process the medication and health information
+              you choose to enter to provide the service. Please also read the{' '}
+              <Link
+                to="/terms"
+                className="font-semibold text-brand-700 hover:text-brand-900"
+                onClick={handleClose}
+              >
+                Terms of Use
+              </Link>
+              .
             </p>
           )}
         </div>
