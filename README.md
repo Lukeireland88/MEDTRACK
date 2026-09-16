@@ -1,6 +1,6 @@
-# Medication Tracker
+# My Meds Record
 
-A responsive web app for tracking daily medications with smart scheduling. Built with React, TypeScript, Tailwind CSS, Vite, and Supabase (database and authentication).
+A calm, simple way to organise daily medications, record doses and keep a useful history. Built with React, TypeScript, Tailwind CSS, Vite, and Supabase (database and authentication).
 
 ## Features
 

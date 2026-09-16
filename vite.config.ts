@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       base: '/MEDTRACK/',
       manifest: {
-        name: 'Medication Tracker',
-        short_name: 'Medication Tracker',
+        name: 'My Meds Record',
+        short_name: 'My Meds Record',
         start_url: '/MEDTRACK/',
         scope: '/MEDTRACK/',
         display: 'standalone',

@@ -7,6 +7,7 @@ export type Handedness = 'left' | 'right';
 /** Default page wash when no custom colour is set (matches previous slate gradient feel). */
 export const DEFAULT_BACKGROUND_COLOR = '#f1f5f9';
 
+// Legacy localStorage keys retained so existing users keep their saved preferences.
 const PREFS_KEY = 'medtrack-preferences';
 const LEGACY_HANDEDNESS_KEY = 'medtrack-handedness';
 

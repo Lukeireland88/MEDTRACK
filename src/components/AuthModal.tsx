@@ -93,7 +93,7 @@ export default function AuthModal({
         return 'Enter your email and we will send a link to reset your password.';
       case 'updatePassword':
         return lockMode
-          ? 'Enter a new password for your Medtrack account.'
+          ? 'Enter a new password for your My Meds Record account.'
           : 'Confirm your current password, then choose a new one. You will stay signed in after it is saved.';
       default:
         return 'Your medications stay private to your account.';

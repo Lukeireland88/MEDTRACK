@@ -33,7 +33,7 @@ BEGIN
 END $$;
 
 -- ---------------------------------------------------------------------------
--- Unused game tables (not used by Medtrack): no public API access
+-- Unused game tables (not used by My Meds Record): no public API access
 -- ---------------------------------------------------------------------------
 DROP POLICY IF EXISTS games_select ON public.games;
 DROP POLICY IF EXISTS game_sessions_select ON public.game_sessions;

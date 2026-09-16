@@ -45,14 +45,14 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-900">
       <header className="relative z-20 border-b border-slate-200/80 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <a href="#top" className="flex items-center gap-3" aria-label="Medtrack home">
+          <a href="#top" className="flex items-center gap-3" aria-label="My Meds Record home">
             <span
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 text-white shadow-brand-sm"
               aria-hidden
             >
               <Pill className="h-5 w-5" strokeWidth={2.2} />
             </span>
-            <span className="text-xl font-bold tracking-tight">Medtrack</span>
+            <span className="text-xl font-bold tracking-tight">My Meds Record</span>
           </a>
 
           <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
                 Simple medication tracking
               </div>
               <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                A calmer way to keep track of your medication.
+                A calmer way to organise and record your medication.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
                 Organise your daily medication, record each dose and keep a useful history—all in
@@ -150,7 +150,7 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
                 Everything you need, without the clutter
               </h2>
               <p className="mt-4 text-lg leading-8 text-slate-600">
-                Medtrack is designed to make everyday recording quick and looking back easy.
+                My Meds Record is designed to make everyday recording quick and looking back easy.
               </p>
             </div>
 
@@ -238,8 +238,8 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
                   Your account, your records
                 </h2>
                 <p className="mt-3 max-w-3xl leading-7 text-brand-100">
-                  Medtrack uses account-based access so your medication and tracking records are
-                  kept separate from other users. Never share your password, and only use Medtrack
+                  My Meds Record uses account-based access so your medication and tracking records are
+                  kept separate from other users. Never share your password, and only use My Meds Record
                   on devices you trust.
                 </p>
               </div>
@@ -267,10 +267,10 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-8 text-sm text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div className="flex items-center gap-2 font-semibold text-slate-700">
             <Pill className="h-4 w-4 text-brand-600" aria-hidden />
-            Medtrack
+            My Meds Record
           </div>
           <p className="max-w-2xl leading-6 md:text-right">
-            Medtrack is a personal record-keeping tool, not medical advice. Always follow the
+            My Meds Record is a personal record-keeping tool, not medical advice. Always follow the
             instructions provided by your doctor, pharmacist or medication packaging.
           </p>
         </div>

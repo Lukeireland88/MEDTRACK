@@ -69,7 +69,7 @@ export default function SettingsPage() {
             </div>
             <div className="min-w-0">
               <h1 className="app-page-title text-2xl font-bold tracking-tight sm:text-3xl">Settings</h1>
-              <p className="app-page-muted mt-1 text-sm">Configure how Medtrack works for you.</p>
+              <p className="app-page-muted mt-1 text-sm">Configure how My Meds Record works for you.</p>
             </div>
           </div>
         </header>
