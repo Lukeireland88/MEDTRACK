@@ -2,13 +2,15 @@ import {
   ArrowRight,
   CalendarDays,
   Check,
+  ChevronDown,
   Clock3,
+  Download,
   FileClock,
   LockKeyhole,
-  NotebookPen,
   Pill,
   ShieldCheck,
   Sparkles,
+  X,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 
@@ -112,46 +114,26 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
             <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:ml-auto">
               <div className="absolute inset-8 -z-10 rounded-[2rem] bg-brand-400/20 blur-3xl" aria-hidden />
               <div className="rounded-[1.75rem] border border-white/90 bg-white/80 p-3 shadow-2xl shadow-brand-900/10 ring-1 ring-slate-200/70 backdrop-blur sm:p-5">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-700">
-                        Today
-                      </p>
-                      <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-950">
-                        Morning medications
-                      </h2>
-                    </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                  <div className="flex items-center justify-between gap-3 px-1 pb-4">
+                    <h2 className="text-xl font-bold tracking-tight text-slate-950">
+                      Today's medications
+                    </h2>
                     <div className="rounded-xl bg-brand-600 p-2 text-white shadow-brand-sm">
                       <Pill className="h-5 w-5" aria-hidden />
                     </div>
                   </div>
 
-                  <div className="mt-5 space-y-3">
-                    <MedicationPreview name="Morning tablet" detail="1 tablet" checked />
-                    <MedicationPreview name="Vitamin supplement" detail="1 capsule" checked />
-                    <MedicationPreview name="Daily medication" detail="2 tablets" />
+                  <div className="flex items-center justify-between rounded-t-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800">
+                    <span>Showing: Morning</span>
+                    <ChevronDown className="h-4 w-4 text-slate-500" aria-hidden />
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between rounded-xl border border-brand-100 bg-brand-50 px-4 py-3">
-                    <div>
-                      <p className="text-xs font-semibold text-brand-800">Morning progress</p>
-                      <p className="mt-0.5 text-sm font-bold text-brand-950">2 of 3 recorded</p>
-                    </div>
-                    <div className="relative h-12 w-12 rounded-full bg-white shadow-sm ring-1 ring-brand-100">
-                      <div className="absolute inset-2 rounded-full border-4 border-brand-200 border-r-brand-600 border-t-brand-600" />
-                    </div>
+                  <div className="space-y-2 rounded-b-xl border-x border-b border-slate-200 bg-white/60 p-2">
+                    <MedicationPreview name="Morning tablet" detail="Daily" status="taken" />
+                    <MedicationPreview name="Vitamin supplement" detail="Daily" status="pending" />
+                    <MedicationPreview name="Daily medication" detail="Daily" status="notTaken" />
                   </div>
-                </div>
-              </div>
-
-              <div className="absolute -bottom-7 -left-2 hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xl shadow-slate-900/10 sm:flex lg:-left-12">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                  <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
-                </span>
-                <div>
-                  <p className="text-xs font-medium text-slate-500">Dose recorded</p>
-                  <p className="text-sm font-bold text-slate-900">History updated</p>
                 </div>
               </div>
             </div>
@@ -211,21 +193,35 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
               </ul>
             </div>
 
-            <div className="rounded-3xl bg-slate-950 p-6 text-white shadow-2xl shadow-slate-900/20 sm:p-8">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 text-brand-200">
-                  <NotebookPen className="h-6 w-6" aria-hidden />
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 shadow-2xl shadow-slate-900/10 sm:p-6">
+              <div className="flex items-center gap-3 px-1">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+                  <FileClock className="h-6 w-6" aria-hidden />
                 </span>
-                <div>
-                  <p className="text-sm text-slate-400">History</p>
-                  <h3 className="font-bold">A useful timeline</h3>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">History</p>
+                  <h3 className="font-bold text-slate-950">History report</h3>
                 </div>
               </div>
 
-              <div className="mt-7 space-y-5 border-l border-slate-700 pl-6">
-                <TimelineItem time="8:05 AM" title="Morning medication recorded" tone="green" />
-                <TimelineItem time="12:30 PM" title="Lunchtime dose recorded" tone="blue" />
-                <TimelineItem time="3:15 PM" title="Observation added" tone="violet" />
+              <div className="mt-5 grid grid-cols-2 gap-2 text-xs font-semibold text-slate-700">
+                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">Last 7 days</div>
+                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">All events</div>
+              </div>
+
+              <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2">
+                  <span className="text-xs text-slate-600">3 events</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800">
+                    <Download className="h-3.5 w-3.5" aria-hidden />
+                    Export CSV
+                  </span>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  <HistoryPreviewRow time="Today, 8:05 AM" name="Morning tablet" status="Taken" tone="green" />
+                  <HistoryPreviewRow time="Yesterday, 8:10 PM" name="Daily medication" status="Not taken" tone="rose" />
+                  <HistoryPreviewRow time="Yesterday, 3:15 PM" name="General note" status="Note" tone="amber" />
+                </div>
               </div>
             </div>
           </div>
@@ -286,31 +282,50 @@ export default function LandingPage({ onSignIn, onCreateAccount }: LandingPagePr
 function MedicationPreview({
   name,
   detail,
-  checked = false,
+  status,
 }: {
   name: string;
   detail: string;
-  checked?: boolean;
+  status: 'taken' | 'pending' | 'notTaken';
 }) {
+  const taken = status === 'taken';
+  const notTaken = status === 'notTaken';
+
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+    <div
+      className={`flex items-center gap-3 rounded-xl border p-3 shadow-sm ${
+        taken
+          ? 'border-emerald-200 bg-emerald-50'
+          : notTaken
+            ? 'border-rose-200 bg-rose-50'
+            : 'border-slate-200 bg-white'
+      }`}
+    >
       <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-          checked ? 'bg-emerald-100 text-emerald-700' : 'bg-brand-100 text-brand-700'
-        }`}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600"
       >
-        {checked ? <Check className="h-5 w-5" strokeWidth={3} /> : <Pill className="h-5 w-5" />}
+        <Pill className="h-4 w-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-slate-900">{name}</span>
+        <span className={`block truncate text-sm font-bold ${taken ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+          {name}
+        </span>
         <span className="block text-xs text-slate-500">{detail}</span>
       </span>
-      <span
-        className={`h-6 w-6 rounded-full border-2 ${
-          checked ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'
-        }`}
-        aria-hidden
-      />
+      <span className={`inline-flex min-h-8 w-[5.75rem] overflow-hidden rounded-md border text-xs font-semibold ${
+        taken
+          ? 'border-emerald-600 bg-emerald-600 text-white'
+          : notTaken
+            ? 'border-rose-400 bg-rose-50 text-rose-800'
+            : 'border-slate-300 bg-white text-slate-700'
+      }`}>
+        <span className="flex flex-1 items-center justify-center px-1.5">
+          {taken ? <Check className="h-4 w-4" strokeWidth={2.5} /> : notTaken ? <X className="h-4 w-4" strokeWidth={2.5} /> : 'Log dose'}
+        </span>
+        <span className={`flex w-7 items-center justify-center border-l ${taken ? 'border-emerald-500' : notTaken ? 'border-rose-300' : 'border-slate-200'}`}>
+          <ChevronDown className="h-3.5 w-3.5" />
+        </span>
+      </span>
     </div>
   );
 }
@@ -326,29 +341,32 @@ function Benefit({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TimelineItem({
+function HistoryPreviewRow({
   time,
-  title,
+  name,
+  status,
   tone,
 }: {
   time: string;
-  title: string;
-  tone: 'green' | 'blue' | 'violet';
+  name: string;
+  status: string;
+  tone: 'green' | 'rose' | 'amber';
 }) {
   const toneClasses = {
-    green: 'bg-emerald-400 ring-emerald-400/20',
-    blue: 'bg-brand-400 ring-brand-400/20',
-    violet: 'bg-violet-400 ring-violet-400/20',
+    green: 'bg-emerald-100 text-emerald-800',
+    rose: 'bg-rose-100 text-rose-800',
+    amber: 'bg-amber-100 text-amber-800',
   };
 
   return (
-    <div className="relative">
-      <span
-        className={`absolute -left-[1.82rem] top-1.5 h-3 w-3 rounded-full ring-4 ${toneClasses[tone]}`}
-        aria-hidden
-      />
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{time}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-100">{title}</p>
+    <div className="flex items-center gap-3 px-3 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-slate-900">{name}</p>
+        <p className="mt-0.5 text-xs text-slate-500">{time}</p>
+      </div>
+      <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${toneClasses[tone]}`}>
+        {status}
+      </span>
     </div>
   );
 }
