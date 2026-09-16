@@ -1,9 +1,9 @@
 {
-  "id": "/MEDTRACK/",
+  "id": "/",
   "name": "My Meds Record",
   "short_name": "My Meds Record",
-  "start_url": "/MEDTRACK/",
-  "scope": "/MEDTRACK/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",

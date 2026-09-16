@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lukeireland88.github.io/MEDTRACK/sitemap.xml
+Sitemap: https://mymedsrecord.co.uk/sitemap.xml
