@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Plus, LogIn, LogOut, NotebookPen, Pill, Settings } from 'lucide-react';
+import { Plus, LogOut, NotebookPen, Pill, Settings } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { DosingMode, MedicationDoseEvent, MedicationWithSlots, SlotDoseState, TimeSlot } from '../types';
 import {
@@ -33,6 +33,7 @@ import LogSeizureModal from '../components/LogSeizureModal';
 import AddEventModal, { AddEventPayload } from '../components/AddEventModal';
 import AddLogPickerModal from '../components/AddLogPickerModal';
 import DoseLimitWarningModal from '../components/DoseLimitWarningModal';
+import LandingPage from './LandingPage';
 import {
   describeDoseLimitViolations,
   evaluateDoseLimits,
@@ -1112,49 +1113,23 @@ export default function TrackerPage() {
 
   if (!user) {
     return (
-      <div className={`${pageBg.className} flex items-center justify-center px-4`} style={pageBg.style}>
-        <div className="w-full max-w-md rounded-2xl surface-glass p-8 text-center">
-          <div
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 via-brand-600 to-brand-800 text-white shadow-brand-sm"
-            aria-hidden
-          >
-            <Pill className="h-7 w-7" strokeWidth={2} />
-          </div>
-          <h1 className="app-page-title text-2xl font-bold tracking-tight">Medtrack</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Sign in or create an account with your email. Each account keeps its own meds and logs private.
-          </p>
-          <div className="mt-6 flex flex-col gap-2">
-            <Button
-              type="button"
-              onClick={() => {
-                setAuthModalMode('signin');
-                setAuthModalOpen(true);
-              }}
-              className="w-full py-3"
-            >
-              <LogIn className="h-5 w-5" />
-              Sign in
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setAuthModalMode('signup');
-                setAuthModalOpen(true);
-              }}
-              className="w-full py-3"
-            >
-              Create account
-            </Button>
-          </div>
-        </div>
+      <>
+        <LandingPage
+          onSignIn={() => {
+            setAuthModalMode('signin');
+            setAuthModalOpen(true);
+          }}
+          onCreateAccount={() => {
+            setAuthModalMode('signup');
+            setAuthModalOpen(true);
+          }}
+        />
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
           initialMode={authModalMode}
         />
-      </div>
+      </>
     );
   }
 
