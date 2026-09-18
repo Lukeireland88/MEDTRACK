@@ -5,7 +5,7 @@ export default function PrivacyPage() {
     <LegalPageShell
       kicker="Privacy"
       title="Privacy"
-      updated="Version 1.1 — last updated 16 September 2026"
+      updated="Version 1.2 — last updated 18 September 2026"
     >
       <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
         This page explains, in plain English, how My Meds Record handles information you enter. It
@@ -45,10 +45,12 @@ export default function PrivacyPage() {
           <li>Medications, schedules, time slots and related settings you enter</li>
           <li>Dose records (taken, not taken, and flexible doses)</li>
           <li>Notes, measurements and observations, including seizure logs if you add them</li>
+          <li>Appearance preferences you choose, such as handedness and background colour</li>
         </ul>
         <p>
-          We do not ask for your name, address or payment details. Preferences such as background
-          colour are saved on this device only, not in your cloud account.
+          We do not ask for your name, address or payment details. When you are signed in, appearance
+          preferences are stored with your account so they can follow you across devices. If you are
+          not signed in, those preferences stay in this browser only.
         </p>
         <p>
           Medication records, observations and measurements may constitute special-category health
@@ -106,8 +108,8 @@ export default function PrivacyPage() {
           server-side function deletes the signed-in login and the medication records, schedules,
           dose history, notes, observations and related settings stored with that account. This
           cannot be undone. Authentication data stored in this browser for the session is cleared.
-          Device preferences (such as background colour) may remain in this browser until you clear
-          site data. There is no separate file-storage bucket in this project.
+          A cached copy of appearance preferences may remain in this browser until you clear site
+          data. There is no separate file-storage bucket in this project.
         </p>
       </LegalSection>
 
@@ -131,7 +133,11 @@ export default function PrivacyPage() {
         <p>The app uses essential browser storage so it can work:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>Authentication session data so you can stay signed in (handled by Supabase Auth)</li>
-          <li>Local preferences such as handedness and background colour</li>
+          <li>
+            A cached copy of appearance preferences (handedness and background colour) so the app
+            can apply them quickly. When you are signed in, the same preferences are also stored
+            with your account
+          </li>
           <li>
             A service worker that may cache the application shell and static files (icons, scripts,
             styles) so the app can load more quickly. It is not intended to store your medication

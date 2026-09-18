@@ -1,21 +1,24 @@
-import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { applyBrandPaletteToDocument } from '../utils/themeColors';
+import {
+  DEFAULT_BACKGROUND_COLOR,
+  defaultPrefs,
+  fetchUserSettings,
+  parseHexColor,
+  parseHandedness,
+  type AppPreferences,
+  type Handedness,
+  normalizePrefs,
+  upsertUserSettings,
+} from '../utils/userSettings';
 
-export type Handedness = 'left' | 'right';
-
-/** Default page wash when no custom colour is set (matches previous slate gradient feel). */
-export const DEFAULT_BACKGROUND_COLOR = '#f1f5f9';
+export { DEFAULT_BACKGROUND_COLOR, type AppPreferences, type Handedness };
 
 // Legacy localStorage keys retained so existing users keep their saved preferences.
 const PREFS_KEY = 'medtrack-preferences';
 const LEGACY_HANDEDNESS_KEY = 'medtrack-handedness';
-
-export type AppPreferences = {
-  handedness: Handedness;
-  /** Hex colour, e.g. #e0f2fe */
-  backgroundColor: string;
-};
+const REMOTE_SAVE_DEBOUNCE_MS = 400;
 
 interface PreferencesContextType {
   handedness: Handedness;
@@ -27,31 +30,8 @@ interface PreferencesContextType {
 
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
 
-const defaultPrefs: AppPreferences = {
-  handedness: 'left',
-  backgroundColor: DEFAULT_BACKGROUND_COLOR,
-};
-
 function storageKeyForUser(userId: string | undefined | null): string {
   return userId ? `${PREFS_KEY}:${userId}` : PREFS_KEY;
-}
-
-function parseHandedness(raw: string | null): Handedness | null {
-  if (raw === 'left' || raw === 'right') return raw;
-  return null;
-}
-
-function parseHexColor(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const v = raw.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toLowerCase();
-  if (/^#[0-9a-fA-F]{3}$/.test(v)) {
-    const r = v[1];
-    const g = v[2];
-    const b = v[3];
-    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
-  }
-  return null;
 }
 
 function readPrefs(userId: string | undefined | null): AppPreferences {
@@ -59,11 +39,7 @@ function readPrefs(userId: string | undefined | null): AppPreferences {
     const userKey = storageKeyForUser(userId);
     const raw = localStorage.getItem(userKey);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<AppPreferences>;
-      const handedness = parseHandedness(parsed.handedness ?? null) ?? defaultPrefs.handedness;
-      const backgroundColor =
-        parseHexColor(parsed.backgroundColor) ?? defaultPrefs.backgroundColor;
-      return { handedness, backgroundColor };
+      return normalizePrefs(JSON.parse(raw) as Partial<AppPreferences>);
     }
 
     // Migrate legacy handedness-only key once.
@@ -100,32 +76,90 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const [prefs, setPrefs] = useState<AppPreferences>(() => readPrefs(null));
+  const prefsRef = useRef(prefs);
+  const localEpochRef = useRef(0);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  prefsRef.current = prefs;
+
+  const flushRemote = (uid: string, next: AppPreferences) => {
+    void upsertUserSettings(uid, next);
+  };
+
+  const scheduleRemote = (uid: string, next: AppPreferences, immediate: boolean) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    if (immediate) {
+      flushRemote(uid, next);
+      return;
+    }
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      flushRemote(uid, prefsRef.current);
+    }, REMOTE_SAVE_DEBOUNCE_MS);
+  };
 
   useEffect(() => {
     const next = readPrefs(userId);
+    localEpochRef.current += 1;
+    const loadEpoch = localEpochRef.current;
     setPrefs(next);
     applyThemeToDocument(next.backgroundColor);
+
+    if (!userId) return;
+
+    let cancelled = false;
+    void (async () => {
+      const remote = await fetchUserSettings(userId);
+      if (cancelled || loadEpoch !== localEpochRef.current) return;
+      if (remote) {
+        setPrefs(remote);
+        writePrefs(userId, remote);
+        applyThemeToDocument(remote.backgroundColor);
+        return;
+      }
+      // Avoid writing defaults from a new device over a colour that has not been synced yet.
+      if (
+        next.handedness !== defaultPrefs.handedness ||
+        next.backgroundColor !== defaultPrefs.backgroundColor
+      ) {
+        await upsertUserSettings(userId, next);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+        flushRemote(userId, prefsRef.current);
+      }
+    };
   }, [userId]);
 
   useEffect(() => {
     applyThemeToDocument(prefs.backgroundColor);
   }, [prefs.backgroundColor]);
 
-  const update = (partial: Partial<AppPreferences>) => {
+  const update = (partial: Partial<AppPreferences>, persistRemoteImmediately = true) => {
     setPrefs((prev) => {
       const next = { ...prev, ...partial };
+      localEpochRef.current += 1;
       writePrefs(userId, next);
+      if (userId) scheduleRemote(userId, next, persistRemoteImmediately);
       return next;
     });
   };
 
-  const setHandedness = (value: Handedness) => update({ handedness: value });
+  const setHandedness = (value: Handedness) => update({ handedness: value }, true);
   const setBackgroundColor = (value: string) => {
     const hex = parseHexColor(value);
     if (!hex) return;
-    update({ backgroundColor: hex });
+    update({ backgroundColor: hex }, false);
   };
-  const resetBackgroundColor = () => update({ backgroundColor: DEFAULT_BACKGROUND_COLOR });
+  const resetBackgroundColor = () => update({ backgroundColor: DEFAULT_BACKGROUND_COLOR }, true);
 
   return (
     <PreferencesContext.Provider

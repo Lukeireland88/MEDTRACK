@@ -167,7 +167,8 @@ export default function SettingsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-slate-900">Handedness</div>
                   <p className="mt-0.5 text-sm text-slate-600">
-                    Put checkboxes and Log dose on your preferred side. Actions move to the other side.
+                    Put checkboxes and Log dose on your preferred side. Actions move to the other
+                    side. Saved to your account when you are signed in.
                   </p>
                   <div
                     className="mt-3 grid grid-cols-2 gap-2"
@@ -220,8 +221,8 @@ export default function SettingsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-slate-900">Background colour</div>
                   <p className="mt-0.5 text-sm text-slate-600">
-                    Choose a page background. Primary buttons (Add, Save, Log dose) follow this colour. Saved for your
-                    account on this device.
+                    Choose a page background. Primary buttons (Add, Save, Log dose) follow this colour.
+                    Saved to your account when you are signed in, so it follows you across devices.
                   </p>
                   <div className="mt-3 flex flex-wrap items-center gap-3">
                     <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700">

@@ -14,6 +14,7 @@ const USER_DATA_TABLES = [
   'timeline_events',
   'medication_course_periods',
   'medication_pause_periods',
+  'user_settings',
 ] as const;
 
 const migrationsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../supabase/migrations');

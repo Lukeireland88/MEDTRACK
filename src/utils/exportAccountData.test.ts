@@ -29,6 +29,7 @@ describe('account data export', () => {
         'medication_dose_events',
         'symptom_events',
         'timeline_events',
+        'user_settings',
       ])
     );
   });

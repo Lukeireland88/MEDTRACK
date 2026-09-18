@@ -13,6 +13,7 @@ export const ACCOUNT_TABLES = [
   'medication_pause_periods',
   'symptom_events',
   'timeline_events',
+  'user_settings',
 ] as const;
 
 const ROOT_TABLES_WITH_USER_ID = new Set([
@@ -20,6 +21,7 @@ const ROOT_TABLES_WITH_USER_ID = new Set([
   'time_slots',
   'symptom_events',
   'timeline_events',
+  'user_settings',
 ]);
 
 const SENSITIVE_KEY = /password|access_token|refresh_token|secret|api[_-]?key/i;
