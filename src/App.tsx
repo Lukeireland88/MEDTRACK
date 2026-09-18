@@ -6,26 +6,14 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import { isSupabaseConfigured } from './lib/supabase';
 import { useAuth } from './contexts/AuthContext';
-import AuthModal from './components/AuthModal';
 import AuthCallbackBanner from './components/AuthCallbackBanner';
 import EmailConfirmationScreen from './components/EmailConfirmationScreen';
-
-function PasswordRecoveryGate() {
-  const { passwordRecoveryPending, clearPasswordRecovery } = useAuth();
-
-  return (
-    <AuthModal
-      isOpen={passwordRecoveryPending}
-      onClose={clearPasswordRecovery}
-      initialMode="updatePassword"
-      lockMode
-    />
-  );
-}
+import PasswordRecoveryScreen from './components/PasswordRecoveryScreen';
 
 export default function App() {
   const {
     emailConfirmation,
+    passwordRecoveryPending,
     authCallbackNotice,
     dismissAuthCallbackNotice,
     dismissEmailConfirmation,
@@ -42,6 +30,10 @@ export default function App() {
     );
   }
 
+  if (passwordRecoveryPending) {
+    return <PasswordRecoveryScreen />;
+  }
+
   return (
     <>
       {!isSupabaseConfigured && (
@@ -54,7 +46,6 @@ export default function App() {
       {authCallbackNotice && (
         <AuthCallbackBanner notice={authCallbackNotice} onDismiss={dismissAuthCallbackNotice} />
       )}
-      <PasswordRecoveryGate />
       <Routes>
         <Route path="/" element={<TrackerPage />} />
         <Route path="/history" element={<HistoryReportPage />} />

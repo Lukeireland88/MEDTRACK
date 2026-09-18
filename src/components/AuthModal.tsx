@@ -61,8 +61,11 @@ export default function AuthModal({
   };
 
   const handleClose = async () => {
-    if (mode === 'updatePassword' && lockMode) {
+    if (lockMode) {
       await signOut();
+      resetForm();
+      setMode(initialMode);
+      return;
     }
     onClose();
     resetForm();
@@ -100,7 +103,7 @@ export default function AuthModal({
         return 'Enter your email and we will send a link to reset your password.';
       case 'updatePassword':
         return lockMode
-          ? 'Enter a new password for your My Meds Record account.'
+          ? 'Enter a new password for your My Meds Record account. Closing this window signs you out — the reset link does not leave you signed in.'
           : 'Confirm your current password, then choose a new one. You will stay signed in after it is saved.';
       default:
         return 'Your medications stay private to your account.';
@@ -425,9 +428,20 @@ export default function AuthModal({
         </div>
 
         <div className="shrink-0 border-t border-slate-100 p-4 sm:p-5 bg-slate-50/80">
-          <Button type="submit" disabled={loading} className="w-full py-3">
-            {submitLabel()}
-          </Button>
+          {lockMode ? (
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="secondary" onClick={() => void handleClose()} disabled={loading} className="w-full sm:w-auto py-3">
+                Cancel and sign out
+              </Button>
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto py-3">
+                {submitLabel()}
+              </Button>
+            </div>
+          ) : (
+            <Button type="submit" disabled={loading} className="w-full py-3">
+              {submitLabel()}
+            </Button>
+          )}
         </div>
       </form>
     </Modal>

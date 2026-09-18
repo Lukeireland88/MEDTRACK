@@ -1,14 +1,18 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   EMAIL_CONFIRMED_MESSAGE,
   GENERIC_AUTH_CALLBACK_ERROR_MESSAGE,
   OTP_EXPIRED_MESSAGE,
+  PASSWORD_RECOVERY_STORAGE_KEY,
   decodeConfirmationUrlValue,
   extractRawConfirmationUrl,
+  isPasswordRecoveryCallback,
   isValidSupabaseVerifyUrl,
   noticeForAuthCallback,
   parseAuthCallbackParams,
   parseCapturedEmailConfirmation,
+  persistPasswordRecoveryPending,
+  readPasswordRecoveryPending,
   resetCapturedAuthLocationForTests,
   stripAuthCallbackParamsFromHref,
   stripConfirmationUrlFromHref,
@@ -140,6 +144,33 @@ describe('auth callback hash inspection', () => {
   it('does not treat password recovery as email confirmation', () => {
     const inspection = parseAuthCallbackParams('#access_token=secret&type=recovery', '');
     expect(noticeForAuthCallback(inspection)).toBeNull();
+  });
+
+  it('recognises a recovery callback hash', () => {
+    expect(isPasswordRecoveryCallback('#access_token=secret&type=recovery')).toBe(true);
+    expect(isPasswordRecoveryCallback('#access_token=secret&type=signup')).toBe(false);
+  });
+});
+
+describe('password recovery pending flag', () => {
+  it('round-trips sessionStorage', () => {
+    const mem: Record<string, string> = {};
+    const storage = {
+      getItem: (key: string) => mem[key] ?? null,
+      setItem: (key: string, value: string) => {
+        mem[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete mem[key];
+      },
+    };
+    vi.stubGlobal('sessionStorage', storage);
+    persistPasswordRecoveryPending(true);
+    expect(readPasswordRecoveryPending()).toBe(true);
+    expect(storage.getItem(PASSWORD_RECOVERY_STORAGE_KEY)).toBe('1');
+    persistPasswordRecoveryPending(false);
+    expect(readPasswordRecoveryPending()).toBe(false);
+    vi.unstubAllGlobals();
   });
 });
 

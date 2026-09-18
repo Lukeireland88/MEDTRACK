@@ -29,7 +29,7 @@ const AUTH_HASH_KEYS = [
 
 const AUTH_SEARCH_KEYS = ['code', 'error', 'error_code', 'error_description'] as const;
 
-const SUCCESS_AUTH_TYPES = new Set(['signup', 'email', 'invite', 'email_change', 'magiclink']);
+export const SUCCESS_AUTH_TYPES = new Set(['signup', 'email', 'invite', 'email_change', 'magiclink']);
 
 export type AuthCallbackInspection = {
   error: string | null;
@@ -177,6 +177,41 @@ export function parseAuthCallbackParams(hash: string, search = ''): AuthCallback
     errorDescription: read('error_description'),
     type: read('type'),
   };
+}
+
+/** sessionStorage so a refresh cannot drop the reset gate while the recovery session still exists. */
+export const PASSWORD_RECOVERY_STORAGE_KEY = 'mmr-password-recovery-pending';
+
+export function persistPasswordRecoveryPending(pending: boolean): void {
+  if (typeof sessionStorage === 'undefined') return;
+  try {
+    if (pending) sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, '1');
+    else sessionStorage.removeItem(PASSWORD_RECOVERY_STORAGE_KEY);
+  } catch {
+    /* private mode / blocked storage */
+  }
+}
+
+export function readPasswordRecoveryPending(): boolean {
+  if (typeof sessionStorage === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(PASSWORD_RECOVERY_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function isPasswordRecoveryCallback(hash: string, search = ''): boolean {
+  return parseAuthCallbackParams(hash, search).type === 'recovery';
+}
+
+export function initialPasswordRecoveryPending(): boolean {
+  const captured = captureInitialAuthLocation();
+  if (isPasswordRecoveryCallback(captured?.hash ?? '', captured?.search ?? '')) {
+    persistPasswordRecoveryPending(true);
+    return true;
+  }
+  return readPasswordRecoveryPending();
 }
 
 export function noticeForAuthCallback(inspection: AuthCallbackInspection): AuthCallbackNotice | null {

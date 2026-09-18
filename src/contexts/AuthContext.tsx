@@ -7,9 +7,11 @@ import {
   type CapturedEmailConfirmation,
   captureInitialAuthLocation,
   getCapturedAuthLocation,
+  initialPasswordRecoveryPending,
   noticeForAuthCallback,
   parseAuthCallbackParams,
   parseCapturedEmailConfirmation,
+  persistPasswordRecoveryPending,
   stripAuthCallbackFromAddressBar,
 } from '../utils/authCallback';
 
@@ -48,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [passwordRecoveryPending, setPasswordRecoveryPending] = useState(false);
+  const [passwordRecoveryPending, setPasswordRecoveryPending] = useState(initialPasswordRecoveryPending);
   const [emailConfirmation, setEmailConfirmation] = useState<CapturedEmailConfirmation | null>(
     () => {
       const captured = captureInitialAuthLocation();
@@ -94,9 +96,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
       if (event === 'PASSWORD_RECOVERY') {
+        persistPasswordRecoveryPending(true);
         setPasswordRecoveryPending(true);
       }
       if (event === 'SIGNED_OUT') {
+        persistPasswordRecoveryPending(false);
         setPasswordRecoveryPending(false);
       }
     });
@@ -129,7 +133,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updatePassword = async (password: string) => {
     const { error } = await supabase.auth.updateUser({ password });
-    if (!error) setPasswordRecoveryPending(false);
+    if (!error) {
+      persistPasswordRecoveryPending(false);
+      setPasswordRecoveryPending(false);
+    }
     return { error };
   };
 
@@ -150,10 +157,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearPasswordRecovery = () => {
+    persistPasswordRecoveryPending(false);
     setPasswordRecoveryPending(false);
   };
 
   const signOut = async () => {
+    persistPasswordRecoveryPending(false);
     setPasswordRecoveryPending(false);
     await supabase.auth.signOut();
   };
@@ -178,6 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: { message: error.message || 'Could not delete account.' } };
     }
     clearLocalAccountData(userId);
+    persistPasswordRecoveryPending(false);
     setPasswordRecoveryPending(false);
     setUser(null);
     setSession(null);
