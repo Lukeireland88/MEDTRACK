@@ -75,6 +75,7 @@ describe('parseCapturedEmailConfirmation', () => {
       present: true,
       valid: true,
       url: 'https://abcd.supabase.co/auth/v1/verify?token=abc&type=signup',
+      purpose: 'signup',
     });
   });
 
@@ -85,6 +86,18 @@ describe('parseCapturedEmailConfirmation', () => {
     expect(parsed.present).toBe(true);
     expect(parsed.valid).toBe(false);
     expect(parsed.url).toBeNull();
+  });
+
+  it('treats a wrapped recovery verify URL as a password-reset hand-off', () => {
+    const parsed = parseCapturedEmailConfirmation(
+      '?confirmation_url=https://abcd.supabase.co/auth/v1/verify?token=abc&type=recovery&redirect_to=https://mymedsrecord.co.uk/'
+    );
+    expect(parsed).toEqual({
+      present: true,
+      valid: true,
+      url: 'https://abcd.supabase.co/auth/v1/verify?token=abc&type=recovery&redirect_to=https://mymedsrecord.co.uk/',
+      purpose: 'recovery',
+    });
   });
 });
 
@@ -134,6 +147,12 @@ describe('URL cleanup', () => {
   it('removes confirmation_url and nested leftover search params', () => {
     const href =
       'https://mymedsrecord.co.uk/?confirmation_url=https://abcd.supabase.co/auth/v1/verify?token=abc&type=signup';
+    expect(stripConfirmationUrlFromHref(href)).toBe('/');
+  });
+
+  it('removes a wrapped recovery confirmation_url from the address bar', () => {
+    const href =
+      'https://mymedsrecord.co.uk/?confirmation_url=https://abcd.supabase.co/auth/v1/verify?token=abc&type=recovery&redirect_to=https://mymedsrecord.co.uk/';
     expect(stripConfirmationUrlFromHref(href)).toBe('/');
   });
 

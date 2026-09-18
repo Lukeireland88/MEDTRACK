@@ -36,6 +36,7 @@ export default function App() {
       <EmailConfirmationScreen
         valid={emailConfirmation.valid}
         confirmationUrl={emailConfirmation.url}
+        purpose={emailConfirmation.purpose}
         onContinue={emailConfirmation.valid ? undefined : dismissEmailConfirmation}
       />
     );

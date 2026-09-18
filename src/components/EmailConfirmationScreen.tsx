@@ -1,18 +1,26 @@
 import { MailCheck, Pill } from 'lucide-react';
 import Button from './ui/Button';
-import { INVALID_CONFIRMATION_LINK_MESSAGE } from '../utils/authCallback';
+import {
+  INVALID_CONFIRMATION_LINK_MESSAGE,
+  INVALID_RECOVERY_LINK_MESSAGE,
+  type WrappedAuthPurpose,
+} from '../utils/authCallback';
 
 interface EmailConfirmationScreenProps {
   valid: boolean;
   confirmationUrl: string | null;
+  purpose?: WrappedAuthPurpose;
   onContinue?: () => void;
 }
 
 export default function EmailConfirmationScreen({
   valid,
   confirmationUrl,
+  purpose = 'signup',
   onContinue,
 }: EmailConfirmationScreenProps) {
+  const isRecovery = purpose === 'recovery';
+
   const handleConfirm = () => {
     if (!valid || !confirmationUrl) return;
     window.location.assign(confirmationUrl);
@@ -42,22 +50,23 @@ export default function EmailConfirmationScreen({
             <MailCheck className="h-6 w-6" aria-hidden />
           </span>
           <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-950">
-            Confirm your email
+            {isRecovery ? 'Reset your password' : 'Confirm your email'}
           </h1>
           {valid ? (
             <>
               <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
-                Press the button below to finish creating your account. This extra step stops email
-                scanners from using your one-time confirmation link before you do.
+                {isRecovery
+                  ? 'Press the button below to continue resetting your password. This extra step stops email scanners from using your one-time reset link before you do.'
+                  : 'Press the button below to finish creating your account. This extra step stops email scanners from using your one-time confirmation link before you do.'}
               </p>
               <Button onClick={handleConfirm} className="mt-6 w-full py-3">
-                Confirm my email
+                {isRecovery ? 'Continue to reset password' : 'Confirm my email'}
               </Button>
             </>
           ) : (
             <>
               <p className="mt-3 text-sm leading-6 text-rose-800 sm:text-base" role="alert">
-                {INVALID_CONFIRMATION_LINK_MESSAGE}
+                {isRecovery ? INVALID_RECOVERY_LINK_MESSAGE : INVALID_CONFIRMATION_LINK_MESSAGE}
               </p>
               {onContinue && (
                 <Button variant="secondary" onClick={onContinue} className="mt-6 w-full py-3">

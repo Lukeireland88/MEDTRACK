@@ -75,6 +75,8 @@ In **Authentication → Attack protection**: enable **Leaked password protection
 
 In **Authentication → Email templates → Confirm signup**, paste `docs/email-templates/confirm-signup.html` so confirmation links go through `https://mymedsrecord.co.uk/?confirmation_url=...` (this stops Outlook from consuming the one-time link).
 
+In **Authentication → Email templates → Reset password**, paste `docs/email-templates/reset-password.html` so reset links use the same first-party wrapper (visible URL stays on mymedsrecord.co.uk).
+
 ### 3. Run locally
 
 ```bash

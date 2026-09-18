@@ -25,7 +25,7 @@ Configure these for `mymedsrecord.co.uk` with your DNS host:
 
 If the SMTP provider offers click/open tracking, **turn it off**. Tracking wrappers can alter Supabase confirmation and password-reset links and make them fail (especially with Outlook Safe Links).
 
-Keep the confirm-signup template that wraps the Supabase URL as  
+Keep the confirm-signup and reset-password templates that wrap the Supabase URL as  
 `https://mymedsrecord.co.uk/?confirmation_url={{ .ConfirmationURL }}`.
 
 ## Deliverability checks

@@ -9,6 +9,8 @@ export const GENERIC_AUTH_CALLBACK_ERROR_MESSAGE =
 
 export const INVALID_CONFIRMATION_LINK_MESSAGE = 'This confirmation link is invalid.';
 
+export const INVALID_RECOVERY_LINK_MESSAGE = 'This password reset link is invalid.';
+
 const CONFIRMATION_URL_MARKER = 'confirmation_url=';
 
 const AUTH_HASH_KEYS = [
@@ -41,10 +43,13 @@ export type AuthCallbackNotice = {
   message: string;
 };
 
+export type WrappedAuthPurpose = 'signup' | 'recovery' | 'other';
+
 export type CapturedEmailConfirmation = {
   present: boolean;
   valid: boolean;
   url: string | null;
+  purpose: WrappedAuthPurpose;
 };
 
 type LocationSnapshot = {
@@ -120,19 +125,39 @@ export function isValidSupabaseVerifyUrl(value: string): boolean {
   }
 }
 
+export function purposeFromSupabaseVerifyUrl(value: string): WrappedAuthPurpose {
+  try {
+    const type = new URL(value).searchParams.get('type');
+    if (type === 'recovery') return 'recovery';
+    if (
+      type === 'signup' ||
+      type === 'email' ||
+      type === 'invite' ||
+      type === 'email_change' ||
+      type === 'magiclink'
+    ) {
+      return 'signup';
+    }
+    return 'other';
+  } catch {
+    return 'other';
+  }
+}
+
 export function parseCapturedEmailConfirmation(search: string): CapturedEmailConfirmation {
   const raw = extractRawConfirmationUrl(search);
   if (raw === null) {
-    return { present: false, valid: false, url: null };
+    return { present: false, valid: false, url: null, purpose: 'other' };
   }
   if (!raw.trim()) {
-    return { present: true, valid: false, url: null };
+    return { present: true, valid: false, url: null, purpose: 'other' };
   }
   const decoded = decodeConfirmationUrlValue(raw);
+  const purpose = purposeFromSupabaseVerifyUrl(decoded);
   if (!isValidSupabaseVerifyUrl(decoded)) {
-    return { present: true, valid: false, url: null };
+    return { present: true, valid: false, url: null, purpose };
   }
-  return { present: true, valid: true, url: decoded };
+  return { present: true, valid: true, url: decoded, purpose };
 }
 
 export function parseAuthCallbackParams(hash: string, search = ''): AuthCallbackInspection {
