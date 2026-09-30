@@ -62,12 +62,22 @@ describe('RLS migrations (static)', () => {
   });
 
   it('delete_own_account uses auth.uid and is not granted to anon', () => {
-    const fn = sql.match(/CREATE OR REPLACE FUNCTION public\.delete_own_account\(\)[\s\S]*?\$\$;/g);
-    expect(fn && fn.length > 0).toBe(true);
-    const latest = fn![fn!.length - 1];
-    expect(latest).toMatch(/uid uuid := auth\.uid\(\)/);
-    expect(latest).not.toMatch(/user_id\s+uuid/);
+    const publicFns = sql.match(/CREATE OR REPLACE FUNCTION public\.delete_own_account\(\)[\s\S]*?\$\$;/g);
+    expect(publicFns && publicFns.length > 0).toBe(true);
+    const latestPublic = publicFns![publicFns!.length - 1];
+    expect(latestPublic).toMatch(/SECURITY INVOKER/);
+    expect(latestPublic).not.toMatch(/SECURITY DEFINER/);
+    expect(latestPublic).not.toMatch(/user_id\s+uuid/);
+
+    const privateFns = sql.match(/CREATE OR REPLACE FUNCTION private\.delete_own_account\(\)[\s\S]*?\$\$;/g);
+    expect(privateFns && privateFns.length > 0).toBe(true);
+    const latestPrivate = privateFns![privateFns!.length - 1];
+    expect(latestPrivate).toMatch(/SECURITY DEFINER/);
+    expect(latestPrivate).toMatch(/uid uuid := auth\.uid\(\)/);
+    expect(latestPrivate).not.toMatch(/user_id\s+uuid/);
+
     expect(sql).toMatch(/REVOKE ALL ON FUNCTION public\.delete_own_account\(\) FROM PUBLIC, anon/);
+    expect(sql).toMatch(/REVOKE ALL ON FUNCTION private\.delete_own_account\(\) FROM PUBLIC, anon/);
   });
 });
 
